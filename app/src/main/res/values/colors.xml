@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#9DA5BE</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="colorPrimary">#2249B3</color>
+    <color name="colorPrimaryDark">#161616</color>
+    <color name="colorAccent">#081A4A</color>
+
+    <color name="red">#FF0000</color>
+    <color name="blue">#2249B3</color>
+
+    <color name="purple_500">#00A6FB</color>
+
+    <color name="purple_700">#51E3F6</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="text_primary">#7D8597</color>
+    <color name="paragraph">#415A77</color>
+    <color name="gray_dark">#5E5E5E</color>
+    <color name="input_field_border">#F3F3F3</color>
+    <color name="text_gray">#5E5E5E</color>
+    <color name="text_gray_hint">#878787</color>
+    <color name="gray">#EFF0F7</color>
+    <color name="gray_bar">#B6BCCB</color>
+    <color name="light_blue">#0A00A6FB</color>
+    <color name="light_blue_trimmer">#3300A6FB</color>
+    <color name="gray_for_card_text">#6C6C6C</color>
+    <color name="button_red">#14FF2525</color>
+    <color name="button_blue">#14374495</color>
+    <color name="orange">#FF9800</color>
+    <color name="card_light_bg">#F9F9FB</color>
+    <color name="card_light_bg_gray">#F3F4F9</color>
+    <color name="card_rounded_light_bg_gray">#EEEFF0</color>
+
+    <array name="arc_colors_default">
+        <item>#00458E</item>
+        <item>#0084D6</item>
+        <item>#2A94F4</item>
+    </array>
+
+
+    <color name="progress_gray">#FFD8D8D8</color>
+    <color name="default_blue_light">#FF33b5e5</color>
+    <color name="visualizer_hover_blue">#1A00A6FB</color>
+
+    <color name="progress_gray_trans">#80D8D8D8</color>
+    <color name="sup_card_back">#1B203D</color>
+    <color name="sup_sub_card_back">#2E3350</color>
+    <color name="sup_card_strok">#2D324F</color>
+    <color name="card_selected">#1F00A6FB</color>
+    <color name="ayp_red">#F44336</color>
+    <color name="text_dark">#415A77</color>
+    <color name="card_background_light">#F7F8FB</color>
+    <color name="visualizer_back">#F7F8F9</color>
+
+
+    <color name="snap_time_picker_transparent_white">#00ffffff</color>
+    <color name="snap_time_picker_white">#FFFFFF</color>
+    <color name="snap_time_picker_black">#333333</color>
+    <color name="snap_time_picker_black_5">#0c000000</color>
+    <color name="snap_time_picker_default_primary">#008577</color>
+    <color name="snap_time_picker_default_accent">#D81B60</color>
+    <color name="snap_time_picker_light_gray">#c2c2c2</color>
+    <color name="snap_time_picker_extra_light_gray">#ebebeb</color>
+    <color name="outline_spot_card">#80374495</color>
+    <color name="transpernt">#00FFFFFF</color>
+    <color name="selected_color">51E3F6</color>
+    <color name="unselected_color">#FFFFFF</color>
+
+</resources>
