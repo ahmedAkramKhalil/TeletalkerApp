@@ -14,8 +14,7 @@
         android:background="@drawable/nav_back"
         android:layout_marginHorizontal="24dp"
         android:layout_marginVertical="12dp"
-        android:itemIconTint="@color/nav_item_color"
-        android:itemTextColor="@color/nav_item_color"
+
 
         android:layout_marginEnd="0dp"
         app:layout_constraintBottom_toBottomOf="parent"

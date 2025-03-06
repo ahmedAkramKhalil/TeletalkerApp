@@ -5,6 +5,9 @@
     <color name="colorPrimary">#2249B3</color>
     <color name="colorPrimaryDark">#161616</color>
     <color name="colorAccent">#081A4A</color>
+    <color name="gunmetalGray">#292F3D</color>
+    <color name="charcoalBlue">#394156</color>
+    <color name="darkMidnightBlue">#181C25</color>
 
     <color name="red">#FF0000</color>
     <color name="blue">#2249B3</color>
@@ -14,11 +17,13 @@
     <color name="purple_700">#51E3F6</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
+    <color name="lightTurquoise">#77E9F8</color>
     <color name="text_primary">#7D8597</color>
     <color name="paragraph">#415A77</color>
     <color name="gray_dark">#5E5E5E</color>
     <color name="input_field_border">#F3F3F3</color>
     <color name="text_gray">#5E5E5E</color>
+    <color name="shadowGray"> #5D5E60</color>
     <color name="text_gray_hint">#878787</color>
     <color name="gray">#EFF0F7</color>
     <color name="gray_bar">#B6BCCB</color>
@@ -38,7 +43,6 @@
         <item>#2A94F4</item>
     </array>
 
-
     <color name="progress_gray">#FFD8D8D8</color>
     <color name="default_blue_light">#FF33b5e5</color>
     <color name="visualizer_hover_blue">#1A00A6FB</color>
@@ -53,7 +57,6 @@
     <color name="card_background_light">#F7F8FB</color>
     <color name="visualizer_back">#F7F8F9</color>
 
-
     <color name="snap_time_picker_transparent_white">#00ffffff</color>
     <color name="snap_time_picker_white">#FFFFFF</color>
     <color name="snap_time_picker_black">#333333</color>
@@ -64,7 +67,6 @@
     <color name="snap_time_picker_extra_light_gray">#ebebeb</color>
     <color name="outline_spot_card">#80374495</color>
     <color name="transpernt">#00FFFFFF</color>
-    <color name="selected_color">51E3F6</color>
+    <color name="selected_color">#51E3F6</color>
     <color name="unselected_color">#FFFFFF</color>
-
 </resources>

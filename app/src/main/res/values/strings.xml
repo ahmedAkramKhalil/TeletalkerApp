@@ -22,7 +22,7 @@
     <string name="password">Password</string>
     <string name="dont_have_account">Dont\'t have an account</string>
     <string name="register_now">Register Now</string>
-    <string name="forget_password">Forgot your password?</string>
+    <string name="forget_password">Forgot Password?</string>
     <string name="username">User Name</string>
     <string name="prompt_username">Name</string>
     <string name="prompt_phone">XX-XXX-XXX</string>
@@ -112,7 +112,7 @@
     <string name="current_password">Current Password</string>
     <string name="current_password_hint">Enter Current Password</string>
     <string name="prompt_password_confirm">Enter Password Confirmation</string>
-    <string name="password_confirm">Password Confirmation</string>
+    <string name="password_confirm">Confirm Password</string>
     <string name="reset_ps">Reset</string>
     <string name="are_you_sure_to_delete_account">هل أنت متأكد من أنك تريد حذف حسابك نهائياَ ؟</string>
     <string name="are_you_sure_to_delete_account_detailes1">حذف الحساب لن يلغي الفتره المتبقية من اشتراكك المدفوع إن وجد.</string>
@@ -305,4 +305,17 @@
     <string name="title_call_history">Call History</string>
     <string name="title_calender">Calender</string>
     <string name="title_settings">Settings</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="let_s_get_started">Let’s Get Started!</string>
+    <string name="discover_the_latest_1000_voice_effects">Discover the latest 1000+ Voice Effects</string>
+    <string name="or">Or</string>
+    <string name="already_have_an_account">Already Have an Account ?</string>
+    <string name="sign_in">Sign in</string>
+    <string name="continue_with_email">Continue with Email</string>
+    <string name="welcome_back">Welcome Back! 👋</string>
+    <string name="great_to_see_you_again_you_ve_been_missed">Great to see you again, You\'ve been missed!</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="create_your_account">Create Your Account 🔐</string>
+    <string name="join_now_and_unlock_1000_voice_effects_instantly">Join now and unlock 1000+ voice effects instantly</string>
 </resources>

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.ui.callhistory.CallHistoryFragment">
+    tools:context=".features.home.presentation.fragments.callhistory.CallHistoryFragment">
 
     <TextView
         android:id="@+id/text_dashboard"

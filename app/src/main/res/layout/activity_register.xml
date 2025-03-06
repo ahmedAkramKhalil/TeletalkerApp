@@ -24,14 +24,16 @@
         <TextView
             android:id="@+id/imageView4"
             android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_marginHorizontal="@dimen/horizontal_margin"
             android:layout_marginTop="40dp"
-            android:textSize="24dp"
-            android:text="Creat Your Account 🔐"
+            android:textSize="24sp"
+            android:text="Creat Your Account"
 
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/exit_btn" />
+            app:layout_constraintTop_toBottomOf="@+id/exit_btn"
+            />
 
 
         <TextView
@@ -85,7 +87,7 @@
             android:hint="@string/prompt_email"
             android:inputType="textEmailAddress"
             android:paddingHorizontal="16dp"
-            android:drawableLeft="@drawable/ic_email"
+            android:drawableStart="@drawable/ic_email"
             android:selectAllOnFocus="true"
             android:textColorHint="@color/text_gray_hint"
             android:textSize="14sp"
@@ -107,13 +109,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/email">
 
-            <com.hbb20.CountryCodePicker
-                android:id="@+id/country_code"
-                android:layout_width="wrap_content"
-                android:layout_height="@dimen/edt_hgt"
-                android:layout_gravity="center"
-                android:background="@drawable/edit_text_back"
-                android:gravity="center" />
+
 
 
             <EditText
@@ -204,7 +200,7 @@
                 android:text="@string/agree_on"
                 android:textColor="@color/black"
 
-                android:textSize="12dp" />
+                android:textSize="12sp" />
 
             <TextView
                 android:id="@+id/terms_tv"
@@ -212,11 +208,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="4dp"
                 android:layout_marginEnd="2dp"
-                android:gravity=""
                 android:text="@string/terms_and_condotion"
                 android:textColor="@color/purple_500"
 
-                android:textSize="12dp"
+                android:textSize="12sp"
                 app:layout_constraintEnd_toStartOf="@+id/linearLayout2"
                 tools:layout_editor_absoluteY="587dp" />
 
@@ -229,8 +224,7 @@
                 android:gravity=""
                 android:text="@string/and"
                 android:textColor="@color/black"
-
-                android:textSize="12dp"
+                android:textSize="12sp"
                 app:layout_constraintEnd_toStartOf="@+id/linearLayout2"
                 tools:layout_editor_absoluteY="587dp" />
 
@@ -244,7 +238,7 @@
                 android:text="@string/privacy"
                 android:textColor="@color/purple_500"
 
-                android:textSize="12dp"
+                android:textSize="12sp"
                 app:layout_constraintEnd_toStartOf="@+id/linearLayout2"
                 tools:layout_editor_absoluteY="587dp" />
 
