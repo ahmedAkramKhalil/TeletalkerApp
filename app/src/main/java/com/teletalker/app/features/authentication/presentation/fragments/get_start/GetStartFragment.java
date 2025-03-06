@@ -27,7 +27,7 @@ public class GetStartFragment extends Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         binding = FragmentGetStartBinding.inflate(inflater, container, false);
         return binding.getRoot();
@@ -36,9 +36,20 @@ public class GetStartFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        initializeComponents(view);
+
+        observes();
+
+        initButtonClicks();
+    }
+
+    void initializeComponents (View view){
         navController = Navigation.findNavController(view);
         viewModel = new ViewModelProvider(this).get(GetStartViewModel.class);
+    }
 
+    void observes(){
         viewModel.events.observe(getViewLifecycleOwner(), state -> {
             if (state instanceof GetStartEvents.NavigateToLoginScreen) {
                 navController.navigate(R.id.action_getStartedFragment_to_loginFragment);
@@ -49,9 +60,10 @@ public class GetStartFragment extends Fragment {
                 viewModel.clearNavigationState();
             }
         });
+    }
 
+    void  initButtonClicks(){
         binding.signInButton.setOnClickListener(v -> viewModel.navigateToLoginScreen());
         binding.signUpButton.setOnClickListener(v -> viewModel.navigateToRegisterScreen());
-
     }
 }

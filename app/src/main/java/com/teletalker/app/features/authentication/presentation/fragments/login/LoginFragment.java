@@ -38,9 +38,20 @@ public class LoginFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        initializeComponents(view);
+
+        observes();
+
+        initButtonClicks();
+    }
+
+
+    void initializeComponents(View view){
         navController = Navigation.findNavController(view);
         viewModel = new ViewModelProvider(this).get(LoginViewModel.class);
-
+    }
+    void observes(){
         viewModel.events.observe(getViewLifecycleOwner(), state -> {
             if (state instanceof LoginEvents.NavigateToRegisterScreen) {
                 navController.navigate(R.id.action_loginFragment_to_registerFragment);
@@ -56,7 +67,8 @@ public class LoginFragment extends Fragment {
                 viewModel.clearNavigationState();
             }
         });
-
+    }
+    void  initButtonClicks(){
         binding.signUpButton.setOnClickListener(v -> viewModel.navigateToRegisterScreen());
         binding.backButton.setOnClickListener(v -> viewModel.popBackStack());
         binding.loginButton.setOnClickListener(v -> viewModel.navigateToHomeScreen());
