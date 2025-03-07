@@ -1,5 +1,6 @@
 package com.teletalker.app.features.home.presentation.fragments.home;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,6 +15,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.teletalker.app.R;
 import com.teletalker.app.databinding.FragmentHomeBinding;
 import com.teletalker.app.features.home.data.models.CallHistoryModel;
+import com.teletalker.app.features.subscription.presentation.SubscriptionActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +25,8 @@ public class HomeFragment extends Fragment {
 
     private FragmentHomeBinding binding;
     private CallHistoryAdapter adapter;
+
+    private HomeViewModel homeViewModel;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -34,7 +38,20 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         adapter = new CallHistoryAdapter(getFakeData());
+        homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
         binding.recyclerView.setAdapter(adapter);
+
+        binding.subscribeButton.setOnClickListener(v -> homeViewModel.navigateToSubscriptionScreen());
+
+        observes();
+
+    }
+
+    private void observes() {
+        homeViewModel.events.observe(getViewLifecycleOwner(), event -> {
+            Intent intent = new Intent(getActivity(), SubscriptionActivity.class);
+            startActivity(intent);
+        });
     }
 
     @Override
@@ -61,6 +78,19 @@ public class HomeFragment extends Fragment {
         fakeList.add(
                 new CallHistoryModel(
                         2,
+                        "John",
+                        "1233434",
+                        R.drawable.glays_image,
+                        "",
+                        1,
+                        45455,
+                        "1:21")
+
+        );
+
+        fakeList.add(
+                new CallHistoryModel(
+                        3,
                         "John",
                         "1233434",
                         R.drawable.glays_image,

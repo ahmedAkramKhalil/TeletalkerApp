@@ -71,7 +71,7 @@ public class LoginFragment extends Fragment {
     void  initButtonClicks(){
         binding.signUpButton.setOnClickListener(v -> viewModel.navigateToRegisterScreen());
         binding.backButton.setOnClickListener(v -> viewModel.popBackStack());
-        binding.loginButton.setOnClickListener(v -> viewModel.navigateToHomeScreen());
+        binding.subscribeButton.setOnClickListener(v -> viewModel.navigateToHomeScreen());
     }
 
 }

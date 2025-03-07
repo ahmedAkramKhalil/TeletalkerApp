@@ -1,0 +1,8 @@
+package com.teletalker.app.features.home.presentation.fragments.home;
+
+public class HomeFragmentEvents {
+    public static final class NavigateToSubscriptionScreen extends HomeFragmentEvents {
+        public static final NavigateToSubscriptionScreen INSTANCE = new NavigateToSubscriptionScreen();
+        private NavigateToSubscriptionScreen() {}
+    }
+}
