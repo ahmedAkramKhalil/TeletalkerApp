@@ -318,4 +318,11 @@
     <string name="sign_up">Sign Up</string>
     <string name="create_your_account">Create Your Account 🔐</string>
     <string name="join_now_and_unlock_1000_voice_effects_instantly">Join now and unlock 1000+ voice effects instantly</string>
+    <string name="don_t_lose_the_offer">Don’t Lose the Offer</string>
+    <string name="get_your_ai_powered_nvoice_companion">Get Your AI-Powered \nVoice Companion</string>
+    <string name="default_agent">Default Agent</string>
+    <string name="support_agent">support agent</string>
+    <string name="default_voice">Default Voice</string>
+    <string name="alex">Alex!</string>
+    <string name="see_all">See all</string>
 </resources>

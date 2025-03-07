@@ -4,20 +4,24 @@
     <item
         android:id="@+id/navigation_home"
         android:icon="@drawable/ic_home_selector"
+        android:enabled="true"
         android:title="@string/title_home" />
 
     <item
         android:id="@+id/navigation_call_history"
         android:icon="@drawable/ic_callhistory_selector"
+        android:enabled="true"
         android:title="@string/title_call_history" />
 
     <item
         android:id="@+id/navigation_calender"
         android:icon="@drawable/ic_calender_selector"
+        android:enabled="true"
         android:title="@string/title_calender" />
     <item
         android:id="@+id/navigation_settings"
         android:icon="@drawable/ic_settings_selector"
+        android:enabled="true"
         android:title="@string/title_settings" />
 
 </menu>
