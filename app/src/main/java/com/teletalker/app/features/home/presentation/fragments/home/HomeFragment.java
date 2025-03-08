@@ -42,16 +42,32 @@ public class HomeFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        initializeVariables(view);
+
+        initListeners();
+
+        observes();
+
+    }
+
+
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
+    }
+
+    private void initListeners() {
+        binding.subscribeButton.setOnClickListener(v -> homeViewModel.navigateToSubscriptionScreen());
+        binding.seeAllHistoryTv.setOnClickListener(v -> homeViewModel.navigateToCallHistoryScreen());
+    }
+
+    private void initializeVariables(@NonNull View view) {
         adapter = new CallHistoryAdapter(getFakeData());
         homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
         binding.recyclerView.setAdapter(adapter);
         navController = Navigation.findNavController(view);
-
-        binding.subscribeButton.setOnClickListener(v -> homeViewModel.navigateToSubscriptionScreen());
-        binding.seeAllHistoryTv.setOnClickListener(v -> homeViewModel.navigateToCallHistoryScreen());
-
-        observes();
-
     }
 
     private void observes() {
@@ -66,13 +82,6 @@ public class HomeFragment extends Fragment {
             }
         });
     }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
-    }
-
     List<CallHistoryModel> getFakeData(){
         List<CallHistoryModel> fakeList = new ArrayList<>();
         fakeList.add(

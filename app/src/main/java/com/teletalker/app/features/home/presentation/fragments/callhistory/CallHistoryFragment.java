@@ -1,5 +1,6 @@
 package com.teletalker.app.features.home.presentation.fragments.callhistory;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -38,15 +39,11 @@ public class CallHistoryFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        viewModel = new ViewModelProvider(this).get(CallHistoryViewModel.class);
-        adapter = new SeeAllHistoryAdapter(fakeList);
-        binding.recyclerView.setAdapter(adapter);
+
+        initializeVariables();
+        observers();
         viewModel.getCallHistoryList();
-        viewModel.callHistoryList.observe(getViewLifecycleOwner(), list -> {
-            fakeList.clear();
-            fakeList.addAll(list);
-            adapter.notifyDataSetChanged();
-        });
+
 
     }
 
@@ -55,6 +52,21 @@ public class CallHistoryFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+    }
+
+    void initializeVariables(){
+        viewModel = new ViewModelProvider(this).get(CallHistoryViewModel.class);
+        adapter = new SeeAllHistoryAdapter(fakeList);
+        binding.recyclerView.setAdapter(adapter);
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    void observers(){
+        viewModel.callHistoryList.observe(getViewLifecycleOwner(), list -> {
+            fakeList.clear();
+            fakeList.addAll(list);
+            adapter.notifyDataSetChanged();
+        });
     }
 
 }
