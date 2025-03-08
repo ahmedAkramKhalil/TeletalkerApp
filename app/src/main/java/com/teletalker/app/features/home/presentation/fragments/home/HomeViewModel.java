@@ -11,6 +11,10 @@ public class HomeViewModel extends ViewModel {
         events.setValue(HomeFragmentEvents.NavigateToSubscriptionScreen.INSTANCE);
     }
 
+    public void navigateToCallHistoryScreen() {
+        events.setValue(HomeFragmentEvents.NavigateToCallHistoryScreen.INSTANCE);
+    }
+
     public void clearNavigationState() {
         events.setValue(null);
     }

@@ -7,6 +7,7 @@ public class CallHistoryModel {
     private final String language;
     private final String phoneNumber;
     private final int callType;
+    private final int callTypeImage;
     private final long callDuration;
     private final String timestamp;
 
@@ -16,7 +17,7 @@ public class CallHistoryModel {
             String phoneNumber,
             int profileImage,
             String language,
-            int callType,
+            int callType, int callTypeImage,
             long callDuration,
             String timestamp
     ) {
@@ -26,6 +27,7 @@ public class CallHistoryModel {
         this.profileImage = profileImage;
         this.language = language;
         this.callType = callType;
+        this.callTypeImage = callTypeImage;
         this.callDuration = callDuration;
         this.timestamp = timestamp;
     }
@@ -38,12 +40,24 @@ public class CallHistoryModel {
         return contactName;
     }
 
+    public int getProfileImage() {
+        return profileImage;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
     public String getPhoneNumber() {
         return phoneNumber;
     }
 
     public int getCallType() {
         return callType;
+    }
+
+    public int getCallTypeImage() {
+        return callTypeImage;
     }
 
     public long getCallDuration() {
@@ -53,15 +67,4 @@ public class CallHistoryModel {
     public String getTimestamp() {
         return timestamp;
     }
-
-    public int getProfileImage() {
-        return profileImage;
-    }
-
-    public String getLanguage() {
-        return language;
-    }
-
-
-
 }

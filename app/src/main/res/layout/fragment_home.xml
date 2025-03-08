@@ -363,7 +363,7 @@
             </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/linearLayout3"
+                android:id="@+id/seeAllHistoryTv"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
@@ -405,9 +405,9 @@
                 android:layout_marginTop="16dp"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 tools:listitem="@layout/call_history_item"
-                app:layout_constraintEnd_toEndOf="@+id/linearLayout3"
-                app:layout_constraintStart_toStartOf="@+id/linearLayout3"
-                app:layout_constraintTop_toBottomOf="@+id/linearLayout3" />
+                app:layout_constraintEnd_toEndOf="@+id/seeAllHistoryTv"
+                app:layout_constraintStart_toStartOf="@+id/seeAllHistoryTv"
+                app:layout_constraintTop_toBottomOf="@+id/seeAllHistoryTv" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.core.widget.NestedScrollView>

@@ -11,6 +11,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
+import androidx.navigation.fragment.NavHostFragment;
 
 import com.teletalker.app.R;
 import com.teletalker.app.databinding.FragmentHomeBinding;
@@ -26,6 +29,8 @@ public class HomeFragment extends Fragment {
     private FragmentHomeBinding binding;
     private CallHistoryAdapter adapter;
 
+    private NavController navController;
+
     private HomeViewModel homeViewModel;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -40,8 +45,10 @@ public class HomeFragment extends Fragment {
         adapter = new CallHistoryAdapter(getFakeData());
         homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
         binding.recyclerView.setAdapter(adapter);
+        navController = Navigation.findNavController(view);
 
         binding.subscribeButton.setOnClickListener(v -> homeViewModel.navigateToSubscriptionScreen());
+        binding.seeAllHistoryTv.setOnClickListener(v -> homeViewModel.navigateToCallHistoryScreen());
 
         observes();
 
@@ -49,8 +56,14 @@ public class HomeFragment extends Fragment {
 
     private void observes() {
         homeViewModel.events.observe(getViewLifecycleOwner(), event -> {
-            Intent intent = new Intent(getActivity(), SubscriptionActivity.class);
-            startActivity(intent);
+            if (event instanceof HomeFragmentEvents.NavigateToSubscriptionScreen) {
+                Intent intent = new Intent(getActivity(), SubscriptionActivity.class);
+                startActivity(intent);
+                homeViewModel.clearNavigationState();
+            }else if (event instanceof HomeFragmentEvents.NavigateToCallHistoryScreen) {
+                navController.navigate(R.id.action_navigation_home_to_navigation_call_history);
+                homeViewModel.clearNavigationState();
+            }
         });
     }
 
@@ -65,12 +78,13 @@ public class HomeFragment extends Fragment {
         fakeList.add(
                 new CallHistoryModel(
                         1,
-                        "Gladys",
+                        "John",
                         "1233434",
                         R.drawable.glays_image,
-                        "",
+                        "Indin",
                         1,
-                        45455,
+                        R.drawable.glays_image,
+                        1,
                         "1:21"
                 )
 
@@ -81,10 +95,12 @@ public class HomeFragment extends Fragment {
                         "John",
                         "1233434",
                         R.drawable.glays_image,
-                        "",
+                        "Indin",
                         1,
-                        45455,
-                        "1:21")
+                        R.drawable.glays_image,
+                        1,
+                        "1:21"
+                )
 
         );
 
@@ -94,23 +110,27 @@ public class HomeFragment extends Fragment {
                         "John",
                         "1233434",
                         R.drawable.glays_image,
-                        "",
+                        "Indin",
                         1,
-                        45455,
-                        "1:21")
+                        R.drawable.glays_image,
+                        1,
+                        "1:21"
+                )
 
         );
 
         fakeList.add(
                 new CallHistoryModel(
-                        3,
+                        4,
                         "John",
                         "1233434",
                         R.drawable.glays_image,
-                        "",
+                        "Indin",
                         1,
-                        45455,
-                        "1:21")
+                        R.drawable.glays_image,
+                        1,
+                        "1:21"
+                )
 
         );
 

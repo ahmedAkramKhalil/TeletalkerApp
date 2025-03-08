@@ -7,31 +7,54 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.teletalker.app.R;
 import com.teletalker.app.databinding.FragmentCallHistoryBinding;
+import com.teletalker.app.features.home.data.models.CallHistoryModel;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class CallHistoryFragment extends Fragment {
 
     private FragmentCallHistoryBinding binding;
 
+    SeeAllHistoryAdapter adapter;
+
+    CallHistoryViewModel viewModel;
+
+    List<CallHistoryModel> fakeList = new ArrayList<>();
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        CallHistoryViewModel dashboardViewModel =
-                new ViewModelProvider(this).get(CallHistoryViewModel.class);
-
         binding = FragmentCallHistoryBinding.inflate(inflater, container, false);
-        View root = binding.getRoot();
-
-        final TextView textView = binding.textDashboard;
-        dashboardViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
-        return root;
+        return binding.getRoot();
     }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        viewModel = new ViewModelProvider(this).get(CallHistoryViewModel.class);
+        adapter = new SeeAllHistoryAdapter(fakeList);
+        binding.recyclerView.setAdapter(adapter);
+        viewModel.getCallHistoryList();
+        viewModel.callHistoryList.observe(getViewLifecycleOwner(), list -> {
+            fakeList.clear();
+            fakeList.addAll(list);
+            adapter.notifyDataSetChanged();
+        });
+
+    }
+
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
     }
+
 }
