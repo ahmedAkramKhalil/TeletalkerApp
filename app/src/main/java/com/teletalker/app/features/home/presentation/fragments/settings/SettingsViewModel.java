@@ -6,14 +6,16 @@ import androidx.lifecycle.ViewModel;
 
 public class SettingsViewModel extends ViewModel {
 
-    private final MutableLiveData<String> mText;
+    final MutableLiveData<SettingsFragmentEvents> events = new MutableLiveData<>();
 
-    public SettingsViewModel() {
-        mText = new MutableLiveData<>();
-        mText.setValue("This is notifications fragment");
+
+    public void navigateToAgentTypeActivity() {
+        events.setValue(SettingsFragmentEvents.NavigateToAgentTypeActivity.INSTANCE);
     }
 
-    public LiveData<String> getText() {
-        return mText;
+    public void navigateToSelectVoiceActivity() {
+        events.setValue(SettingsFragmentEvents.NavigateToSelectVoiceActivity.INSTANCE);
+
     }
+
 }

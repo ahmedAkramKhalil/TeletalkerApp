@@ -14,35 +14,29 @@
         android:theme="@style/Theme.Teletalker"
         tools:targetApi="tiramisu">
         <activity
+            android:name=".features.select_voice.presentation.SelectVoiceActivity"
+            android:exported="false" />
+        <activity
             android:name=".features.subscription.presentation.SubscriptionActivity"
-            android:exported="true" >
-        </activity>
+            android:exported="true"></activity>
         <activity
             android:name=".features.splash.SplashActivity"
             android:exported="true">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
-
         <activity
             android:name=".features.authentication.presentation.AuthActivity"
-            android:exported="true">
-
-        </activity>
-
+            android:exported="true"></activity>
         <activity
             android:name=".features.home.presentation.HomeActivity"
             android:exported="false"
-            android:label="@string/title_activity_home" >
-
-        </activity>
+            android:label="@string/title_activity_home"></activity>
         <activity
-            android:name=".features.home.presentation.MainActivity"
+            android:name=".features.agent_type.AgentTypeActivity"
             android:exported="true" />
     </application>
 
