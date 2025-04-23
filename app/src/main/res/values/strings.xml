@@ -4,6 +4,7 @@
     <string name="login_now">Login Now</string>
     <string name="send">Send\n</string>
     <string name="forget_password_activity_title">Forget Password</string>
+    <string name="accessibility_service_description">accessibility service description</string>
 
 
     <string name="title_activity_login">LoginActivity</string>

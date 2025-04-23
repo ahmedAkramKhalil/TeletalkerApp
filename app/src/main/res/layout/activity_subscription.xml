@@ -39,7 +39,7 @@
                     app:tint="#000000" />
 
                 <TextView
-                    android:id="@+id/timeTv"
+                    android:id="@+id/durationTv"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="78dp"
@@ -59,8 +59,8 @@
                     app:cardBackgroundColor="@color/darkMidnightBlue"
                     app:cardCornerRadius="99dp"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toEndOf="@+id/timeTv"
-                    app:layout_constraintTop_toTopOf="@+id/timeTv"
+                    app:layout_constraintStart_toEndOf="@+id/durationTv"
+                    app:layout_constraintTop_toTopOf="@+id/durationTv"
                     app:strokeWidth="0dp">
 
 
@@ -209,8 +209,8 @@
                         app:cardBackgroundColor="#ffffff"
                         app:cardCornerRadius="8dp"
                         app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toEndOf="@+id/timeTv"
-                        app:layout_constraintTop_toTopOf="@+id/timeTv"
+                        app:layout_constraintStart_toEndOf="@+id/durationTv"
+                        app:layout_constraintTop_toTopOf="@+id/durationTv"
                         app:strokeWidth="0dp">
 
 

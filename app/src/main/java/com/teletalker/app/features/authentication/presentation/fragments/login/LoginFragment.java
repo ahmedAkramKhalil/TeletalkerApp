@@ -16,7 +16,7 @@ import android.view.ViewGroup;
 
 import com.teletalker.app.R;
 import com.teletalker.app.databinding.FragmentLoginBinding;
-import com.teletalker.app.features.home.presentation.HomeActivity;
+import com.teletalker.app.features.home.HomeActivity;
 
 
 public class LoginFragment extends Fragment {

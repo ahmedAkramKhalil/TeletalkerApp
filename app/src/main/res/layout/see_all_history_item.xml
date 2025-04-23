@@ -17,7 +17,7 @@
         >
 
         <ImageView
-            android:id="@+id/callTypeIm"
+            android:id="@+id/callStateImg"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginStart="8dp"
@@ -35,8 +35,8 @@
             tools:text="Gladys"
             android:textColor="@color/white"
             android:textSize="15sp"
-            app:layout_constraintStart_toEndOf="@+id/callTypeIm"
-            app:layout_constraintTop_toTopOf="@+id/callTypeIm" />
+            app:layout_constraintStart_toEndOf="@+id/callStateImg"
+            app:layout_constraintTop_toTopOf="@+id/callStateImg" />
 
         <TextView
             android:id="@+id/numberTv"
@@ -61,10 +61,11 @@
 
 
             <ImageView
+                android:id="@+id/icPlayRecorde"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:padding="10dp"
-                android:src="@drawable/ic_big_play" />
+                tools:src="@drawable/ic_big_play" />
 
 
         </com.google.android.material.card.MaterialCardView>
@@ -92,7 +93,7 @@
         </com.google.android.material.card.MaterialCardView>
 
         <TextView
-            android:id="@+id/timeTv"
+            android:id="@+id/durationTv"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="12dp"

@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/navigation_home"
-        android:name="com.teletalker.app.features.home.presentation.fragments.home.HomeFragment"
+        android:name="com.teletalker.app.features.home.fragments.home.presentation.HomeFragment"
         android:label="@string/title_home"
         tools:layout="@layout/fragment_home" >
         <action
@@ -17,18 +17,18 @@
 
     <fragment
         android:id="@+id/navigation_call_history"
-        android:name="com.teletalker.app.features.home.presentation.fragments.callhistory.CallHistoryFragment"
+        android:name="com.teletalker.app.features.home.fragments.callhistory.presentation.CallHistoryFragment"
         android:label="@string/title_call_history"
         tools:layout="@layout/fragment_call_history" />
 
     <fragment
         android:id="@+id/navigation_calender"
-        android:name="com.teletalker.app.features.home.presentation.fragments.calender.CalenderFragment"
+        android:name="com.teletalker.app.features.home.fragments.calender.CalenderFragment"
         android:label="@string/title_calender"
         tools:layout="@layout/fragment_calender" />
     <fragment
         android:id="@+id/navigation_settings"
-        android:name="com.teletalker.app.features.home.presentation.fragments.settings.SettingsFragment"
+        android:name="com.teletalker.app.features.home.fragments.settings.SettingsFragment"
         android:label="@string/title_settings"
         tools:layout="@layout/fragment_calender" />
 </navigation>
