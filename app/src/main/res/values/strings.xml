@@ -4,6 +4,7 @@
     <string name="login_now">Login Now</string>
     <string name="send">Send\n</string>
     <string name="forget_password_activity_title">Forget Password</string>
+    <string name="accessibility_service_description">accessibility service description</string>
 
 
     <string name="title_activity_login">LoginActivity</string>
@@ -22,7 +23,7 @@
     <string name="password">Password</string>
     <string name="dont_have_account">Dont\'t have an account</string>
     <string name="register_now">Register Now</string>
-    <string name="forget_password">Forgot your password?</string>
+    <string name="forget_password">Forgot Password?</string>
     <string name="username">User Name</string>
     <string name="prompt_username">Name</string>
     <string name="prompt_phone">XX-XXX-XXX</string>
@@ -112,7 +113,7 @@
     <string name="current_password">Current Password</string>
     <string name="current_password_hint">Enter Current Password</string>
     <string name="prompt_password_confirm">Enter Password Confirmation</string>
-    <string name="password_confirm">Password Confirmation</string>
+    <string name="password_confirm">Confirm Password</string>
     <string name="reset_ps">Reset</string>
     <string name="are_you_sure_to_delete_account">هل أنت متأكد من أنك تريد حذف حسابك نهائياَ ؟</string>
     <string name="are_you_sure_to_delete_account_detailes1">حذف الحساب لن يلغي الفتره المتبقية من اشتراكك المدفوع إن وجد.</string>
@@ -305,4 +306,46 @@
     <string name="title_call_history">Call History</string>
     <string name="title_calender">Calender</string>
     <string name="title_settings">Settings</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="let_s_get_started">Let’s Get Started!</string>
+    <string name="discover_the_latest_1000_voice_effects">Discover the latest 1000+ Voice Effects</string>
+    <string name="or">Or</string>
+    <string name="already_have_an_account">Already Have an Account ?</string>
+    <string name="sign_in">Sign in</string>
+    <string name="continue_with_email">Continue with Email</string>
+    <string name="welcome_back">Welcome Back! 👋</string>
+    <string name="great_to_see_you_again_you_ve_been_missed">Great to see you again, You\'ve been missed!</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="create_your_account">Create Your Account 🔐</string>
+    <string name="join_now_and_unlock_1000_voice_effects_instantly">Join now and unlock 1000+ voice effects instantly</string>
+    <string name="don_t_lose_the_offer">Don’t Lose the Offer</string>
+    <string name="get_your_ai_powered_nvoice_companion">Get Your AI-Powered \nVoice Companion</string>
+    <string name="default_agent">Default Agent</string>
+    <string name="support_agent">support agent</string>
+    <string name="default_voice">Default Voice</string>
+    <string name="alex">Alex!</string>
+    <string name="see_all">See all</string>
+    <string name="teletalker">TeleTalker</string>
+    <string name="pro">PRO</string>
+    <string name="try_teletalker_premium_features">Try TeleTalker Premium Features</string>
+    <string name="monthly">Monthly</string>
+    <string name="what_s_included">WHAT’S INCLUDED</string>
+    <string name="some_features_goes_here">Some features goes here</string>
+    <string name="_3_day_free_trial_then_19_99_year_cancel_anytime">3 day free trial, then $19.99 / year. Cancel anytime.</string>
+    <string name="redeem_free_trial">Redeem Free Trial</string>
+    <string name="upgraded_to_teletalker_pro">Upgraded to TeleTalker Pro!</string>
+    <string name="congratulations_you_ve_successfully_upgraded_to_teletalker_pro_enjoy_enhanced_features">Congratulations! You\'ve successfully upgraded to TeleTalker Pro. Enjoy enhanced features.</string>
+    <string name="explore">Explore</string>
+    <string name="call_log">CALL LOG</string>
+    <string name="search">Search...</string>
+    <string name="settings">Settings</string>
+    <string name="payment_amp_membership"><![CDATA[Payment & Membership]]></string>
+    <string name="change_default_agent">Change Default Agent</string>
+    <string name="change_default_agent_voice">Change Default Agent Voice</string>
+    <string name="auto_answer">Auto Answer</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="default_agent_type">Default Agent Type</string>
+    <string name="english">English</string>
+    <string name="select_voice">Select Voice</string>
 </resources>

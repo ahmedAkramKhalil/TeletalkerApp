@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/home_navigation"
+    app:startDestination="@+id/navigation_home">
+
+    <fragment
+        android:id="@+id/navigation_home"
+        android:name="com.teletalker.app.features.home.fragments.home.presentation.HomeFragment"
+        android:label="@string/title_home"
+        tools:layout="@layout/fragment_home" >
+        <action
+            android:id="@+id/action_navigation_home_to_navigation_call_history"
+            app:destination="@id/navigation_call_history" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_call_history"
+        android:name="com.teletalker.app.features.home.fragments.callhistory.presentation.CallHistoryFragment"
+        android:label="@string/title_call_history"
+        tools:layout="@layout/fragment_call_history" />
+
+    <fragment
+        android:id="@+id/navigation_calender"
+        android:name="com.teletalker.app.features.home.fragments.calender.CalenderFragment"
+        android:label="@string/title_calender"
+        tools:layout="@layout/fragment_calender" />
+    <fragment
+        android:id="@+id/navigation_settings"
+        android:name="com.teletalker.app.features.home.fragments.settings.SettingsFragment"
+        android:label="@string/title_settings"
+        tools:layout="@layout/fragment_calender" />
+</navigation>
