@@ -11,7 +11,7 @@ android {
         applicationId "com.teletalker.app"
         minSdk 26
         targetSdk 34
-        versionCode 1
+        versionCode 9
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -75,6 +75,11 @@ dependencies {
     //Room database
     implementation "androidx.room:room-runtime:$room_version"
     annotationProcessor "androidx.room:room-compiler:$room_version"
+
+    implementation 'com.neovisionaries:nv-websocket-client:2.14'
+
+    // JSON handling (if not already included)
+    implementation 'org.json:json:20231013'
 
     //Check Root
     //implementation 'com.scottyab:rootbeer-lib:0.1.1'

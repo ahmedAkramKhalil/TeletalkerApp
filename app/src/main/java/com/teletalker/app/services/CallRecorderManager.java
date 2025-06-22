@@ -22,19 +22,68 @@ public class CallRecorderManager {
         this.context = context;
     }
 
+//    public void startRecording() {
+//        try {
+//            currentPlayingFile = context.getExternalFilesDir(null).getAbsolutePath() + "/call_" + System.currentTimeMillis() + ".3gp";
+//            recorder = new MediaRecorder();
+//            recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_COMMUNICATION);
+//            recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+//            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+//            recorder.setOutputFile(currentPlayingFile);
+//            recorder.prepare();
+//            recorder.start();
+//            Log.d("CallRecorder", "Recording started");
+//        } catch (Exception e) {
+//            Log.e("CallRecorder", "Recording failed: " + e.getMessage());
+//        }
+//    }
+
+
     public void startRecording() {
         try {
             currentPlayingFile = context.getExternalFilesDir(null).getAbsolutePath() + "/call_" + System.currentTimeMillis() + ".3gp";
             recorder = new MediaRecorder();
-            recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_COMMUNICATION);
+
+            // Reset recorder to clean state
+            recorder.reset();
+
+            // Try different audio sources in order of preference
+            try {
+                recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
+            } catch (Exception e) {
+                try {
+                    recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                } catch (Exception e2) {
+                    recorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
+                }
+            }
+
             recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
             recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
             recorder.setOutputFile(currentPlayingFile);
-            recorder.prepare();
-            recorder.start();
-            Log.d("CallRecorder", "Recording started");
+
+            // Set recommended parameters
+            recorder.setAudioSamplingRate(8000);
+            recorder.setAudioEncodingBitRate(12200);
+            recorder.setAudioChannels(1);
+
+            try {
+                recorder.prepare();
+                recorder.start();
+                Log.d("CallRecorder", "Recording started successfully");
+            } catch (Exception e) {
+                Log.e("CallRecorder", "Start failed after prepare: " + e.getMessage());
+                // Clean up failed recorder
+                try {
+                    recorder.reset();
+                    recorder.release();
+                } catch (Exception ignored) {}
+                recorder = null;
+                throw e;
+            }
         } catch (Exception e) {
             Log.e("CallRecorder", "Recording failed: " + e.getMessage());
+            Toast.makeText(context, "Recording failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 

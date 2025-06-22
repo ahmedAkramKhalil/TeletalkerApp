@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeNotificationStateChanged|typeViewClicked|typeViewTextChanged|typeViewSelected"
     android:accessibilityFeedbackType="feedbackSpoken"
     android:notificationTimeout="100"
-    android:packageNames="com.whatsapp,com.facebook.orca"
+    android:packageNames="com.whatsapp,com.facebook.orca,com.android.dialer,com.google.android.dialer,com.samsung.android.dialer,com.android.server.telecom,com.android.incallui"
     android:canRetrieveWindowContent="true"
-    android:accessibilityFlags="flagDefault"/>
+    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows|flagRequestTouchExplorationMode"/>

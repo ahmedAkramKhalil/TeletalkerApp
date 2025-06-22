@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- App's internal storage directory -->
+    <!-- Maps to: /data/data/com.teletalker.app/files/ -->
+    <files-path
+        name="internal_files"
+        path="." />
+
+    <!-- App's cache directory -->
+    <!-- Maps to: /data/data/com.teletalker.app/cache/ -->
+    <cache-path
+        name="cache_files"
+        path="." />
+
+    <!-- App-specific external storage -->
+    <!-- Maps to: /Android/data/com.teletalker.app/files/ -->
+    <external-files-path
+        name="external_files"
+        path="." />
+
+    <!-- App-specific external cache -->
+    <!-- Maps to: /Android/data/com.teletalker.app/cache/ -->
+    <external-cache-path
+        name="external_cache"
+        path="." />
+
+    <!-- External storage root (requires WRITE_EXTERNAL_STORAGE) -->
+    <!-- Maps to: /storage/emulated/0/ -->
+    <external-path
+        name="external_storage_root"
+        path="." />
+
+    <!-- Music directory (where TeleTalker recordings are saved) -->
+    <!-- Maps to: /storage/emulated/0/Music/TeleTalker/ -->
+    <external-path
+        name="music_recordings"
+        path="Music/TeleTalker" />
+
+    <!-- Downloads directory (alternative recording location) -->
+    <!-- Maps to: /storage/emulated/0/Download/TeleTalker/ -->
+    <external-path
+        name="download_recordings"
+        path="Download/TeleTalker" />
+
+    <!-- Generic recordings path for flexibility -->
+    <!-- Maps to: /storage/emulated/0/Music/ -->
+    <external-path
+        name="music_directory"
+        path="Music" />
+
+    <!-- Documents directory -->
+    <!-- Maps to: /storage/emulated/0/Documents/ -->
+    <external-path
+        name="documents"
+        path="Documents" />
+
+</paths>
