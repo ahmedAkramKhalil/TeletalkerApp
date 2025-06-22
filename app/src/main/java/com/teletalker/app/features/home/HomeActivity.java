@@ -23,9 +23,11 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.teletalker.app.R;
 import com.teletalker.app.databinding.ActivityHomeBinding;
+import com.teletalker.app.services.AICallRecorder;
 import com.teletalker.app.services.CallDetector;
 import com.teletalker.app.services.ServiceManager;
 import com.teletalker.app.services.VoIPCallService;
+import com.teletalker.app.utils.AIConfigurationHelper;
 import com.teletalker.app.utils.PermissionUtils;
 import com.teletalker.app.utils.RootPermissionManager;
 import com.teletalker.app.utils.RootSetupManager;
@@ -65,6 +67,20 @@ public class HomeActivity extends AppCompatActivity implements
         setupUI();
         initializeManagers();
         startInitializationFlow();
+        //TODO: remove this
+        setupAiAgent();
+    }
+
+    private void setupAiAgent() {
+        AIConfigurationHelper.configureAI(
+                this,
+                "sk_6789e30ae9d555245395c3769d9e317999c5cc21e84fa890",
+                "agent_01jxyf9nbrffcbm8z8a34qmqvt",
+                AICallRecorder.AIMode.SMART_ASSISTANT,
+                true // AI enabled
+        );
+
+
     }
 
     // ============ UI SETUP ============

@@ -8,6 +8,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
@@ -42,12 +43,12 @@ import java.util.Random;
 import java.util.concurrent.Executors;
 
 /**
- * TeleTalker InCall Service - BCR-style implementation
- * Uses InCallService that conditionally becomes foreground only when recording
+ * TeleTalker InCall Service with AI Integration - Enhanced BCR-style implementation
+ * Uses AICallRecorder for real-time AI conversation during calls
  */
 public class CallDetector extends InCallService {
-    private static final String TAG = "TeleTalkerInCallService";
-    private static final String CHANNEL_ID = "teletalker_call_service";
+    private static final String TAG = "TeleTalkerAIInCallService";
+    private static final String CHANNEL_ID = "teletalker_ai_call_service";
     private static final String PHONE_PACKAGE = "com.android.phone";
 
     // Action constants for notification buttons
@@ -55,8 +56,18 @@ public class CallDetector extends InCallService {
     private static final String ACTION_RESUME = "com.teletalker.app.services.CallDetector.resume";
     private static final String ACTION_RESTORE = "com.teletalker.app.services.CallDetector.restore";
     private static final String ACTION_DELETE = "com.teletalker.app.services.CallDetector.delete";
+    private static final String ACTION_TOGGLE_AI = "com.teletalker.app.services.CallDetector.toggle_ai";
+    private static final String ACTION_CHANGE_AI_MODE = "com.teletalker.app.services.CallDetector.change_ai_mode";
     private static final String EXTRA_TOKEN = "token";
     private static final String EXTRA_NOTIFICATION_ID = "notification_id";
+    private static final String EXTRA_AI_MODE = "ai_mode";
+
+    // SharedPreferences keys for AI configuration
+    private static final String PREFS_NAME = "teletalker_ai_config";
+    private static final String PREF_ELEVENLABS_API_KEY = "elevenlabs_api_key";
+    private static final String PREF_AGENT_ID = "agent_id";
+    private static final String PREF_AI_MODE = "ai_mode";
+    private static final String PREF_AI_ENABLED = "ai_enabled";
 
     private Handler handler;
     private NotificationManager notificationManager;
@@ -65,28 +76,43 @@ public class CallDetector extends InCallService {
     // Security token to prevent third-party interference
     private byte[] token;
 
-    // Notification management - BCR style
+    // Notification management - Enhanced for AI
     private int foregroundNotificationId;
-    private Map<Integer, CallRecorderWrapper> notificationIdsToRecorders = new HashMap<>();
+    private Map<Integer, AICallRecorderWrapper> notificationIdsToRecorders = new HashMap<>();
     private Map<Integer, NotificationState> allNotificationIds = new HashMap<>();
 
     // Call tracking
-    private Map<Call, CallRecorderWrapper> callsToRecorders = new HashMap<>();
+    private Map<Call, AICallRecorderWrapper> callsToRecorders = new HashMap<>();
 
-    // Inner classes for state management
+    // AI Configuration
+    private SharedPreferences aiPreferences;
+    private String elevenLabsApiKey;
+    private String agentId;
+    private AICallRecorder.AIMode currentAIMode = AICallRecorder.AIMode.SMART_ASSISTANT;
+    private boolean isAIEnabled = true;
+
+    // Inner classes for enhanced state management
     private static class NotificationState {
         final int titleResId;
         final String message;
         final boolean canShowDelete;
         final boolean isPaused;
         final boolean isHolding;
+        final boolean isAIConnected;
+        final boolean isAIResponding;
+        final AICallRecorder.AIMode aiMode;
 
-        NotificationState(int titleResId, String message, boolean canShowDelete, boolean isPaused, boolean isHolding) {
+        NotificationState(int titleResId, String message, boolean canShowDelete, boolean isPaused,
+                          boolean isHolding, boolean isAIConnected, boolean isAIResponding,
+                          AICallRecorder.AIMode aiMode) {
             this.titleResId = titleResId;
             this.message = message;
             this.canShowDelete = canShowDelete;
             this.isPaused = isPaused;
             this.isHolding = isHolding;
+            this.isAIConnected = isAIConnected;
+            this.isAIResponding = isAIResponding;
+            this.aiMode = aiMode;
         }
 
         @Override
@@ -98,11 +124,14 @@ public class CallDetector extends InCallService {
                     canShowDelete == that.canShowDelete &&
                     isPaused == that.isPaused &&
                     isHolding == that.isHolding &&
+                    isAIConnected == that.isAIConnected &&
+                    isAIResponding == that.isAIResponding &&
+                    aiMode == that.aiMode &&
                     (message != null ? message.equals(that.message) : that.message == null);
         }
     }
 
-    private static class CallRecorderWrapper {
+    private static class AICallRecorderWrapper {
         enum State {
             NOT_STARTED, RECORDING, FINALIZING, COMPLETED
         }
@@ -111,15 +140,18 @@ public class CallDetector extends InCallService {
             KEEP, DISCARD, DISCARD_TOO_SHORT
         }
 
-        final CallRecorder recorder;
+        final AICallRecorder recorder;
         final CallInfo callInfo;
         State state = State.NOT_STARTED;
         KeepState keepState = KeepState.KEEP;
         boolean isPaused = false;
         boolean isHolding = false;
+        boolean isAIConnected = false;
+        boolean isAIResponding = false;
+        String lastAIResponse = "";
         Call call;
 
-        CallRecorderWrapper(CallRecorder recorder, CallInfo callInfo, Call call) {
+        AICallRecorderWrapper(AICallRecorder recorder, CallInfo callInfo, Call call) {
             this.recorder = recorder;
             this.callInfo = callInfo;
             this.call = call;
@@ -138,11 +170,14 @@ public class CallDetector extends InCallService {
         long callAnswerTime;
         boolean isRecorded;
         String recordingFile;
-        CallRecorder.RecordingMode recordingMode;
+        AICallRecorder.RecordingMode recordingMode;
+        AICallRecorder.AIMode aiMode;
+        boolean aiEnabled;
 
         CallInfo() {
             isRecorded = false;
             callStartTime = System.currentTimeMillis();
+            aiEnabled = true;
         }
     }
 
@@ -177,10 +212,13 @@ public class CallDetector extends InCallService {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "TeleTalker InCall Service created");
+        Log.d(TAG, "TeleTalker AI InCall Service created");
 
         handler = new Handler(Looper.getMainLooper());
         notificationManager = getSystemService(NotificationManager.class);
+
+        // Initialize AI configuration
+        initializeAIConfiguration();
 
         // Generate security token
         token = new byte[128];
@@ -193,9 +231,42 @@ public class CallDetector extends InCallService {
         acquireWakeLock();
     }
 
+    private void initializeAIConfiguration() {
+        aiPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+
+        elevenLabsApiKey = aiPreferences.getString(PREF_ELEVENLABS_API_KEY, null);
+        agentId = aiPreferences.getString(PREF_AGENT_ID, null);
+        isAIEnabled = aiPreferences.getBoolean(PREF_AI_ENABLED, true);
+
+        String aiModeString = aiPreferences.getString(PREF_AI_MODE, AICallRecorder.AIMode.SMART_ASSISTANT.name());
+        try {
+            currentAIMode = AICallRecorder.AIMode.valueOf(aiModeString);
+        } catch (IllegalArgumentException e) {
+            currentAIMode = AICallRecorder.AIMode.SMART_ASSISTANT;
+        }
+
+        Log.d(TAG, "AI Configuration - Enabled: " + isAIEnabled + ", Mode: " + currentAIMode);
+    }
+
+    public void updateAIConfiguration(String apiKey, String agentId, AICallRecorder.AIMode aiMode, boolean enabled) {
+        this.elevenLabsApiKey = apiKey;
+        this.agentId = agentId;
+        this.currentAIMode = aiMode;
+        this.isAIEnabled = enabled;
+
+        // Save to preferences
+        aiPreferences.edit()
+                .putString(PREF_ELEVENLABS_API_KEY, apiKey)
+                .putString(PREF_AGENT_ID, agentId)
+                .putString(PREF_AI_MODE, aiMode.name())
+                .putBoolean(PREF_AI_ENABLED, enabled)
+                .apply();
+
+        Log.d(TAG, "AI Configuration updated");
+    }
+
     /**
-     * Handle intents triggered from notification actions for pausing and resuming.
-     * This is BCR's approach - using startCommand for notification actions only.
+     * Handle intents triggered from notification actions for pausing, resuming, and AI control.
      */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -205,7 +276,7 @@ public class CallDetector extends InCallService {
             if (receivedToken != null && java.util.Arrays.equals(receivedToken, token)) {
                 int notificationId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, -1);
                 if (notificationId != -1) {
-                    handleNotificationAction(intent.getAction(), notificationId);
+                    handleNotificationAction(intent.getAction(), intent, notificationId);
                 }
             } else if (receivedToken != null) {
                 Log.w(TAG, "Invalid token received in intent");
@@ -219,8 +290,8 @@ public class CallDetector extends InCallService {
         return START_NOT_STICKY;
     }
 
-    private void handleNotificationAction(String action, int notificationId) {
-        CallRecorderWrapper wrapper = notificationIdsToRecorders.get(notificationId);
+    private void handleNotificationAction(String action, Intent intent, int notificationId) {
+        AICallRecorderWrapper wrapper = notificationIdsToRecorders.get(notificationId);
         if (wrapper == null) return;
 
         switch (action) {
@@ -233,25 +304,57 @@ public class CallDetector extends InCallService {
                 resumeRecording(wrapper);
                 break;
             case ACTION_RESTORE:
-                wrapper.keepState = CallRecorderWrapper.KeepState.KEEP;
+                wrapper.keepState = AICallRecorderWrapper.KeepState.KEEP;
                 break;
             case ACTION_DELETE:
-                wrapper.keepState = CallRecorderWrapper.KeepState.DISCARD;
+                wrapper.keepState = AICallRecorderWrapper.KeepState.DISCARD;
+                break;
+            case ACTION_TOGGLE_AI:
+                toggleAI(wrapper);
+                break;
+            case ACTION_CHANGE_AI_MODE:
+                changeAIMode(wrapper, intent);
                 break;
         }
         updateForegroundState();
     }
 
+    private void toggleAI(AICallRecorderWrapper wrapper) {
+        // Toggle AI for this specific call
+        wrapper.callInfo.aiEnabled = !wrapper.callInfo.aiEnabled;
+
+        // Apply the change to the recorder
+        if (wrapper.callInfo.aiEnabled && elevenLabsApiKey != null && agentId != null) {
+            wrapper.recorder.setElevenLabsConfig(elevenLabsApiKey, agentId);
+            wrapper.recorder.setAIMode(currentAIMode);
+        }
+
+        Log.d(TAG, "AI toggled for call: " + wrapper.callInfo.aiEnabled);
+    }
+
+    private void changeAIMode(AICallRecorderWrapper wrapper, Intent intent) {
+        String aiModeString = intent.getStringExtra(EXTRA_AI_MODE);
+        if (aiModeString != null) {
+            try {
+                AICallRecorder.AIMode newMode = AICallRecorder.AIMode.valueOf(aiModeString);
+                wrapper.recorder.setAIMode(newMode);
+                wrapper.callInfo.aiMode = newMode;
+                Log.d(TAG, "AI mode changed to: " + newMode);
+            } catch (IllegalArgumentException e) {
+                Log.e(TAG, "Invalid AI mode: " + aiModeString);
+            }
+        }
+    }
+
     /**
      * Always called when the telephony framework becomes aware of a new call.
-     * This is the entry point for a new call. Callback is registered to track state changes.
      */
     @Override
     public void onCallAdded(Call call) {
         super.onCallAdded(call);
         Log.d(TAG, "📞 Call added: " + getCallInfo(call));
 
-        // The callback is unregistered in requestStopRecording()
+        // Register callback to track state changes
         call.registerCallback(callCallback);
 
         // In case the call is already in the active state
@@ -260,8 +363,6 @@ public class CallDetector extends InCallService {
 
     /**
      * Called when the telephony framework destroys a call.
-     * This will request the cancellation of the recording.
-     * NOTE: This is NOT guaranteed to be called on older Samsung firmware due to bugs.
      */
     @Override
     public void onCallRemoved(Call call) {
@@ -274,7 +375,6 @@ public class CallDetector extends InCallService {
 
     /**
      * Start or stop recording based on the call state.
-     * If state is ACTIVE, recording begins. If DISCONNECTING/DISCONNECTED, recording stops.
      */
     private void handleStateChange(Call call, Integer state) {
         int callState = state != null ? state :
@@ -290,17 +390,16 @@ public class CallDetector extends InCallService {
 
         if (callState == Call.STATE_ACTIVE) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                Log.d("com.teletalker.app","Can not start recordunig dut to permission ");
+                Log.d(TAG, "Cannot start recording due to permission");
                 return;
             }
-            startRecording(call);
+            startAIRecording(call);
         } else if (callState == Call.STATE_DISCONNECTING || callState == Call.STATE_DISCONNECTED) {
-            // This is necessary because onCallRemoved() might not be called due to firmware bugs
             requestStopRecording(call);
         }
 
         // Update holding state
-        CallRecorderWrapper wrapper = callsToRecorders.get(call);
+        AICallRecorderWrapper wrapper = callsToRecorders.get(call);
         if (wrapper != null) {
             wrapper.isHolding = (callState == Call.STATE_HOLDING);
             updateForegroundState();
@@ -309,7 +408,7 @@ public class CallDetector extends InCallService {
 
     private void handleDetailsChange(Call call, Call.Details details) {
         Call parentCall = call.getParent();
-        CallRecorderWrapper wrapper = parentCall != null ?
+        AICallRecorderWrapper wrapper = parentCall != null ?
                 callsToRecorders.get(parentCall) : callsToRecorders.get(call);
 
         if (wrapper != null) {
@@ -320,12 +419,10 @@ public class CallDetector extends InCallService {
     }
 
     /**
-     * Start a RecorderThread for the call.
-     * If call recording is disabled or permissions aren't granted, no recorder is created.
-     * This function is idempotent.
+     * Start AI-enhanced recording for the call.
      */
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-    private void startRecording(Call call) {
+    private void startAIRecording(Call call) {
         if (!hasRecordAudioPermission()) {
             Log.v(TAG, "Required permissions have not been granted");
             return;
@@ -344,109 +441,113 @@ public class CallDetector extends InCallService {
         try {
             CallInfo callInfo = new CallInfo();
             extractCallDetails(call, callInfo);
+            callInfo.aiEnabled = isAIEnabled;
+            callInfo.aiMode = currentAIMode;
 
-            CallRecorder recorder = new CallRecorder(this);
-            CallRecorderWrapper wrapper = new CallRecorderWrapper(recorder, callInfo, call);
+            AICallRecorder recorder = new AICallRecorder(this);
+            AICallRecorderWrapper wrapper = new AICallRecorderWrapper(recorder, callInfo, call);
 
             callsToRecorders.put(call, wrapper);
 
-            // BCR approach: Use foreground ID if no recorders, otherwise generate new ID
+            // Generate notification ID
             int notificationId = notificationIdsToRecorders.isEmpty() ?
                     foregroundNotificationId : generateNotificationId();
             notificationIdsToRecorders.put(notificationId, wrapper);
 
-            // Setup recording callback
-            recorder.setCallback(new RecordingCallbackImpl(wrapper));
+            // Configure AI if enabled and credentials available
+            if (callInfo.aiEnabled && elevenLabsApiKey != null && agentId != null) {
+                recorder.setElevenLabsConfig(elevenLabsApiKey, agentId);
+                recorder.setAIMode(currentAIMode);
+                Log.d(TAG, "🤖 AI configured for call recording");
+            } else {
+                Log.d(TAG, "⚠️ AI not configured - recording without AI features");
+            }
 
-            // Update foreground state - this will start foreground service if needed
+            // Setup recording callback
+            recorder.setCallback(new AIRecordingCallbackImpl(wrapper));
+
+            // Update foreground state
             updateForegroundState();
 
-            // Start recording
+            // Start AI-enhanced recording
             String filename = generateRecordingFilename(callInfo);
-            wrapper.state = CallRecorderWrapper.State.RECORDING;
+            wrapper.state = AICallRecorderWrapper.State.RECORDING;
             boolean started = recorder.startRecording(filename);
 
             if (started) {
-                Log.d(TAG, "✅ Recording started successfully");
+                Log.d(TAG, "✅ AI recording started successfully");
                 callInfo.isRecorded = true;
                 callInfo.recordingFile = filename;
             } else {
-                Log.e(TAG, "❌ Failed to start recording");
-                wrapper.state = CallRecorderWrapper.State.COMPLETED;
-                // Will be cleaned up by updateForegroundState
+                Log.e(TAG, "❌ Failed to start AI recording");
+                wrapper.state = AICallRecorderWrapper.State.COMPLETED;
             }
 
         } catch (Exception e) {
-            Log.e(TAG, "❌ Exception starting recording: " + e.getMessage());
+            Log.e(TAG, "❌ Exception starting AI recording: " + e.getMessage());
         }
     }
 
     /**
-     * Request the cancellation of the RecorderThread.
-     * The RecorderThread is immediately removed from callsToRecorders, but remains in
-     * notificationIdsToRecorders to keep foreground service alive until thread exits.
+     * Request the cancellation of the AI recording.
      */
     private void requestStopRecording(Call call) {
         // Safe to call multiple times
         call.unregisterCallback(callCallback);
 
-        CallRecorderWrapper wrapper = callsToRecorders.get(call);
+        AICallRecorderWrapper wrapper = callsToRecorders.get(call);
         if (wrapper != null) {
-            stopCallRecording(wrapper);
+            stopAIRecording(wrapper);
             callsToRecorders.remove(call);
-            // Don't change foreground state until thread has exited
         }
     }
 
-    private void stopCallRecording(CallRecorderWrapper wrapper) {
+    private void stopAIRecording(AICallRecorderWrapper wrapper) {
         try {
-            Log.d(TAG, "🛑 Stopping call recording...");
-            wrapper.state = CallRecorderWrapper.State.FINALIZING;
+            Log.d(TAG, "🛑 Stopping AI recording...");
+            wrapper.state = AICallRecorderWrapper.State.FINALIZING;
             updateForegroundState();
 
             wrapper.recorder.stopRecording();
-            Log.d(TAG, "✅ Recording stopped successfully");
+            Log.d(TAG, "✅ AI recording stopped successfully");
 
-            wrapper.state = CallRecorderWrapper.State.COMPLETED;
+            wrapper.state = AICallRecorderWrapper.State.COMPLETED;
 
             // Save to database
             saveCallToDatabase(wrapper.callInfo);
 
-            // Schedule removal from notifications (like BCR does)
+            // Schedule removal from notifications
             handler.postDelayed(() -> {
                 onRecorderExited(wrapper);
             }, 3000);
 
         } catch (Exception e) {
-            Log.e(TAG, "❌ Error stopping recording: " + e.getMessage());
-            wrapper.state = CallRecorderWrapper.State.COMPLETED;
+            Log.e(TAG, "❌ Error stopping AI recording: " + e.getMessage());
+            wrapper.state = AICallRecorderWrapper.State.COMPLETED;
             onRecorderExited(wrapper);
         }
     }
 
-    private void pauseRecording(CallRecorderWrapper wrapper) {
-        // Implementation depends on CallRecorder capabilities
-        Log.d(TAG, "🔸 Pausing recording");
+    private void pauseRecording(AICallRecorderWrapper wrapper) {
+        Log.d(TAG, "🔸 Pausing AI recording");
+        // Note: Implement pause functionality in AICallRecorder if needed
         updateForegroundState();
     }
 
-    private void resumeRecording(CallRecorderWrapper wrapper) {
-        // Implementation depends on CallRecorder capabilities
-        Log.d(TAG, "▶️ Resuming recording");
+    private void resumeRecording(AICallRecorderWrapper wrapper) {
+        Log.d(TAG, "▶️ Resuming AI recording");
+        // Note: Implement resume functionality in AICallRecorder if needed
         updateForegroundState();
     }
 
-    private void onRecorderExited(CallRecorderWrapper wrapper) {
+    private void onRecorderExited(AICallRecorderWrapper wrapper) {
         // Remove from notifications
         notificationIdsToRecorders.values().removeIf(w -> w == wrapper);
         updateForegroundState();
     }
 
     /**
-     * Move to foreground, creating a persistent notification, when there are active calls or
-     * recording threads that haven't finished exiting yet.
-     *
-     * THIS IS THE KEY BCR LOGIC - Only becomes foreground when there are active recordings!
+     * Enhanced foreground state management with AI status
      */
     private void updateForegroundState() {
         if (notificationIdsToRecorders.isEmpty()) {
@@ -458,7 +559,6 @@ public class CallDetector extends InCallService {
         // Cancel and remove notifications for recorders that have exited
         for (int notificationId : allNotificationIds.keySet().toArray(new Integer[0])) {
             if (!notificationIdsToRecorders.containsKey(notificationId)) {
-                // The foreground notification will be overwritten
                 if (notificationId != foregroundNotificationId) {
                     notificationManager.cancel(notificationId);
                 }
@@ -466,11 +566,11 @@ public class CallDetector extends InCallService {
             }
         }
 
-        // Reassign the foreground notification to another recorder if needed
+        // Reassign the foreground notification if needed
         if (!notificationIdsToRecorders.containsKey(foregroundNotificationId)) {
-            Map.Entry<Integer, CallRecorderWrapper> entry = notificationIdsToRecorders.entrySet().iterator().next();
+            Map.Entry<Integer, AICallRecorderWrapper> entry = notificationIdsToRecorders.entrySet().iterator().next();
             int oldNotificationId = entry.getKey();
-            CallRecorderWrapper wrapper = entry.getValue();
+            AICallRecorderWrapper wrapper = entry.getValue();
 
             notificationIdsToRecorders.remove(oldNotificationId);
             notificationManager.cancel(oldNotificationId);
@@ -478,10 +578,10 @@ public class CallDetector extends InCallService {
             notificationIdsToRecorders.put(foregroundNotificationId, wrapper);
         }
 
-        // Create/update notifications
-        for (Map.Entry<Integer, CallRecorderWrapper> entry : notificationIdsToRecorders.entrySet()) {
+        // Create/update notifications with AI status
+        for (Map.Entry<Integer, AICallRecorderWrapper> entry : notificationIdsToRecorders.entrySet()) {
             int notificationId = entry.getKey();
-            CallRecorderWrapper wrapper = entry.getValue();
+            AICallRecorderWrapper wrapper = entry.getValue();
 
             NotificationState newState = createNotificationState(wrapper);
             NotificationState currentState = allNotificationIds.get(notificationId);
@@ -493,7 +593,6 @@ public class CallDetector extends InCallService {
             Notification notification = createNotificationForWrapper(wrapper, notificationId);
 
             if (notificationId == foregroundNotificationId) {
-                // This is where we become a foreground service!
                 startForeground(notificationId, notification);
             } else {
                 notificationManager.notify(notificationId, notification);
@@ -503,42 +602,44 @@ public class CallDetector extends InCallService {
         }
     }
 
-    private NotificationState createNotificationState(CallRecorderWrapper wrapper) {
+    private NotificationState createNotificationState(AICallRecorderWrapper wrapper) {
         int titleResId;
         boolean canShowDelete;
 
         switch (wrapper.state) {
             case NOT_STARTED:
-                titleResId = R.string.app_name; // "Recording initializing"
+                titleResId = R.string.app_name; // "AI Recording initializing"
                 canShowDelete = true;
                 break;
             case RECORDING:
                 if (wrapper.isHolding) {
-                    titleResId = R.string.app_name; // "Recording on hold"
+                    titleResId = R.string.app_name; // "AI Recording on hold"
                 } else if (wrapper.isPaused) {
-                    titleResId = R.string.app_name; // "Recording paused"
+                    titleResId = R.string.app_name; // "AI Recording paused"
                 } else {
-                    titleResId = R.string.app_name; // "Recording in progress"
+                    titleResId = R.string.app_name; // "AI Recording in progress"
                 }
                 canShowDelete = true;
                 break;
             case FINALIZING:
             case COMPLETED:
             default:
-                titleResId = R.string.app_name; // "Recording finalizing"
+                titleResId = R.string.app_name; // "AI Recording finalizing"
                 canShowDelete = false;
                 break;
         }
 
         String message = wrapper.getOutputPath();
-        if (wrapper.keepState == CallRecorderWrapper.KeepState.DISCARD) {
+        if (wrapper.keepState == AICallRecorderWrapper.KeepState.DISCARD) {
             message += "\n\nMarked for deletion";
         }
 
-        return new NotificationState(titleResId, message, canShowDelete, wrapper.isPaused, wrapper.isHolding);
+        return new NotificationState(titleResId, message, canShowDelete, wrapper.isPaused,
+                wrapper.isHolding, wrapper.isAIConnected, wrapper.isAIResponding,
+                wrapper.callInfo.aiMode);
     }
 
-    private Notification createNotificationForWrapper(CallRecorderWrapper wrapper, int notificationId) {
+    private Notification createNotificationForWrapper(AICallRecorderWrapper wrapper, int notificationId) {
         Intent homeIntent = new Intent(this, HomeActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this, 0, homeIntent,
@@ -547,7 +648,7 @@ public class CallDetector extends InCallService {
         );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("TeleTalker Call Recording")
+                .setContentTitle("TeleTalker AI Call Recording")
                 .setContentText(createNotificationText(wrapper))
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentIntent(pendingIntent)
@@ -555,13 +656,18 @@ public class CallDetector extends InCallService {
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setCategory(NotificationCompat.CATEGORY_SERVICE);
 
-        // Add action buttons based on state
+        // Add AI status to notification
+        if (wrapper.callInfo.aiEnabled) {
+            builder.setSubText(getAIStatusText(wrapper));
+        }
+
+        // Add action buttons with AI controls
         addNotificationActions(builder, wrapper, notificationId);
 
         return builder.build();
     }
 
-    private String createNotificationText(CallRecorderWrapper wrapper) {
+    private String createNotificationText(AICallRecorderWrapper wrapper) {
         StringBuilder text = new StringBuilder();
 
         if (wrapper.callInfo.contactName != null && !wrapper.callInfo.contactName.equals("Unknown")) {
@@ -574,7 +680,7 @@ public class CallDetector extends InCallService {
 
         switch (wrapper.state) {
             case NOT_STARTED:
-                text.append(" - Initializing...");
+                text.append(wrapper.callInfo.aiEnabled ? " - AI Initializing..." : " - Initializing...");
                 break;
             case RECORDING:
                 if (wrapper.isHolding) {
@@ -582,7 +688,7 @@ public class CallDetector extends InCallService {
                 } else if (wrapper.isPaused) {
                     text.append(" - Paused");
                 } else {
-                    text.append(" - Recording...");
+                    text.append(wrapper.callInfo.aiEnabled ? " - AI Recording..." : " - Recording...");
                 }
                 break;
             case FINALIZING:
@@ -596,10 +702,24 @@ public class CallDetector extends InCallService {
         return text.toString();
     }
 
-    private void addNotificationActions(NotificationCompat.Builder builder, CallRecorderWrapper wrapper, int notificationId) {
-        if (wrapper.state == CallRecorderWrapper.State.RECORDING && !wrapper.isHolding) {
+    private String getAIStatusText(AICallRecorderWrapper wrapper) {
+        if (!wrapper.callInfo.aiEnabled) {
+            return "AI Disabled";
+        }
+
+        if (wrapper.isAIResponding) {
+            return "🤖 AI Responding";
+        } else if (wrapper.isAIConnected) {
+            return "🤖 AI Active (" + wrapper.callInfo.aiMode.name().replace("_", " ") + ")";
+        } else {
+            return "🤖 AI Connecting...";
+        }
+    }
+
+    private void addNotificationActions(NotificationCompat.Builder builder, AICallRecorderWrapper wrapper, int notificationId) {
+        // Standard recording actions
+        if (wrapper.state == AICallRecorderWrapper.State.RECORDING && !wrapper.isHolding) {
             if (wrapper.isPaused) {
-                // Add resume action
                 Intent resumeIntent = createActionIntent(notificationId, ACTION_RESUME);
                 PendingIntent resumePendingIntent = PendingIntent.getService(
                         this, notificationId * 10 + 1, resumeIntent,
@@ -607,7 +727,6 @@ public class CallDetector extends InCallService {
                                 PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT);
                 builder.addAction(android.R.drawable.ic_media_play, "Resume", resumePendingIntent);
             } else {
-                // Add pause action
                 Intent pauseIntent = createActionIntent(notificationId, ACTION_PAUSE);
                 PendingIntent pausePendingIntent = PendingIntent.getService(
                         this, notificationId * 10 + 2, pauseIntent,
@@ -617,9 +736,20 @@ public class CallDetector extends InCallService {
             }
         }
 
-        // Add delete/restore actions
-        if (wrapper.state == CallRecorderWrapper.State.RECORDING || wrapper.state == CallRecorderWrapper.State.NOT_STARTED) {
-            if (wrapper.keepState == CallRecorderWrapper.KeepState.KEEP) {
+        // AI toggle action
+        if (wrapper.state == AICallRecorderWrapper.State.RECORDING) {
+            String aiActionText = wrapper.callInfo.aiEnabled ? "Disable AI" : "Enable AI";
+            Intent toggleAIIntent = createActionIntent(notificationId, ACTION_TOGGLE_AI);
+            PendingIntent toggleAIPendingIntent = PendingIntent.getService(
+                    this, notificationId * 10 + 5, toggleAIIntent,
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ?
+                            PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT);
+            builder.addAction(android.R.drawable.ic_menu_manage, aiActionText, toggleAIPendingIntent);
+        }
+
+        // Delete/restore actions
+        if (wrapper.state == AICallRecorderWrapper.State.RECORDING || wrapper.state == AICallRecorderWrapper.State.NOT_STARTED) {
+            if (wrapper.keepState == AICallRecorderWrapper.KeepState.KEEP) {
                 Intent deleteIntent = createActionIntent(notificationId, ACTION_DELETE);
                 PendingIntent deletePendingIntent = PendingIntent.getService(
                         this, notificationId * 10 + 3, deleteIntent,
@@ -646,26 +776,26 @@ public class CallDetector extends InCallService {
         return intent;
     }
 
-    // Recording callback implementation
-    private class RecordingCallbackImpl implements CallRecorder.RecordingCallback {
-        private final CallRecorderWrapper wrapper;
+    // Enhanced AI recording callback implementation
+    private class AIRecordingCallbackImpl implements AICallRecorder.RecordingCallback {
+        private final AICallRecorderWrapper wrapper;
 
-        RecordingCallbackImpl(CallRecorderWrapper wrapper) {
+        AIRecordingCallbackImpl(AICallRecorderWrapper wrapper) {
             this.wrapper = wrapper;
         }
 
         @Override
-        public void onRecordingStarted(CallRecorder.RecordingMode mode) {
+        public void onRecordingStarted(AICallRecorder.RecordingMode mode) {
             wrapper.callInfo.recordingMode = mode;
-            Log.d(TAG, "🎙️ Recording started: " + mode.getDescription());
+            Log.d(TAG, "🎙️ AI Recording started: " + mode.getDescription());
             updateForegroundState();
         }
 
         @Override
         public void onRecordingFailed(String reason) {
-            Log.e(TAG, "❌ Recording failed: " + reason);
+            Log.e(TAG, "❌ AI Recording failed: " + reason);
             wrapper.callInfo.isRecorded = false;
-            wrapper.state = CallRecorderWrapper.State.COMPLETED;
+            wrapper.state = AICallRecorderWrapper.State.COMPLETED;
             updateForegroundState();
         }
 
@@ -675,12 +805,43 @@ public class CallDetector extends InCallService {
                 wrapper.callInfo.recordingFile = new File(filename).getName();
                 wrapper.callInfo.isRecorded = true;
             }
-            Log.d(TAG, "🛑 Recording stopped: " + filename + " (" + (duration / 1000) + "s)");
+            Log.d(TAG, "🛑 AI Recording stopped: " + filename + " (" + (duration / 1000) + "s)");
+            updateForegroundState();
+        }
+
+        @Override
+        public void onAIConnected() {
+            wrapper.isAIConnected = true;
+            Log.d(TAG, "🤖 AI Connected for call");
+            updateForegroundState();
+        }
+
+        @Override
+        public void onAIDisconnected() {
+            wrapper.isAIConnected = false;
+            wrapper.isAIResponding = false;
+            Log.d(TAG, "🔌 AI Disconnected from call");
+            updateForegroundState();
+        }
+
+        @Override
+        public void onAIError(String error) {
+            wrapper.isAIConnected = false;
+            wrapper.isAIResponding = false;
+            Log.e(TAG, "⚠️ AI Error: " + error);
+            updateForegroundState();
+        }
+
+        @Override
+        public void onAIResponse(String transcript, boolean isPlaying) {
+            wrapper.isAIResponding = isPlaying;
+            wrapper.lastAIResponse = transcript;
+            Log.d(TAG, "🤖 AI Response: " + transcript + (isPlaying ? " (Playing)" : ""));
             updateForegroundState();
         }
     }
 
-    // Utility methods (keeping existing implementations)
+    // Utility methods (keeping existing implementations with AI enhancements)
     private void extractCallDetails(Call call, CallInfo callInfo) {
         if (call.getDetails().getHandle() != null) {
             callInfo.phoneNumber = call.getDetails().getHandle().getSchemeSpecificPart();
@@ -711,6 +872,11 @@ public class CallDetector extends InCallService {
 
         StringBuilder filename = new StringBuilder(timestamp);
 
+        // Add AI prefix if enabled
+        if (callInfo.aiEnabled) {
+            filename.append("_AI");
+        }
+
         if (callInfo.direction != null) {
             filename.append("_").append(callInfo.direction);
         }
@@ -727,7 +893,7 @@ public class CallDetector extends InCallService {
             }
         }
 
-        filename.append(".m4a");
+        filename.append(".wav"); // Changed to .wav for better AI processing
         return filename.toString();
     }
 
@@ -773,7 +939,7 @@ public class CallDetector extends InCallService {
         CallEntity callEntity = new CallEntity(
                 callInfo.phoneNumber != null ? callInfo.phoneNumber : "",
                 callInfo.contactName != null ? callInfo.contactName : "Unknown",
-                "Call",
+                callInfo.aiEnabled ? "AI Call" : "Call",
                 callInfo.direction != null ? callInfo.direction : "Unknown",
                 callDuration,
                 convertTimestampToReadableTime(callInfo.callStartTime),
@@ -781,14 +947,14 @@ public class CallDetector extends InCallService {
                 callInfo.isRecorded
         );
 
-        Log.d(TAG, "💾 Saving call to database: " + callEntity.toString());
+        Log.d(TAG, "💾 Saving AI call to database: " + callEntity.toString());
 
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 CallDatabase.getInstance(getApplicationContext()).callDao().insertCall(callEntity);
-                Log.d(TAG, "✅ Call saved to database successfully");
+                Log.d(TAG, "✅ AI call saved to database successfully");
             } catch (Exception e) {
-                Log.e(TAG, "❌ Failed to save call to database: " + e.getMessage());
+                Log.e(TAG, "❌ Failed to save AI call to database: " + e.getMessage());
             }
         });
     }
@@ -797,10 +963,10 @@ public class CallDetector extends InCallService {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
-                    "TeleTalker Call Recording",
+                    "TeleTalker AI Call Recording",
                     NotificationManager.IMPORTANCE_LOW
             );
-            channel.setDescription("Call recording service");
+            channel.setDescription("AI-enhanced call recording service");
             channel.setShowBadge(false);
             channel.setSound(null, null);
 
@@ -813,7 +979,7 @@ public class CallDetector extends InCallService {
     private void acquireWakeLock() {
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
-                "TeleTalker:CallRecording");
+                "TeleTalker:AICallRecording");
         wakeLock.acquire(10*60*1000L);
     }
 
@@ -868,12 +1034,17 @@ public class CallDetector extends InCallService {
         return (int) (System.currentTimeMillis() & 0xFFFFFF);
     }
 
+    // Public methods for external AI configuration
+    public boolean isAIEnabled() { return isAIEnabled; }
+    public AICallRecorder.AIMode getCurrentAIMode() { return currentAIMode; }
+    public boolean hasAICredentials() { return elevenLabsApiKey != null && agentId != null; }
+
     @Override
     public void onDestroy() {
-        Log.d(TAG, "TeleTalker InCall Service destroyed");
+        Log.d(TAG, "TeleTalker AI InCall Service destroyed");
 
-        // Stop all active recordings
-        for (CallRecorderWrapper wrapper : callsToRecorders.values()) {
+        // Stop all active AI recordings
+        for (AICallRecorderWrapper wrapper : callsToRecorders.values()) {
             if (wrapper.recorder.isRecording()) {
                 wrapper.recorder.stopRecording();
             }
@@ -888,13 +1059,13 @@ public class CallDetector extends InCallService {
 
     @Override
     public IBinder onBind(Intent intent) {
-        Log.d(TAG, "TeleTalker InCall Service bound");
+        Log.d(TAG, "TeleTalker AI InCall Service bound");
         return super.onBind(intent);
     }
 
     @Override
     public boolean onUnbind(Intent intent) {
-        Log.d(TAG, "TeleTalker InCall Service unbound");
+        Log.d(TAG, "TeleTalker AI InCall Service unbound");
         return super.onUnbind(intent);
     }
 }
