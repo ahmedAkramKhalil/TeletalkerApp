@@ -11,10 +11,15 @@ android {
         applicationId "com.teletalker.app"
         minSdk 26
         targetSdk 34
-        versionCode 12
+        versionCode 15
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+//        externalNativeBuild {
+//            cmake {
+//                cppFlags ''
+//            }
+//        }
     }
     buildFeatures {
         dataBinding = true
@@ -31,6 +36,12 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+//    externalNativeBuild {
+//        cmake {
+//            path file('src/main/cpp/CMakeLists.txt')
+//            version '3.22.1'
+//        }
+//    }
 }
 
 dependencies {

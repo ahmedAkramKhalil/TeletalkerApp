@@ -3,24 +3,33 @@ package com.teletalker.app.services;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.media.AudioAttributes;
 import android.media.AudioFormat;
+import android.media.AudioManager;
 import android.media.AudioRecord;
+import android.media.AudioTrack;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.RemoteException;
 import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresPermission;
 import androidx.core.content.ContextCompat;
 
+import com.teletalker.app.services.injection.AudioInjectionManager;
+import com.teletalker.app.services.injection.AudioInjector;
+
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,7 +42,9 @@ public class CallRecorder {
     private static final String TAG = "CallRecorder";
 
     // Audio configuration
+    // Audio configuration
     private static final int SAMPLE_RATE = 44100;
+    private static final int TELEPHONY_SAMPLE_RATE = 8000; // For injection
     private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
     private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
 
@@ -71,57 +82,512 @@ public class CallRecorder {
         }
     }
 
-    // Callback interface
+    // Audio injection modes
+    public enum InjectionMode {
+        MEDIA_PLAYER("MediaPlayer with STREAM_VOICE_CALL"),
+        AUDIO_TRACK("AudioTrack with telephony routing"),
+        NATIVE_HAL("Native HAL injection"),
+        FAILED("Injection failed");
+
+        private final String description;
+        InjectionMode(String description) {
+            this.description = description;
+        }
+        public String getDescription() {
+            return description;
+        }
+    }
+
+
+
     public interface RecordingCallback {
         void onRecordingStarted(RecordingMode mode);
         void onRecordingFailed(String reason);
         void onRecordingStopped(String filename, long duration);
     }
 
+    public interface InjectionCallback {
+        void onInjectionStarted(AudioInjector.InjectionMethod mode);
+        void onInjectionFailed(String reason);
+        void onInjectionCompleted();
+    }
+
     // Instance variables
     private Context context;
     private MediaRecorder mediaRecorder;
+    private MediaPlayer injectionPlayer;
+    private AudioTrack injectionTrack;
+    private AudioManager audioManager;
     private ExecutorService executorService;
     private Handler mainHandler;
-    private RecordingCallback callback;
+    private RecordingCallback recordingCallback;
+    private InjectionCallback injectionCallback;
 
     // State tracking
     private final AtomicBoolean isRecording = new AtomicBoolean(false);
+    private final AtomicBoolean isInjecting = new AtomicBoolean(false);
     private String currentRecordingFile;
     private long recordingStartTime;
     private RecordingMode currentRecordingMode = RecordingMode.UNKNOWN;
+    private InjectionMode currentInjectionMode = InjectionMode.FAILED;
     private int currentAudioSource;
 
     // System capabilities
     private final AtomicBoolean isRooted = new AtomicBoolean(false);
     private final AtomicBoolean voiceCallAccessible = new AtomicBoolean(false);
 
+    private AudioInjectionManager injectionManager;
+
+
+    // Audio state backup
+    private int originalAudioMode;
+    private boolean originalSpeakerphoneOn;
+
     public CallRecorder(Context context) {
         this.context = context;
+        this.audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         this.executorService = Executors.newSingleThreadExecutor();
         this.mainHandler = new Handler(Looper.getMainLooper());
+        this.injectionManager = new AudioInjectionManager(context);
 
         // Initialize system capabilities
         executorService.execute(this::initializeCapabilities);
     }
 
-    public void setCallback(RecordingCallback callback) {
-        this.callback = callback;
+    public void setRecordingCallback(RecordingCallback callback) {
+        this.recordingCallback = callback;
+    }
+
+    public void setInjectionCallback(InjectionCallback callback) {
+        this.injectionCallback = callback;
+    }
+
+    private CallRecorder.InjectionMode convertToRecorderInjectionMode(AudioInjector.InjectionMethod method) {
+        switch (method) {
+            case MEDIA_PLAYER:
+                return CallRecorder.InjectionMode.MEDIA_PLAYER;
+            case AUDIO_TRACK:
+                return CallRecorder.InjectionMode.AUDIO_TRACK;
+            case NATIVE_HAL:
+                return CallRecorder.InjectionMode.NATIVE_HAL;
+            case XPOSED_HOOK:
+            case ACCESSIBILITY:
+            default:
+                return CallRecorder.InjectionMode.FAILED;
+        }
+    }
+
+    private AudioInjector.InjectionMethod currentInjectionMethod;
+
+    private CallAudioInjector audioInjector;
+
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
+    public boolean injectAudioToCall(String audioPath) {
+        audioInjector = new CallAudioInjector(context);
+
+//        audioInjector.injectAudio(audioPath, new CallAudioInjector.InjectionCallback() {
+//            @Override
+//            public void onInjectionStarted() {
+//                Log.d("CallInjector","onInjectionStarted");
+//            }
+//
+//            @Override
+//            public void onInjectionCompleted(boolean success) {
+//                Log.d("CallInjector","onInjectionCompleted");
+//
+//            }
+//
+//            @Override
+//            public void onInjectionError(String error) {
+//                Log.d("CallInjector","error" + error);
+//
+//            }
+//        });
+
+
+//        if (!hasRecordAudioPermission()) {
+//            notifyInjectionCallback(cb -> cb.onInjectionFailed("RECORD_AUDIO permission not granted"));
+//            return false;
+//        }
+//
+//        return  injectionManager.injectWithStreamingAudioTrack(audioPath, new InjectionCallback() {
+//            @Override
+//            public void onInjectionStarted(AudioInjector.InjectionMethod mode) {
+//                Log.d("InjectionTest","onInjectionStarted");
+//
+//            }
+//
+//            @Override
+//            public void onInjectionFailed(String reason) {
+//                Log.d("InjectionTest","onInjectionFailed");
+//
+//            }
+//
+//            @Override
+//            public void onInjectionCompleted() {
+//                Log.d("InjectionTest","onInjectionCompleted");
+//
+//            }
+//        });
+        return true;
+    }
+
+
+
+
+    public void stopInjection() {
+//        injectionManager.stopInjection();
+//        isInjecting.set(false);
+    }
+
+    // Test injection methods
+    public void testInjectionMethods(AudioInjectionManager.TestCallback callback) {
+        injectionManager.testInjectionMethods(callback);
+    }
+
+    public interface IAudioInjector extends android.os.IInterface {
+        void startInjection(int audioSessionId) throws RemoteException;
+        void stopInjection() throws RemoteException;
+        void injectAudioData(byte[] data) throws RemoteException;
+    }
+
+    private AudioTrack audioTrack;
+    private Thread injectionThread;
+
+
+
+    private void startAudioInjection(int audioSessionId) {
+        if (isInjecting.get()) {
+            Log.w(TAG, "Injection already running");
+            return;
+        }
+
+        try {
+            int bufferSize = AudioTrack.getMinBufferSize(
+                    SAMPLE_RATE,
+                    AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT
+            );
+
+            audioTrack = new AudioTrack(
+                    new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                            .build(),
+                    new AudioFormat.Builder()
+                            .setSampleRate(SAMPLE_RATE)
+                            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                            .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                            .build(),
+                    bufferSize,
+                    AudioTrack.MODE_STREAM,
+                    audioSessionId
+            );
+
+            audioTrack.play();
+            isInjecting.set(true);
+
+            // Start a thread to maintain the injection
+            injectionThread = new Thread(() -> {
+                while (isInjecting.get()) {
+                    try {
+                        // Keep the stream alive
+                        byte[] silence = new byte[bufferSize];
+                        audioTrack.write(silence, 0, silence.length);
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        Log.e(TAG, "Injection thread interrupted", e);
+                    }
+                }
+            });
+            injectionThread.start();
+
+            Log.d(TAG, "Audio injection started with session ID: " + audioSessionId);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to start audio injection", e);
+            stopAudioInjection();
+        }
+    }
+
+    private void stopAudioInjection() {
+        if (!isInjecting.get()) return;
+
+        isInjecting.set(false);
+
+        try {
+            if (injectionThread != null) {
+                injectionThread.interrupt();
+                injectionThread.join(500);
+            }
+
+            if (audioTrack != null) {
+                audioTrack.stop();
+                audioTrack.release();
+                audioTrack = null;
+            }
+
+            Log.d(TAG, "Audio injection stopped");
+        } catch (Exception e) {
+            Log.e(TAG, "Error stopping audio injection", e);
+        }
+    }
+
+
+
+
+
+
+    /**
+     * Stop ongoing audio injection
+     */
+
+    // ============================================================================
+    // INJECTION IMPLEMENTATIONS
+    // ============================================================================
+
+    private boolean injectWithMediaPlayer(String audioFilePath) {
+        try {
+            Log.d(TAG, "🎵 Attempting MediaPlayer injection...");
+
+            // Prepare audio routing
+            audioManager.setMode(AudioManager.MODE_IN_CALL);
+
+            // Root commands for enhanced routing
+            if (isRooted.get()) {
+                executeRootCommands(new String[]{
+                        "setprop audio.voicecall.inject 1",
+                        "dumpsys audio set-voice-call-routing 1",
+                        "settings put system volume_voice_call 8"
+                });
+            }
+
+            // Create and configure MediaPlayer
+            injectionPlayer = new MediaPlayer();
+            injectionPlayer.setAudioAttributes(
+                    new AudioAttributes.Builder()
+                            .setLegacyStreamType(AudioManager.STREAM_VOICE_CALL)
+                            .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                            .build()
+            );
+
+            injectionPlayer.setDataSource(audioFilePath);
+            injectionPlayer.prepare();
+
+            // Set completion listener
+            injectionPlayer.setOnCompletionListener(mp -> {
+                Log.d(TAG, "Audio injection completed");
+                stopInjection();
+            });
+
+            injectionPlayer.start();
+            Log.d(TAG, "✅ MediaPlayer injection started");
+            return true;
+
+        } catch (Exception e) {
+            Log.e(TAG, "MediaPlayer injection failed: " + e.getMessage());
+            if (injectionPlayer != null) {
+                injectionPlayer.release();
+                injectionPlayer = null;
+            }
+            return false;
+        }
+    }
+
+    private boolean injectWithAudioTrack(String audioFilePath) {
+        try {
+            Log.d(TAG, "🎵 Attempting AudioTrack injection...");
+
+            // Read audio file
+            File audioFile = new File(audioFilePath);
+            FileInputStream fis = new FileInputStream(audioFile);
+            byte[] audioData = new byte[(int) audioFile.length()];
+            fis.read(audioData);
+            fis.close();
+
+            // Configure audio routing
+            audioManager.setMode(AudioManager.MODE_IN_CALL);
+
+            // Enhanced routing for different manufacturers
+            if (isRooted.get()) {
+                String manufacturer = Build.MANUFACTURER.toLowerCase();
+                if (manufacturer.contains("samsung")) {
+                    executeRootCommand("setprop audio.samsung.voice_path on");
+                } else if (manufacturer.contains("xiaomi")) {
+                    executeRootCommand("setprop persist.audio.voice.call on");
+                } else if (manufacturer.contains("huawei")) {
+                    executeRootCommand("setprop persist.audio.voicecall on");
+                }
+            }
+
+            // Create AudioTrack for telephony
+            int bufferSize = AudioTrack.getMinBufferSize(
+                    TELEPHONY_SAMPLE_RATE,
+                    AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT
+            );
+
+            injectionTrack = new AudioTrack.Builder()
+                    .setAudioAttributes(new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                            .build())
+                    .setAudioFormat(new AudioFormat.Builder()
+                            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                            .setSampleRate(TELEPHONY_SAMPLE_RATE)
+                            .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                            .build())
+                    .setBufferSizeInBytes(bufferSize)
+                    .setTransferMode(AudioTrack.MODE_STREAM)
+                    .build();
+
+            // Write audio data
+            injectionTrack.write(audioData, 0, audioData.length);
+
+            // Set notification for completion
+            injectionTrack.setNotificationMarkerPosition(audioData.length / 2); // 16-bit = 2 bytes per sample
+            injectionTrack.setPlaybackPositionUpdateListener(new AudioTrack.OnPlaybackPositionUpdateListener() {
+                @Override
+                public void onMarkerReached(AudioTrack track) {
+                    Log.d(TAG, "AudioTrack injection completed");
+                    stopInjection();
+                }
+
+                @Override
+                public void onPeriodicNotification(AudioTrack track) {}
+            });
+
+            injectionTrack.play();
+            Log.d(TAG, "✅ AudioTrack injection started");
+            return true;
+
+        } catch (Exception e) {
+            Log.e(TAG, "AudioTrack injection failed: " + e.getMessage());
+            if (injectionTrack != null) {
+                injectionTrack.release();
+                injectionTrack = null;
+            }
+            return false;
+        }
+    }
+
+    private boolean injectWithNativeHAL(String audioFilePath) {
+        try {
+            Log.d(TAG, "🎵 Attempting Native HAL injection...");
+
+            // Use tinymix or alsa commands based on availability
+            String checkTinymix = executeRootCommand("which tinymix");
+            boolean hasTinymix = checkTinymix != null && checkTinymix.contains("tinymix");
+
+            if (hasTinymix) {
+                // Use tinymix commands
+                executeRootCommands(new String[]{
+                        "tinymix 'Voice Tx Mute' 0",
+                        "tinymix 'TX1 Digital Volume' 84",
+                        "tinymix 'Voice Rx Device' 'HANDSET'"
+                });
+            } else {
+                // Try alsa_amixer
+                executeRootCommands(new String[]{
+                        "alsa_amixer -c 0 set 'Voice Tx' unmute",
+                        "alsa_amixer -c 0 set 'Voice Tx Volume' 80%"
+                });
+            }
+
+            // Still use MediaPlayer but with enhanced routing
+            return injectWithMediaPlayer(audioFilePath);
+
+        } catch (Exception e) {
+            Log.e(TAG, "Native HAL injection failed: " + e.getMessage());
+            return false;
+        }
     }
 
     // ============================================================================
-    // MAIN RECORDING METHODS
+    // AUDIO STATE MANAGEMENT
     // ============================================================================
+
+    private void backupAudioState() {
+        originalAudioMode = audioManager.getMode();
+        originalSpeakerphoneOn = audioManager.isSpeakerphoneOn();
+
+        Log.d(TAG, "Audio state backed up - Mode: " + originalAudioMode +
+                ", Speaker: " + originalSpeakerphoneOn);
+    }
+
+    private void restoreAudioState() {
+        try {
+            audioManager.setMode(originalAudioMode);
+            audioManager.setSpeakerphoneOn(originalSpeakerphoneOn);
+
+            if (isRooted.get()) {
+                executeRootCommand("setprop audio.voicecall.inject 0");
+            }
+
+            Log.d(TAG, "Audio state restored");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to restore audio state: " + e.getMessage());
+        }
+    }
+
+    private void applyInjectionFixes() {
+        if (!isRooted.get()) {
+            return;
+        }
+
+        try {
+            Log.d(TAG, "🔧 Applying injection fixes...");
+
+            String packageName = context.getPackageName();
+
+            // Essential permissions and properties
+            String[] commands = {
+                    // AppOps permissions
+                    "appops set " + packageName + " RECORD_AUDIO allow",
+                    "appops set " + packageName + " PHONE_CALL_MICROPHONE allow",
+
+                    // Audio properties for injection
+                    "setprop persist.audio.voicecall true",
+                    "setprop audio.telephony.inject 1",
+                    "setprop persist.vendor.audio.voicecall.speaker.stereo true",
+
+                    // Service calls for audio routing
+                    "service call audio 31 i32 0",  // Set communication device
+                    "service call audio 32 i32 1"   // Enable voice call routing
+            };
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                // Android 12+ specific
+                String[] android12Commands = {
+                        "appops set " + packageName + " RECORD_AUDIO_OUTPUT allow",
+                        "setprop persist.vendor.radio.enable_voicecall_recording true",
+                        "setprop persist.vendor.radio.enable_voicecall_injection true"
+                };
+                commands = concatenateArrays(commands, android12Commands);
+            }
+
+            executeRootCommands(commands);
+            Thread.sleep(500); // Let changes take effect
+
+            Log.d(TAG, "✅ Injection fixes applied");
+
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to apply injection fixes: " + e.getMessage());
+        }
+    }
+
+
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     public boolean startRecording(String filename) {
+        // [Keep all existing recording code as is]
         if (isRecording.get()) {
             Log.w(TAG, "Recording already in progress");
             return false;
         }
 
         if (!hasRecordAudioPermission()) {
-            notifyCallback(cb -> cb.onRecordingFailed("RECORD_AUDIO permission not granted"));
+            notifyRecordingCallback(cb -> cb.onRecordingFailed("RECORD_AUDIO permission not granted"));
             return false;
         }
 
@@ -143,22 +609,81 @@ public class CallRecorder {
             if (started) {
                 isRecording.set(true);
                 analyzeRecordingQuality();
-                notifyCallback(cb -> cb.onRecordingStarted(currentRecordingMode));
+                notifyRecordingCallback(cb -> cb.onRecordingStarted(currentRecordingMode));
                 Log.d(TAG, "✅ Recording started with " + currentRecordingMode.getDescription());
                 return true;
             } else {
                 Log.e(TAG, "❌ Failed to start recording with any audio source");
-                notifyCallback(cb -> cb.onRecordingFailed("No compatible audio source found"));
+                notifyRecordingCallback(cb -> cb.onRecordingFailed("No compatible audio source found"));
                 return false;
             }
 
         } catch (Exception e) {
             Log.e(TAG, "Exception starting recording: " + e.getMessage());
-            notifyCallback(cb -> cb.onRecordingFailed("Exception: " + e.getMessage()));
+            notifyRecordingCallback(cb -> cb.onRecordingFailed("Exception: " + e.getMessage()));
             cleanup();
             return false;
         }
     }
+
+    // [Keep all other existing methods as they are]
+
+    // ============================================================================
+    // UTILITY METHODS (ENHANCED)
+    // ============================================================================
+
+    private void notifyRecordingCallback(CallbackAction<RecordingCallback> action) {
+        if (recordingCallback != null) {
+            mainHandler.post(() -> action.execute(recordingCallback));
+        }
+    }
+
+    private void notifyInjectionCallback(CallbackAction<InjectionCallback> action) {
+        if (injectionCallback != null) {
+            mainHandler.post(() -> action.execute(injectionCallback));
+        }
+    }
+
+    @FunctionalInterface
+    private interface CallbackAction<T> {
+        void execute(T callback);
+    }
+
+    private String executeRootCommand(String command) {
+        try {
+            Process process = Runtime.getRuntime().exec(new String[]{"su", "-c", command});
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            StringBuilder output = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
+            }
+            process.waitFor();
+            return output.toString().trim();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to execute: " + command, e);
+            return null;
+        }
+    }
+
+    // ============================================================================
+    // PUBLIC GETTERS (ENHANCED)
+    // ============================================================================
+
+    public boolean isInjecting() {
+        return isInjecting.get();
+    }
+
+    public InjectionMode getCurrentInjectionMode() {
+        return currentInjectionMode;
+    }
+
+
+
+    // ============================================================================
+    // MAIN RECORDING METHODS
+    // ============================================================================
+
 
     public void stopRecording() {
         if (!isRecording.get()) {
@@ -181,7 +706,8 @@ public class CallRecorder {
             // Validate and finalize recording
             String finalFilename = validateRecording();
 
-            notifyCallback(cb -> cb.onRecordingStopped(finalFilename, recordingDuration));
+            // Use the correct callback method name
+            notifyRecordingCallback(cb -> cb.onRecordingStopped(finalFilename, recordingDuration));
             Log.d(TAG, "✅ Recording stopped. Duration: " + (recordingDuration / 1000) + "s");
 
         } catch (Exception e) {
@@ -189,7 +715,6 @@ public class CallRecorder {
             cleanup();
         }
     }
-
     // ============================================================================
     // RECORDING IMPLEMENTATION
     // ============================================================================
@@ -560,16 +1085,7 @@ public class CallRecorder {
         }
     }
 
-    private void notifyCallback(CallbackAction action) {
-        if (callback != null) {
-            mainHandler.post(() -> action.execute(callback));
-        }
-    }
 
-    @FunctionalInterface
-    private interface CallbackAction {
-        void execute(RecordingCallback callback);
-    }
 
     private boolean hasRecordAudioPermission() {
         return ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)

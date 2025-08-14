@@ -21,10 +21,11 @@ public class ElevenLabsWebSocketClient {
     private static final String WEBSOCKET_URL = "wss://api.elevenlabs.io/v1/convai/conversation";
 
     // Replace with your actual agent ID
-    private static final String AGENT_ID = "YOUR_AGENT_ID";
+    private static final String AGENT_ID = "agent_01jygb7h3aez9t265gdxnj1z8b";
 
     // Replace with your actual API key (only for private agents)
-    private static final String API_KEY = "YOUR_ELEVENLABS_API_KEY";
+    private static final String API_KEY = "sk_75a50e8295302914451d5a7832860febcf118da4de87e9a7";
+
 
     private WebSocket webSocket;
     private Context context;

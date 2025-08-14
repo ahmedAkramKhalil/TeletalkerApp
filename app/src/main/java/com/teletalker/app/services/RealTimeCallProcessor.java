@@ -814,7 +814,6 @@ public class RealTimeCallProcessor {
 
                 @Override
                 public void onAgentResponse(String response) {
-
                 }
 
                 @Override
@@ -1173,7 +1172,7 @@ public class RealTimeCallProcessor {
     }
 
     private void processAndInjectAudio(byte[] audioData) {
-        // Implementation for AI audio injection
+
     }
 
     private void interruptAudioResponse() {

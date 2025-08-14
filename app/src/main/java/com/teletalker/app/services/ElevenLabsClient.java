@@ -24,7 +24,7 @@ public class ElevenLabsClient {
     private static final String CONVAI_ENDPOINT = "/v1/convai/conversation/stream";
 
     // Replace with your actual API key
-    private static final String API_KEY = "sk_0c231a8a65c81b722ef703dfcf1293a1913a36fd83eb52e5";
+    private static final String API_KEY = "sk_75a50e8295302914451d5a7832860febcf118da4de87e9a7";
 
     // Replace with your agent ID or conversation ID
     private static final String AGENT_ID = "YOUR_AGENT_ID";
