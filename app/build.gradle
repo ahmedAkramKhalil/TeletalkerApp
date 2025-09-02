@@ -91,6 +91,8 @@ dependencies {
 
     // JSON handling (if not already included)
     implementation 'org.json:json:20231013'
+    implementation 'androidx.vectordrawable:vectordrawable:1.1.0'
+    implementation 'androidx.vectordrawable:vectordrawable-animated:1.1.0'
 
     //Check Root
     //implementation 'com.scottyab:rootbeer-lib:0.1.1'

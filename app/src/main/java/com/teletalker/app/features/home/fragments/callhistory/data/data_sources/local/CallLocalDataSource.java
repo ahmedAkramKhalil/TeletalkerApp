@@ -12,4 +12,7 @@ public interface CallLocalDataSource {
     void insertCall(CallEntity callEntity);
 
     void deleteCall(CallEntity callEntity);
+    List<CallEntity> getLastTwoCallRecords();
+
+
 }

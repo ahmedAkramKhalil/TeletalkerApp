@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools" >
+    <data>
+        <variable
+            name="call"
+            type="com.teletalker.app.features.home.fragments.callhistory.data.models.CallEntity" />
+        <variable
+            name="isPlaying"
+            type="boolean" />
+        <variable
+            name="viewModel"
+            type="com.teletalker.app.features.home.fragments.home.presentation.HomeViewModel" />
+    </data>
+
+    <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -65,8 +80,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:padding="10dp"
+                app:onPlaybackClick="@{call}"
+                app:playbackState="@{call}"
                 tools:src="@drawable/ic_big_play" />
-
 
         </com.google.android.material.card.MaterialCardView>
 
@@ -109,3 +125,4 @@
 
 
 </com.google.android.material.card.MaterialCardView>
+    </layout>

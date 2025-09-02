@@ -33,4 +33,9 @@ public class CallLocalDataSourceImpl implements CallLocalDataSource {
     public void deleteCall(CallEntity callEntity) {
         executorService.execute(() -> callDao.deleteCall(callEntity));
     }
+
+    @Override
+    public List<CallEntity> getLastTwoCallRecords() {
+        return  callDao.getLastTwoCallRecords();
+    }
 }

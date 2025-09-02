@@ -74,8 +74,9 @@ public class HomeActivity extends AppCompatActivity implements
     private void setupAiAgent() {
         AIConfigurationHelper.configureAI(
                 this,
-                "sk_ca8fc9f78f62a0d8a9181dd3790fa30cf225e22003469b6a",
-                "agent_01jxyf9nbrffcbm8z8a34qmqvt",
+                //this is Jeff Account
+                "sk_691d29f40ed72ac79857e3132d83dceb494cc2af495d5fae",
+                "agent_7901k363gp7mfyxrmsrfjzxhxn1y",
                 AICallRecorder.AIMode.SMART_ASSISTANT,
                 true // AI enabled
         );

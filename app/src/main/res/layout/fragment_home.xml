@@ -91,12 +91,14 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
+
             android:layout_height="match_parent">
 
             <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/constraintLayout2"
+                android:id="@+id/notSubscribed_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:visibility="gone"
                 app:layout_constraintTop_toTopOf="parent">
 
                 <ImageView
@@ -168,6 +170,19 @@
 
 
             </androidx.constraintlayout.widget.ConstraintLayout>
+            <ImageButton
+                android:id="@+id/aiActivationButton"
+                android:layout_width="180dp"
+                android:layout_height="180dp"
+                android:foregroundGravity="center"
+                android:layout_marginTop="26dp"
+                android:src="@drawable/inactive_button"
+                android:background="@android:color/transparent"
+
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                />
 
 
             <LinearLayout
@@ -176,9 +191,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:orientation="horizontal"
-                app:layout_constraintEnd_toEndOf="@+id/constraintLayout2"
-                app:layout_constraintStart_toStartOf="@+id/constraintLayout2"
-                app:layout_constraintTop_toBottomOf="@+id/constraintLayout2">
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/aiActivationButton">
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
@@ -245,6 +260,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:layout_marginEnd="12dp"
+                            android:id="@+id/changeAgentButton"
                             app:cardBackgroundColor="@color/shadowGray"
                             app:cardCornerRadius="8dp"
                             app:layout_constraintEnd_toEndOf="parent"
@@ -269,6 +285,11 @@
 
                 </com.google.android.material.card.MaterialCardView>
 
+
+
+
+
+
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -276,6 +297,8 @@
                     android:layout_weight="1"
                     app:cardBackgroundColor="@color/darkMidnightBlue"
                     app:cardCornerRadius="12dp"
+                    android:visibility="gone"
+
                     app:layout_constraintStart_toStartOf="@+id/constraintLayout2"
                     app:layout_constraintTop_toBottomOf="@+id/constraintLayout2"
                     app:strokeWidth="0dp">
@@ -289,6 +312,7 @@
                         <com.google.android.material.card.MaterialCardView
                             android:id="@+id/materialCardView6"
                             android:layout_width="40dp"
+
                             android:layout_height="40dp"
                             android:layout_marginStart="12dp"
                             android:layout_marginTop="12dp"
@@ -361,6 +385,9 @@
 
 
             </LinearLayout>
+
+
+
 
             <LinearLayout
                 android:id="@+id/seeAllHistoryTv"

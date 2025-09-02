@@ -38,6 +38,11 @@ public class AIConfigurationHelper {
                     .putBoolean("ai_enabled", enabled)
                     .apply();
 
+            PreferencesManager preferencesManager = PreferencesManager.getInstance(context);
+            preferencesManager.saveApiKey(apiKey);
+            preferencesManager.setIsBotActive(enabled);
+
+
             Log.d(TAG, "AI configuration saved - Enabled: " + enabled + ", Mode: " + aiMode);
 
         } catch (Exception e) {

@@ -605,7 +605,7 @@ public class CallDetector extends InCallService {
                 handler.postDelayed(() -> {
                     if (recorder.isRecording()) {
                         Log.d(TAG, "🔍 COMPREHENSIVE AI STATUS CHECK:");
-                        recorder.logAIStatus();
+//                        recorder.logAIStatus();
                     }
                 }, 5000);
 
@@ -770,6 +770,30 @@ public class CallDetector extends InCallService {
             Log.e(TAG, "💥 AUDIO INJECTION ERROR: " + error);
             wrapper.isAudioInjectionActive = false;
             updateForegroundState();
+        }
+
+        @Override
+        public void onConnectionHealthChanged(boolean healthy) {
+            Log.e(TAG, "💥 onConnectionHealthChanged healthy: " + healthy);
+
+        }
+
+        @Override
+        public void onAudioQualityChanged(String quality, String reason) {
+            Log.e(TAG, "💥 onAudioQualityChanged quality: " + quality + "  reason:"+reason);
+
+        }
+
+        @Override
+        public void onSilenceDetected(long durationMs) {
+            Log.e(TAG, "💥 onSilenceDetected durationMs=: " + durationMs);
+
+        }
+
+        @Override
+        public void onSpeechDetected(long durationMs) {
+            Log.e(TAG, "💥 onSpeechDetected: durationMs=" + durationMs);
+
         }
     }
 

@@ -1331,55 +1331,55 @@ public class AICallRecorder {
 
                 long injectionStartTime = System.currentTimeMillis();
 
-                // Use enhanced injection method
-                audioInjector.injectAudioWithPreciseTiming(completeAudioData, expectedDurationMs, totalTimeoutMs,
-                        new CallAudioInjector.InjectionCallback() {
-
-                            @Override
-                            public void onInjectionStarted() {
-                                isAudioInjectionActive.set(true);
-                                Log.d(TAG, "✅ Precise injection STARTED at " + System.currentTimeMillis());
-                                notifyCallback(cb -> cb.onAudioInjectionStarted("Precise complete audio"));
-                            }
-
-                            @Override
-                            public void onInjectionCompleted(boolean success) {
-                                long actualDuration = System.currentTimeMillis() - injectionStartTime;
-
-                                Log.d(TAG, "🏁 Precise injection COMPLETED:");
-                                Log.d(TAG, "  ✅ Success: " + success);
-                                Log.d(TAG, "  ⏱️ Expected: " + expectedDurationMs + "ms");
-                                Log.d(TAG, "  ⏱️ Actual: " + actualDuration + "ms");
-                                Log.d(TAG, "  📊 Accuracy: " + (actualDuration * 100.0 / expectedDurationMs) + "%");
-
-                                // Mark injection as complete
-                                isCurrentlyInjecting.set(false);
-                                isAudioInjectionActive.set(false);
-                                if (injectionCompleteLatch != null) {
-                                    injectionCompleteLatch.countDown();
-                                }
-
-                                notifyCallback(cb -> cb.onAudioInjectionStopped());
-                            }
-
-                            @Override
-                            public void onInjectionError(String error) {
-                                long actualDuration = System.currentTimeMillis() - injectionStartTime;
-
-                                Log.e(TAG, "❌ Precise injection ERROR:");
-                                Log.e(TAG, "  💥 Error: " + error);
-                                Log.e(TAG, "  ⏱️ After: " + actualDuration + "ms");
-
-                                // Mark injection as complete
-                                isCurrentlyInjecting.set(false);
-                                isAudioInjectionActive.set(false);
-                                if (injectionCompleteLatch != null) {
-                                    injectionCompleteLatch.countDown();
-                                }
-
-                                notifyCallback(cb -> cb.onAudioInjectionError(error));
-                            }
-                        });
+//                // Use enhanced injection method
+//                audioInjector.injectAudio16kMono(completeAudioData, expectedDurationMs, totalTimeoutMs,
+//                        new CallAudioInjector.InjectionCallback() {
+//
+//                            @Override
+//                            public void onInjectionStarted() {
+//                                isAudioInjectionActive.set(true);
+//                                Log.d(TAG, "✅ Precise injection STARTED at " + System.currentTimeMillis());
+//                                notifyCallback(cb -> cb.onAudioInjectionStarted("Precise complete audio"));
+//                            }
+//
+//                            @Override
+//                            public void onInjectionCompleted(boolean success) {
+//                                long actualDuration = System.currentTimeMillis() - injectionStartTime;
+//
+//                                Log.d(TAG, "🏁 Precise injection COMPLETED:");
+//                                Log.d(TAG, "  ✅ Success: " + success);
+//                                Log.d(TAG, "  ⏱️ Expected: " + expectedDurationMs + "ms");
+//                                Log.d(TAG, "  ⏱️ Actual: " + actualDuration + "ms");
+//                                Log.d(TAG, "  📊 Accuracy: " + (actualDuration * 100.0 / expectedDurationMs) + "%");
+//
+//                                // Mark injection as complete
+//                                isCurrentlyInjecting.set(false);
+//                                isAudioInjectionActive.set(false);
+//                                if (injectionCompleteLatch != null) {
+//                                    injectionCompleteLatch.countDown();
+//                                }
+//
+//                                notifyCallback(cb -> cb.onAudioInjectionStopped());
+//                            }
+//
+//                            @Override
+//                            public void onInjectionError(String error) {
+//                                long actualDuration = System.currentTimeMillis() - injectionStartTime;
+//
+//                                Log.e(TAG, "❌ Precise injection ERROR:");
+//                                Log.e(TAG, "  💥 Error: " + error);
+//                                Log.e(TAG, "  ⏱️ After: " + actualDuration + "ms");
+//
+//                                // Mark injection as complete
+//                                isCurrentlyInjecting.set(false);
+//                                isAudioInjectionActive.set(false);
+//                                if (injectionCompleteLatch != null) {
+//                                    injectionCompleteLatch.countDown();
+//                                }
+//
+//                                notifyCallback(cb -> cb.onAudioInjectionError(error));
+//                            }
+//                        });
 
             } catch (Exception e) {
                 Log.e(TAG, "💥 Failed to start precise audio injection: " + e.getMessage());
@@ -1930,7 +1930,7 @@ public class AICallRecorder {
         Log.d(TAG, "  Injector available: " + (audioInjector != null));
         if (audioInjector != null) {
             Log.d(TAG, "  Currently injecting: " + audioInjector.isCurrentlyInjecting());
-            Log.d(TAG, "  Time since last: " + audioInjector.getTimeSinceLastInjection() + "ms");
+//            Log.d(TAG, "  Time since last: " + audioInjector.getTimeSinceLastInjection() + "ms");
         }
 
         // 6. Streaming Stats
@@ -2465,28 +2465,28 @@ public class AICallRecorder {
         // Create a 2-second test tone
         byte[] testAudio = createTestAudioChunk(32000, 800); // 2 seconds at 800Hz
 
-        audioInjector.injectAudioWithPreciseTiming(testAudio, 2000, 8000,
-                new CallAudioInjector.InjectionCallback() {
-                    @Override
-                    public void onInjectionStarted() {
-                        Log.d(TAG, "✅ Test injection started");
-                    }
-
-                    @Override
-                    public void onInjectionCompleted(boolean success) {
-                        Log.d(TAG, "🏁 Test injection completed: " + success);
-                    }
-
-                    @Override
-                    public void onInjectionError(String error) {
-                        Log.e(TAG, "❌ Test injection error: " + error);
-                    }
-
-                    @Override
-                    public void onInjectionProgress(long elapsedMs, long expectedMs) {
-                        Log.d(TAG, "⏱️ Test injection progress: " + elapsedMs + "/" + expectedMs + "ms");
-                    }
-                });
+//        audioInjector.injectAudioWithPreciseTiming(testAudio, 2000, 8000,
+//                new CallAudioInjector.InjectionCallback() {
+//                    @Override
+//                    public void onInjectionStarted() {
+//                        Log.d(TAG, "✅ Test injection started");
+//                    }
+//
+//                    @Override
+//                    public void onInjectionCompleted(boolean success) {
+//                        Log.d(TAG, "🏁 Test injection completed: " + success);
+//                    }
+//
+//                    @Override
+//                    public void onInjectionError(String error) {
+//                        Log.e(TAG, "❌ Test injection error: " + error);
+//                    }
+//
+//                    @Override
+//                    public void onInjectionProgress(long elapsedMs, long expectedMs) {
+//                        Log.d(TAG, "⏱️ Test injection progress: " + elapsedMs + "/" + expectedMs + "ms");
+//                    }
+//                });
     }
 
     /**

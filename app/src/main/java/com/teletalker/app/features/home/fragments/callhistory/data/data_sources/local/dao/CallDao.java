@@ -23,4 +23,8 @@ public interface CallDao {
     @Delete
     void deleteCall(CallEntity call);
 
+    @Query("SELECT * FROM calls ORDER BY id DESC LIMIT 2")
+    List<CallEntity> getLastTwoCallRecords();
+
+
 }
