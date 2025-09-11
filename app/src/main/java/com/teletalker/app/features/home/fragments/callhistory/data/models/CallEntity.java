@@ -1,7 +1,11 @@
 package com.teletalker.app.features.home.fragments.callhistory.data.models;
 
+import android.os.Environment;
+
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
+
+import java.io.File;
 
 @Entity(tableName = "calls")
 public class CallEntity {
@@ -29,6 +33,17 @@ public class CallEntity {
         this.isCallRecordingPlay = false;
         this.isCallRecorded = isCallRecorded;
     }
+
+
+    public String getRecordingFilePath() {
+        return new File(getDirectory(),recordingFilePath).getAbsolutePath();
+    }
+
+    public static File getDirectory() {
+        return new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_MUSIC), "TeleTalker/AI_Calls");
+    }
+
     public boolean isCallRecordingPlay() {
         return isCallRecordingPlay;
     }

@@ -21,29 +21,32 @@ public class AIConfigurationHelper {
      * @param context Application context
      * @param apiKey ElevenLabs API key
      * @param agentId ElevenLabs Agent ID
-     * @param aiMode AI response mode
      * @param enabled Whether AI is enabled
      */
     public static void configureAI(Context context, String apiKey, String agentId,
-                                   AICallRecorder.AIMode aiMode, boolean enabled) {
+             boolean enabled) {
         try {
             // This would typically be done through a bound service or broadcast
             // For now, we'll save to SharedPreferences and the service will pick it up
 
             context.getSharedPreferences("teletalker_ai_config", Context.MODE_PRIVATE)
                     .edit()
-                    .putString("elevenlabs_api_key", apiKey)
-                    .putString("agent_id", agentId)
-                    .putString("ai_mode", aiMode.name())
-                    .putBoolean("ai_enabled", enabled)
+                    .putString(PreferencesManager.API_KEY, apiKey)
+//                    .putString(PreferencesManager.SELECTED_AGENT_ID, agentId)
+//                    .putBoolean(PreferencesManager.IS_BOT_ACTIVE, enabled)
                     .apply();
+
+//            Log.d("Agent Detailes","teletalker_ai_config Agent ID=" + agentId);
+
+
+
 
             PreferencesManager preferencesManager = PreferencesManager.getInstance(context);
             preferencesManager.saveApiKey(apiKey);
             preferencesManager.setIsBotActive(enabled);
 
 
-            Log.d(TAG, "AI configuration saved - Enabled: " + enabled + ", Mode: " + aiMode);
+            Log.d(TAG, "AI configuration saved - Enabled: " + enabled );
 
         } catch (Exception e) {
             Log.e(TAG, "Failed to configure AI: " + e.getMessage());
@@ -57,9 +60,9 @@ public class AIConfigurationHelper {
         try {
             SharedPreferences prefs = context.getSharedPreferences("teletalker_ai_config", Context.MODE_PRIVATE);
 
-            String apiKey = prefs.getString("elevenlabs_api_key", null);
-            String agentId = prefs.getString("agent_id", null);
-            boolean enabled = prefs.getBoolean("ai_enabled", true);
+            String apiKey = prefs.getString(PreferencesManager.API_KEY, null);
+            String agentId = prefs.getString(PreferencesManager.SELECTED_AGENT_ID, null);
+            boolean enabled = prefs.getBoolean(PreferencesManager.IS_BOT_ACTIVE, true);
 
             String aiModeString = prefs.getString("ai_mode", AICallRecorder.AIMode.SMART_ASSISTANT.name());
             AICallRecorder.AIMode aiMode;

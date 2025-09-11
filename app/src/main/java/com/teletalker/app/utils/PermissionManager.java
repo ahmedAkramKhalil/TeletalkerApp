@@ -80,7 +80,9 @@ public class PermissionManager {
                 Manifest.permission.READ_CALL_LOG,
                 Manifest.permission.READ_CONTACTS,
                 Manifest.permission.READ_PHONE_STATE,
+                Manifest.permission.ANSWER_PHONE_CALLS,
                 Manifest.permission.POST_NOTIFICATIONS
+
         );
     }
 

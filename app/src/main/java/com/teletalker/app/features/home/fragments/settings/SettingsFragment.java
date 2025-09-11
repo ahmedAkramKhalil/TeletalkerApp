@@ -1,10 +1,14 @@
 package com.teletalker.app.features.home.fragments.settings;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -14,6 +18,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.teletalker.app.databinding.FragmentSettingsBinding;
 import com.teletalker.app.features.select_voice.presentation.SelectVoiceActivity;
 import com.teletalker.app.features.agent_type.AgentTypeActivity;
+import com.teletalker.app.utils.PreferencesManager;
 
 public class SettingsFragment extends Fragment {
 
@@ -37,10 +42,31 @@ public class SettingsFragment extends Fragment {
 
         initListeners();
 
+        setAutoAnswerSwitch();
+
     }
 
+    private void setAutoAnswerSwitch() {
+
+        binding.autoAnswer.setChecked(PreferencesManager.getInstance(getContext()).getBoolean(PreferencesManager.PREF_AUTO_ANSWER_ENABLED,true));
+        binding.autoAnswer.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                configureAutoAnswer(getContext(),b);
+            }
+        });
+
+
+    }
+
+    public static void configureAutoAnswer(Context context, boolean enabled) {
+        Log.d("configureAutoAnswer","AutoAnswer=="+enabled);
+        PreferencesManager.getInstance(context).saveBoolean(PreferencesManager.PREF_AUTO_ANSWER_ENABLED , enabled);
+    }
+
+
     private void initListeners() {
-        binding.arrowAgentType.setOnClickListener(l -> {
+        binding.agentTypeContainer.setOnClickListener(l -> {
             viewModel.navigateToAgentTypeActivity();
         });
         binding.arrowAgentTypeVoice.setOnClickListener(l -> {

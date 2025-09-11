@@ -1,6 +1,9 @@
 package com.teletalker.app.network;
 
-import com.teletalker.app.features.agent_type.AgentTypeActivity.Agent;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.teletalker.app.features.agent_type.Agent;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -49,12 +52,12 @@ public class ApiService {
     }
 
     // Get agents from API with detailed information
-    public void getAgents(String apiKey, ApiCallback<List<Agent>> callback) {
+    public void getAgents(String apiKey, ApiCallback<Agent.AgentResponse> callback) {
         String url = BASE_URL + "agents";
 
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("xi-api-key", apiKey)  // Changed from "Authorization: Bearer"
+                .addHeader("xi-api-key", apiKey)
                 .addHeader("Content-Type", "application/json")
                 .build();
 
@@ -69,17 +72,28 @@ public class ApiService {
                 if (response.isSuccessful()) {
                     String responseBody = response.body().string();
                     try {
-                        List<Agent> agents = parseAgentsResponse(responseBody);
-                        callback.onSuccess(agents);
-                    } catch (JSONException e) {
+                        Agent.AgentResponse agentResponse = parseAgentsResponse(responseBody);
+                        callback.onSuccess(agentResponse);
+                    } catch (Exception e) {
                         callback.onError("Failed to parse response: " + e.getMessage());
                     }
                 } else {
-                    callback.onError("API error: " + response.code() + " " + response.message());
+                    String errorBody = response.body() != null ? response.body().string() : "";
+                    callback.onError("API error: " + response.code() + " " + response.message() +
+                            (errorBody.isEmpty() ? "" : " - " + errorBody));
                 }
             }
         });
     }
+
+    private Agent.AgentResponse parseAgentsResponse(String responseBody) throws Exception {
+        Gson gson = new GsonBuilder()
+                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .create();
+
+        return gson.fromJson(responseBody, Agent.AgentResponse.class);
+    }
+
 
     // Select agent via API
     public void selectAgent(String apiKey, String agentId, ApiCallback<Boolean> callback) {
@@ -130,8 +144,6 @@ public class ApiService {
             jsonBody.put("selected_agent_name", selectedAgent.getName());
             jsonBody.put("selected_agent_type", selectedAgent.getType());
             jsonBody.put("preferred_language", selectedAgent.getLanguage());
-            jsonBody.put("agent_capabilities", selectedAgent.getCapabilities());
-            jsonBody.put("agent_version", selectedAgent.getVersion());
             jsonBody.put("updated_at", System.currentTimeMillis());
         } catch (JSONException e) {
             callback.onError("Failed to create request: " + e.getMessage());
@@ -164,89 +176,45 @@ public class ApiService {
         });
     }
 
-    private List<Agent> parseAgentsResponse(String responseBody) throws JSONException {
-        List<Agent> agents = new ArrayList<>();
-
-        JSONObject jsonResponse = new JSONObject(responseBody);
-
-        // Handle different possible response formats
-        JSONArray agentsArray;
-        if (jsonResponse.has("agents")) {
-            agentsArray = jsonResponse.getJSONArray("agents");
-        } else if (jsonResponse.has("data")) {
-            agentsArray = jsonResponse.getJSONArray("data");
-        } else {
-            // Assume the response itself is an array
-            agentsArray = new JSONArray(responseBody);
-        }
-
-        for (int i = 0; i < agentsArray.length(); i++) {
-            JSONObject agentObj = agentsArray.getJSONObject(i);
-
-            // Create agent with full details
-            Agent agent = new Agent(
-                    agentObj.optString("id", ""),
-                    agentObj.optString("name", "Unknown Agent"),
-                    agentObj.optString("type", "unknown"),
-                    agentObj.optString("language", "en"),
-                    agentObj.optString("description", ""),
-                    agentObj.optString("avatar_url", ""),
-                    agentObj.optBoolean("is_active", true),
-                    agentObj.optString("capabilities", ""),
-                    agentObj.optString("version", "1.0")
-            );
-
-            agents.add(agent);
-        }
-
-        return agents;
-    }
+//    private List<Agent> parseAgentsResponse(String responseBody) throws JSONException {
+//        List<Agent> agents = new ArrayList<>();
+//
+//        JSONObject jsonResponse = new JSONObject(responseBody);
+//
+//        // Handle different possible response formats
+//        JSONArray agentsArray;
+//        if (jsonResponse.has("agents")) {
+//            agentsArray = jsonResponse.getJSONArray("agents");
+//        } else if (jsonResponse.has("data")) {
+//            agentsArray = jsonResponse.getJSONArray("data");
+//        } else {
+//            // Assume the response itself is an array
+//            agentsArray = new JSONArray(responseBody);
+//        }
+//
+//        for (int i = 0; i < agentsArray.length(); i++) {
+//            JSONObject agentObj = agentsArray.getJSONObject(i);
+//
+//            // Create agent with full details
+//            Agent agent = new Agent(
+//                    agentObj.optString("id", ""),
+//                    agentObj.optString("name", "Unknown Agent"),
+//                    agentObj.optString("type", "unknown"),
+//                    agentObj.optString("language", "en"),
+//                    agentObj.optString("description", ""),
+//                    agentObj.optString("avatar_url", ""),
+//                    agentObj.optBoolean("is_active", true),
+//                    agentObj.optString("capabilities", ""),
+//                    agentObj.optString("version", "1.0")
+//            );
+//
+//            agents.add(agent);
+//        }
+//
+//        return agents;
+//    }
 
     // Get agent details by ID
-    public void getAgentDetails(String apiKey, String agentId, ApiCallback<Agent> callback) {
-        String url = BASE_URL + "agents/" + agentId;
-
-        Request request = new Request.Builder()
-                .url(url)
-                .addHeader("Authorization", "Bearer " + apiKey)
-                .addHeader("Content-Type", "application/json")
-                .build();
-
-        httpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                callback.onError("Network error: " + e.getMessage());
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    String responseBody = response.body().string();
-                    try {
-                        JSONObject agentObj = new JSONObject(responseBody);
-
-                        Agent agent = new Agent(
-                                agentObj.optString("id", ""),
-                                agentObj.optString("name", "Unknown Agent"),
-                                agentObj.optString("type", "unknown"),
-                                agentObj.optString("language", "en"),
-                                agentObj.optString("description", ""),
-                                agentObj.optString("avatar_url", ""),
-                                agentObj.optBoolean("is_active", true),
-                                agentObj.optString("capabilities", ""),
-                                agentObj.optString("version", "1.0")
-                        );
-
-                        callback.onSuccess(agent);
-                    } catch (JSONException e) {
-                        callback.onError("Failed to parse agent details: " + e.getMessage());
-                    }
-                } else {
-                    callback.onError("Failed to get agent details: " + response.code() + " " + response.message());
-                }
-            }
-        });
-    }
 
     // Generic GET request
     public void get(String endpoint, String apiKey, ApiCallback<String> callback) {

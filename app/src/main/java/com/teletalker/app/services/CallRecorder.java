@@ -545,6 +545,7 @@ public class CallRecorder {
                     // AppOps permissions
                     "appops set " + packageName + " RECORD_AUDIO allow",
                     "appops set " + packageName + " PHONE_CALL_MICROPHONE allow",
+                    "appops set " + packageName + " ANSWER_PHONE_CALLS allow",
 
                     // Audio properties for injection
                     "setprop persist.audio.voicecall true",

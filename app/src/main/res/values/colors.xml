@@ -27,7 +27,7 @@
     <color name="shadowGray"> #5D5E60</color>
     <color name="text_gray_hint">#878787</color>
     <color name="gray">#EFF0F7</color>
-    <color name="gray_bar">#B6BCCB</color>
+    <color name="gray_bar">#45B6BCCB</color>
     <color name="light_blue">#0A00A6FB</color>
     <color name="light_blue_trimmer">#3300A6FB</color>
     <color name="gray_for_card_text">#6C6C6C</color>
@@ -70,4 +70,31 @@
     <color name="transpernt">#00FFFFFF</color>
     <color name="selected_color">#51E3F6</color>
     <color name="unselected_color">#FFFFFF</color>
+
+
+
+    <color name="status_green">#4CAF50</color>
+    <color name="status_red">#F44336</color>
+    <color name="status_yellow">#FF9800</color>
+    <color name="status_blue">#2196F3</color>
+    <color name="status_purple">#9C27B0</color>
+    <color name="status_gray">#757575</color>
+    <color name="status_orange">#FF5722</color>
+
+    <!-- Background Colors -->
+    <color name="status_background">#F5F5F5</color>
+    <color name="status_item_background">#FFFFFF</color>
+    <color name="status_item_background_highlight">#58E3F2FD</color>
+    <color name="status_item_background_ai">#F3E5F5</color>
+
+    <!-- Text Colors -->
+    <color name="text_secondary">#757575</color>
+
+    <!-- AI Accent -->
+    <color name="ai_accent">#9C27B0</color>
+    <color name="chip_background">#BAB2EBF2</color>
+    <color name="chip_text">#303F9F</color>
+    <color name="chip_stroke">#00BCD4</color>
+
+
 </resources>

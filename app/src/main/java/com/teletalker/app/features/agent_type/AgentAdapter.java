@@ -11,21 +11,23 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 import com.teletalker.app.R;
 
 import java.util.List;
 
 public class AgentAdapter extends RecyclerView.Adapter<AgentAdapter.AgentViewHolder> {
 
-    private List<AgentTypeActivity.Agent> agents;
+    private List<Agent> agents;
     private OnAgentSelectedListener listener;
     private String selectedAgentId = null;
 
     public interface OnAgentSelectedListener {
-        void onAgentSelected(AgentTypeActivity.Agent agent);
+        void onAgentSelected(Agent agent);
     }
 
-    public AgentAdapter(List<AgentTypeActivity.Agent> agents, OnAgentSelectedListener listener) {
+    public AgentAdapter(List<Agent> agents, OnAgentSelectedListener listener) {
         this.agents = agents;
         this.listener = listener;
     }
@@ -40,7 +42,7 @@ public class AgentAdapter extends RecyclerView.Adapter<AgentAdapter.AgentViewHol
 
     @Override
     public void onBindViewHolder(@NonNull AgentViewHolder holder, int position) {
-        AgentTypeActivity.Agent agent = agents.get(position);
+        Agent agent = agents.get(position);
         holder.bind(agent);
     }
 
@@ -55,19 +57,25 @@ public class AgentAdapter extends RecyclerView.Adapter<AgentAdapter.AgentViewHol
 
         // Notify changes for radio button updates
         for (int i = 0; i < agents.size(); i++) {
-            if (agents.get(i).getId().equals(agentId) ||
-                    (previousSelected != null && agents.get(i).getId().equals(previousSelected))) {
+            if (agents.get(i).getAgentId().equals(agentId) ||
+                    (previousSelected != null && agents.get(i).getAgentId().equals(previousSelected))) {
                 notifyItemChanged(i);
             }
         }
+    }
+
+    public void updateAgents(List<Agent> newAgents) {
+        this.agents = newAgents;
+        notifyDataSetChanged();
     }
 
     class AgentViewHolder extends RecyclerView.ViewHolder {
         private MaterialCardView cardView;
         private TextView nameTextView;
         private TextView descriptionTextView;
-        private TextView languageTextView;
-        private TextView typeTextView;
+//        private TextView createdTextView;
+//        private TextView creatorTextView;
+        private ChipGroup tagsChipGroup;
         private RadioButton radioButton;
         private ImageView avatarImageView;
         private View statusIndicator;
@@ -77,50 +85,48 @@ public class AgentAdapter extends RecyclerView.Adapter<AgentAdapter.AgentViewHol
             cardView = itemView.findViewById(R.id.agentCardView);
             nameTextView = itemView.findViewById(R.id.agentName);
             descriptionTextView = itemView.findViewById(R.id.agentDescription);
-            languageTextView = itemView.findViewById(R.id.agentLanguage);
-            typeTextView = itemView.findViewById(R.id.agentType);
+//            createdTextView = itemView.findViewById(R.id.agentCreated);
+//            creatorTextView = itemView.findViewById(R.id.agentCreator);
+            tagsChipGroup = itemView.findViewById(R.id.agentTags);
             radioButton = itemView.findViewById(R.id.agentRadioButton);
             avatarImageView = itemView.findViewById(R.id.agentAvatar);
             statusIndicator = itemView.findViewById(R.id.statusIndicator);
         }
 
-        public void bind(AgentTypeActivity.Agent agent) {
+        public void bind(Agent agent) {
             // Set basic info
             nameTextView.setText(agent.getName());
             descriptionTextView.setText(agent.getDescription());
 
-            // Set language display
-            String languageDisplay = getLanguageDisplay(agent.getLanguage());
-            languageTextView.setText(languageDisplay);
+            // Set creation info
+//            if (createdTextView != null) {
+//                createdTextView.setText("Created " + agent.getFormattedCreatedDate());
+//            }
+//
+//            // Set creator info
+//            if (creatorTextView != null) {
+//                creatorTextView.setText("By " + agent.getCreatorInfo());
+//            }
 
-            // Set type (capitalize first letter)
-            String typeDisplay = agent.getType().substring(0, 1).toUpperCase() +
-                    agent.getType().substring(1).toLowerCase();
-            typeTextView.setText(typeDisplay);
+            // Set tags as chips
+            setupTagChips(agent);
 
             // Set radio button state
-            boolean isSelected = agent.getId().equals(selectedAgentId);
+            boolean isSelected = agent.getAgentId().equals(selectedAgentId);
             radioButton.setChecked(isSelected);
 
-            // Set status indicator
+            // Set status indicator (all fetched agents are considered active)
             if (statusIndicator != null) {
-                statusIndicator.setVisibility(agent.isActive() ? View.VISIBLE : View.GONE);
+                statusIndicator.setVisibility(View.VISIBLE);
             }
 
-            // Set avatar (if you have image loading library like Glide or Picasso)
-            if (avatarImageView != null && agent.getAvatarUrl() != null && !agent.getAvatarUrl().isEmpty()) {
-                // Load image with your preferred library
-                // Glide.with(itemView.getContext()).load(agent.getAvatarUrl()).into(avatarImageView);
-                avatarImageView.setVisibility(View.VISIBLE);
-            } else {
-                // Set default avatar based on type
-                setDefaultAvatar(agent.getType());
-            }
+            // Set avatar
+            setupAvatar(agent);
 
             // Set click listeners
             View.OnClickListener clickListener = v -> {
-                if (!agent.getId().equals(selectedAgentId)) {
-                    setSelectedAgentId(agent.getId());
+                if (!agent.getAgentId().equals(selectedAgentId)) {
+                    setSelectedAgentId(agent.getAgentId());
                     if (listener != null) {
                         listener.onAgentSelected(agent);
                     }
@@ -132,75 +138,86 @@ public class AgentAdapter extends RecyclerView.Adapter<AgentAdapter.AgentViewHol
 
             // Update card appearance based on selection
             updateCardAppearance(isSelected);
+        }
 
-            // Show additional info if available
-            if (agent.getCapabilities() != null && !agent.getCapabilities().isEmpty()) {
-                // You can add a capabilities view if needed
+        private void setupTagChips(Agent agent) {
+            if (tagsChipGroup == null) return;
+
+            tagsChipGroup.removeAllViews();
+
+            List<String> tags = agent.getTags();
+            if (tags != null && !tags.isEmpty()) {
+                for (String tag : tags) {
+                    Chip chip = new Chip(itemView.getContext());
+                    chip.setText(tag);
+                    chip.setChipBackgroundColorResource(R.color.chip_background);
+                    chip.setTextColor(itemView.getContext().getColor(R.color.chip_text));
+                    chip.setChipStrokeColorResource(R.color.chip_stroke);
+                    chip.setChipStrokeWidth(1f);
+                    chip.setTextSize(12f);
+                    chip.setClickable(false);
+                    chip.setCheckable(false);
+
+                    tagsChipGroup.addView(chip);
+                }
+                tagsChipGroup.setVisibility(View.VISIBLE);
+            } else {
+                tagsChipGroup.setVisibility(View.GONE);
             }
         }
 
-        private void setDefaultAvatar(String agentType) {
+        private void setupAvatar(Agent agent) {
             if (avatarImageView == null) return;
 
-            int avatarResource = R.drawable.ic_agent_default; // Default avatar
+            if (agent.getAvatarUrl() != null && !agent.getAvatarUrl().isEmpty()) {
+                // Load image with your preferred library
+                // Glide.with(itemView.getContext()).load(agent.getAvatarUrl()).into(avatarImageView);
+                avatarImageView.setVisibility(View.VISIBLE);
+            } else {
+                // Set default avatar based on primary tag
+                setDefaultAvatar(agent);
+            }
+        }
 
-//            switch (agentType.toLowerCase()) {
-//                case "english":
-//                    avatarResource = R.drawable.ic_agent_english;
-//                    break;
-//                case "arab":
-//                case "arabic":
-//                    avatarResource = R.drawable.ic_agent_arabic;
-//                    break;
-//                case "spanish":
-//                    avatarResource = R.drawable.ic_agent_spanish;
-//                    break;
-//                case "japanese":
-//                    avatarResource = R.drawable.ic_agent_japanese;
-//                    break;
-//                case "french":
-//                    avatarResource = R.drawable.ic_agent_french;
-//                    break;
-//                case "german":
-//                    avatarResource = R.drawable.ic_agent_german;
-//                    break;
-//                default:
-//                    avatarResource = R.drawable.ic_agent_default;
-//                    break;
+        private void setDefaultAvatar(Agent agent) {
+            if (avatarImageView == null) return;
+
+            int avatarResource = R.drawable.ic_agent_default;
+
+            // Use primary tag to determine avatar
+            List<String> tags = agent.getTags();
+//            if (tags != null && !tags.isEmpty()) {
+//                String primaryTag = tags.get(0).toLowerCase();
+//
+////                switch (primaryTag) {
+////                    case "customer support":
+////                        avatarResource = R.drawable.ic_agent_support;
+////                        break;
+////                    case "technical help":
+////                        avatarResource = R.drawable.ic_agent_technical;
+////                        break;
+////                    case "sales":
+////                        avatarResource = R.drawable.ic_agent_sales;
+////                        break;
+////                    case "multilingual":
+////                        avatarResource = R.drawable.ic_agent_multilingual;
+////                        break;
+////                    default:
+////                        // Try to match language-specific tags
+////                        if (primaryTag.contains("english")) {
+////                            avatarResource = R.drawable.ic_agent_english;
+////                        } else if (primaryTag.contains("arabic") || primaryTag.contains("arab")) {
+////                            avatarResource = R.drawable.ic_agent_arabic;
+////                        } else if (primaryTag.contains("spanish")) {
+////                            avatarResource = R.drawable.ic_agent_spanish;
+////                        } else {
+////                            avatarResource = R.drawable.ic_agent_default;
+////                        }
+////                        break;
+////                }
 //            }
 
             avatarImageView.setImageResource(avatarResource);
-        }
-
-        private String getLanguageDisplay(String languageCode) {
-            switch (languageCode.toLowerCase()) {
-                case "en":
-                    return "English";
-                case "ar":
-                    return "العربية";
-                case "es":
-                    return "Español";
-                case "ja":
-                    return "日本語";
-                case "fr":
-                    return "Français";
-                case "de":
-                    return "Deutsch";
-                case "zh":
-                    return "中文";
-                case "ko":
-                    return "한국어";
-                case "it":
-                    return "Italiano";
-                case "pt":
-                    return "Português";
-                case "ru":
-                    return "Русский";
-                case "hi":
-                    return "हिन्दी";
-                default:
-                    return languageCode.toUpperCase();
-            }
         }
 
         private void updateCardAppearance(boolean isSelected) {
@@ -213,5 +230,28 @@ public class AgentAdapter extends RecyclerView.Adapter<AgentAdapter.AgentViewHol
                 cardView.setCardElevation(4f);
             }
         }
+    }
+
+    // Helper methods for filtering agents
+    public void filterByTag(String tag) {
+        List<Agent> filteredAgents = agents.stream()
+                .filter(agent -> agent.hasTag(tag))
+                .collect(java.util.stream.Collectors.toList());
+        updateAgents(filteredAgents);
+    }
+
+    public void filterByCreator(boolean userCreatedOnly) {
+        if (userCreatedOnly) {
+            List<Agent> userAgents = agents.stream()
+                    .filter(Agent::isOwnedByUser)
+                    .collect(java.util.stream.Collectors.toList());
+            updateAgents(userAgents);
+        } else {
+            notifyDataSetChanged(); // Show all agents
+        }
+    }
+
+    public void clearFilters(List<Agent> originalAgents) {
+        updateAgents(originalAgents);
     }
 }

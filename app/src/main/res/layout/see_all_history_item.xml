@@ -14,9 +14,7 @@
             type="com.teletalker.app.features.home.fragments.home.presentation.HomeViewModel" />
     </data>
 
-    <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+    <com.google.android.material.card.MaterialCardView
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     app:cardCornerRadius="12dp"
@@ -69,6 +67,7 @@
             android:layout_height="40dp"
             app:cardBackgroundColor="@color/gunmetalGray"
             app:cardCornerRadius="12dp"
+            android:clickable="true"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -80,8 +79,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:padding="10dp"
-                app:onPlaybackClick="@{call}"
-                app:playbackState="@{call}"
                 tools:src="@drawable/ic_big_play" />
 
         </com.google.android.material.card.MaterialCardView>
@@ -96,6 +93,7 @@
             app:layout_constraintBottom_toBottomOf="@+id/materialCardView6"
             app:layout_constraintEnd_toStartOf="@+id/materialCardView6"
             app:layout_constraintTop_toTopOf="@+id/materialCardView6"
+            android:visibility="gone"
             app:strokeWidth="0dp">
 
 
@@ -103,6 +101,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:padding="10dp"
+
                 android:src="@drawable/ic_sound" />
 
 
@@ -116,8 +115,8 @@
             tools:text="1.30"
             android:textColor="@color/lightTurquoise"
             android:textSize="12sp"
-            app:layout_constraintBottom_toBottomOf="@+id/materialCardView7"
-            app:layout_constraintEnd_toStartOf="@+id/materialCardView7"
+            app:layout_constraintBottom_toBottomOf="@+id/materialCardView6"
+            app:layout_constraintEnd_toStartOf="@+id/materialCardView6"
             app:layout_constraintTop_toTopOf="parent" />
 
 

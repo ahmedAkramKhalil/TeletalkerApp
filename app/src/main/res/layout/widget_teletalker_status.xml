@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/status_container"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="4dp"
+    android:background="@drawable/status_background">
+
+    <!-- Internet Status -->
+    <LinearLayout
+        android:id="@+id/internet_status_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="12dp"
+        android:background="@drawable/status_item_background"
+        android:layout_marginBottom="8dp">
+
+        <ImageView
+            android:id="@+id/internet_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_wifi"
+            android:contentDescription="Internet status" />
+
+        <TextView
+            android:id="@+id/internet_status_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:text="Checking connection..."
+            android:textSize="14sp"
+            android:textColor="@color/white" />
+
+        <View
+            android:id="@+id/internet_status_dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:background="@drawable/status_dot"
+            android:layout_marginEnd="4dp" />
+
+    </LinearLayout>
+
+    <!-- Call Status (Hidden by default, shown during calls) -->
+    <LinearLayout
+        android:id="@+id/call_status_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="12dp"
+        android:background="@drawable/status_item_background_highlight"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/call_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_phone"
+            android:contentDescription="Call status" />
+
+        <TextView
+            android:id="@+id/call_status_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:text="Call Status"
+            android:textSize="14sp"
+            android:textColor="@color/white" />
+
+        <TextView
+            android:id="@+id/call_duration"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:gravity="end"
+            android:layout_marginEnd="4dp"
+            android:textSize="14sp"
+            android:textColor="@color/white" />
+
+
+        <View
+            android:id="@+id/call_status_dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:background="@drawable/status_dot"
+            android:layout_marginEnd="4dp" />
+
+    </LinearLayout>
+
+    <!-- AI Status (Hidden by default, shown during calls with AI) -->
+    <LinearLayout
+        android:id="@+id/ai_status_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="12dp"
+        android:background="@drawable/status_item_background_ai"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/ai_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_bot"
+            android:contentDescription="AI status" />
+
+        <TextView
+            android:id="@+id/ai_status_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:text="AI Status"
+            android:textSize="14sp"
+            android:textColor="@color/white" />
+        <TextView
+            android:id="@+id/ai_details"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:textSize="10sp"
+            android:textColor="@color/white" />
+
+        <View
+            android:id="@+id/ai_status_dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:background="@drawable/status_dot"
+            android:layout_marginEnd="4dp" />
+
+    </LinearLayout>
+
+    <!-- Progress Bar for AI Activity -->
+    <ProgressBar
+        android:id="@+id/status_progress_bar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:indeterminate="true"
+        android:progressTint="@color/colorAccent"
+        android:visibility="gone"
+        android:layout_marginTop="8dp" />
+
+</LinearLayout>

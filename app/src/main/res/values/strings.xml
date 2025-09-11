@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Teletalker</string>
+    <string name="app_name">TeleTalker</string>
     <string name="have_account">Already Have an Account ?</string>
     <string name="login_now">Login Now</string>
     <string name="send">Send\n</string>
@@ -15,9 +15,7 @@
     <string name="invalid_username">Invalid Email</string>
     <string name="invalid_password">Invalid Password</string>
     <string name="login">Login</string>
-    <string name="on_boarding_text_content">اسمع، عدّل الدوزان، حدد البداية والنهاية للمقطع الذي تريده وتعلم العزف بشكل سماعي معنا!</string>
     <string name="on_boarding_text">Welcome to</string>
-    <string name="app_name_ar">سماعي</string>
     <string name="skip">Skip</string>
     <string name="email">Email</string>
     <string name="password">Password</string>
@@ -33,271 +31,11 @@
     <string name="title_activity_forget_password">ForgetPasswordActivity</string>
     <!-- Strings used for fragments for navigation -->
 
-    <string name="title_activity_home">HomeActivity</string>
     <string name="title_home">Home</string>
     <string name="title_profile">Profile</string>
     <string name="title_youtube">"Youtube "</string>
     <string name="title_tuning">Tuner</string>
-    <string name="cancel">Cancel</string>
-    <string name="importing_audio_file_title">استيراد ملف صوتي</string>
-    <string name="importing_audio_file_content">"سيتم حفظ هذا الملف كملف صوتي في التطبيق, بإمكانك تسميه الملف الصوتي "</string>
-    <string name="prompt_renaming">مثال: حب أيه</string>
-    <string name="save">حفظ</string>
-    <string name="loading_audio">جاري معالجة الملف الصوتي ..</string>
-    <string name="loading_video">جاري معالجة الملف ..</string>
-    <string name="enter_correct_name">الرجاء ادخال اسم صحيح للملف</string>
-    <string name="please_pick_a_valid_media">الرجاء اختباد ملف صالح</string>
-    <string name="learn_with_samaei">تعلم العزف بسهولة مع تطبيق سماعي</string>
-    <string name="samaei">" سماعي"</string>
-    <string name="learn_with_samaei_content">نساعدك على التدريب وعزف الآلات الموسيقية بشكل سماعي </string>
-    <string name="hello">"أهلا بك "</string>
-    <string name="start_now">ابدأ الآن</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="sound_too_long">مدة المقطع قصيرة جداً, هذه الميزة تعمل مع المقاطع الطويلة فقط</string>
-    <string name="start_time_too_long">نقطة البداية قصيرة جداً</string>
-    <string name="end_time_too_long">نقطة النهاية قصيرة جداً</string>
-    <string name="no_way_to_select_start_higher_than_end">لا يمكن تحديد نقطة بداية أعلى من نقطة النهاية</string>
-    <string name="speed">السرعة</string>
-    <string name="pitch_tv">الطبقة</string>
-    <string name="prop_rights_radio">إنتهاك حقوق الملكية</string>
-    <string name="content_radio">محتوى غير لائق</string>
-    <string name="non_music_radio">محتوى غير موسيقي</string>
-    <string name="others_radio">أسباب أخرى</string>
-    <string name="report_dialog_title">الأبلاغ عن المحتوى</string>
-    <string name="report_hint">الرجاء إدخال سبب البلاغ</string>
-    <string name="report">إبلاغ</string>
-    <string name="title">العنوان</string>
-    <string name="add_title_here">..ادخل عنوان المقطع هنا</string>
-    <string name="artist_name">اسم الفنان</string>
-    <string name="write_here">أكتب هنا</string>
-    <string name="maqam">المقام</string>
-    <string name="maqam_here">"..أكتب اسم المقام هنا "</string>
-    <string name="drum">الإيقاع</string>
-    <string name="drum_here">"..أكتب اسم الإيقاع هنا "</string>
-    <string name="contiue">إستمرار</string>
-    <string name="do_you_want_to_delete">هل تريد بالفعل حذف للمقطع الصوتي؟</string>
-    <string name="delete_message">لا يمكنك استعادة المقطع بعد حذفه، هل تريد بالفعل حذفه؟</string>
-    <string name="delete">حذف</string>
-    <string name="rename">إعادة تسمية الملف الصوتي</string>
-    <string name="rename_text">أعد تسمية ملف الصوت</string>
-    <string name="renaming">إعادة التسمية</string>
-    <string name="please_enter_valid_name">الرجاء ادخال اسم صحيح</string>
-    <string name="failed_to_add">"الملف موجود مسبقا "</string>
-    <string name="file_added_successfully">تم اضافة الملف بنجاح</string>
-    <string name="username_or_email">خطآ في اسم المستخدم او كلمة المرور</string>
-    <string name="error_user_exists">المستخدم موجود مسبقا، يمكنك اعادة ضبط كلمة المرور</string>
-    <string name="error_email_exists">البريد الالكتروني موجود مسبقا</string>
-    <string name="error_invalid_email">خطآ في البريد الالكتروني</string>
-    <string name="error_weak_password">"خطآ في كلمة المرور، يرجى ادخال كلمة مرور قوية  "</string>
-    <string name="weak_password">" يرجى ادخال كلمة مرور قوية "</string>
-    <string name="error_register">يرجى التآكد من صحة البيانات</string>
-    <string name="email_sent">تم ارسال  بريد استرداد كلمة المرور  بنجاح يرجى تفقد البريد الالكتروني الخاص بك</string>
-    <string name="user_profile">الملف الشخصي</string>
-    <string name="my_profile">حسابي</string>
-    <string name="setting">اعدادات الملفات الصوتية</string>
-    <string name="membership">العضوية</string>
-    <string name="app_version">اصدار التطبيق</string>
-    <string name="more">المزيد</string>
-    <string name="privacy">Privacy Policy</string>
-    <string name="terms">Terms and Conditions</string>
-    <string name="refund">إستعادة المشتريات</string>
-    <string name="support">الدعم الفني</string>
-    <string name="follow_on">تابعنا على</string>
-    <string name="all_rights">"2020-2023  Samaei , Octavey © جميع الحقوق محفوظة "</string>
-    <string name="logout">تسجيل الخروج</string>
-    <string name="edite_user_profile">تعديل اسم المستخدم</string>
-    <string name="edite_password">تعديل كلمة المرور</string>
-    <string name="delete_account">حذف الحساب</string>
-    <string name="edite_user_account">تعديل الملف الشخصي</string>
-    <string name="password_reset">Password Reset</string>
-    <string name="current_password">Current Password</string>
-    <string name="current_password_hint">Enter Current Password</string>
-    <string name="prompt_password_confirm">Enter Password Confirmation</string>
-    <string name="password_confirm">Confirm Password</string>
-    <string name="reset_ps">Reset</string>
-    <string name="are_you_sure_to_delete_account">هل أنت متأكد من أنك تريد حذف حسابك نهائياَ ؟</string>
-    <string name="are_you_sure_to_delete_account_detailes1">حذف الحساب لن يلغي الفتره المتبقية من اشتراكك المدفوع إن وجد.</string>
-    <string name="are_you_sure_to_delete_account_detailes2">سيتم حذف جميع البيانات الخاصة بك من سيرفراتنا بما فيها الرصيد المتبقي من النقاط ولن نتمكن من إستعادتها أبداً.</string>
-    <string name="are_you_sure_to_delete_account_detailes3">إذا كانت لديك مشاكل تقنية فلا تتردد بالتواصل معنا وسنقوم جاهدين بمساعدتك.</string>
-    <string name="agree_on_terms">لقد قرأت الشروط والأحكام</string>
-    <string name="reason_of_deletion">أريد حذف حسابي بسبب :</string>
-    <string name="no_longer_use_the_app">لم اعد استخدم التطبيق</string>
-    <string name="need_new_account">اريد انشاء حساب جديد</string>
-    <string name="other_reason">أسباب أخرى</string>
-    <string name="subsription_issues">مشاكل بالاشتراك</string>
-    <string name="delete_account_detailes">نريد أن تساعدنا في تحسين تجربته استخدامك، لماذا  تريد حذف حسابك في سماعي؟</string>
-    <string name="delete_reson_hint">أخبرنا أكثر عن السبب</string>
-    <string name="setting_page">ضبط الأعدادات</string>
-    <string name="delete_all_files">حذف جميع الملفات</string>
-    <string name="delete_all_files_detailes">حذف الملفات المؤقته والمحفوظة</string>
-    <string name="please_read_terms">يجب الموافقة على الشروط و الاحكام لتتمكن من حذف الحساب</string>
-    <string name="do_you_want_to_delete_cash_data">هل تريد حذف الملفات المؤقته؟</string>
-    <string name="do_you_want_to_delete_all_data">هل تريد حذف الملفات المؤقته والمحفوظة؟</string>
-    <string name="delete_message_all_data">حذف الملفات المؤقته سيزيد من سرعة التشغيل ولكن سيزيد من استهلاك مساحة الهاتف</string>
-    <string name="error_reset_password">حدث خطآ ما ، حاول مرة اخرى</string>
-    <string name="success_reset_password">"تمت اعادة ضبط كلمة المرور بنجاح "</string>
-    <string name="password_must_be_same">كلمة المرور غير متطابقة</string>
-    <string name="must_be_defferant">يجب ان تكون كلمة المرور مختلفة عن السابقة</string>
-    <string name="addphoto">اضافة صورة الحساب</string>
-    <string name="choosefromgallery">اختيار من معرض الصور</string>
-    <string name="takeaphoto">التقاط من الكاميرا</string>
-    <string name="camera_access_required">السماح للوصول للكاميرا مطلوب لاجراء هذه العملية</string>
-    <string name="storage_premission_required">"اذن الوصول للذاكرة الداخلية مطلوب "</string>
-    <string name="max_images_reached">" لا يمكن رفع اكثر من صورة واحدة"</string>
-    <string name="email_updated">"تم تعديل البريد الالكتروني بنجاح "</string>
-    <string name="profile_image_updated">تم تعديل صورة الحساب بنجاح</string>
-    <string name="profile_name_updated">تم تعديل اسم المستخدم  بنجاح</string>
-    <string name="do_you_want_to_logout">هل تريد بالتاكيد تسجيل الخروج من الحساب ؟</string>
-    <string name="have_to_accept_terms">"يجب الموافقة على الشروط والاحكام "</string>
-    <string name="snap_not_exist">تطبيق سناب شات غير محمل على جوالك</string>
-    <string name="telegram_not_exist">تطبيق تليجرام غير محمل على جوالك</string>
-    <string name="wp_not_exist">تطبيق الوالتساب غير محمل على جوالك</string>
-    <string name="premuim_version">النسخة الإحترافية</string>
-    <string name="text_prmuim">أشترك اللآن، وتمتع بوصول غير محدود لكل مزايا سماعي:</string>
-    <string name="text_prmuim_1">إمكانية البحث في مكتبة سماعي</string>
-    <string name="text_prmuim_2">إمكانية التحكم بطبقة الملف الصوتي</string>
-    <string name="text_prmuim_3">إمكانية إضافة عدد لا محدود من الملفات الصوتية</string>
-    <string name="text_prmuim_1_4">إمكانية البحث في اليوتيوب عن مقاطع الفيديو</string>
-    <string name="other_features">مزيد من المزايا</string>
-    <string name="select_now">أختر خطة الأشتراك الأحترافية :</string>
-    <string name="supscripe">إشترك الآن</string>
-    <string name="you_can_cancel">يمكن الألغاء في أي وقت</string>
-    <string name="usage_agreement">إتفاقية الإستخدام</string>
-    <string name="text_prmuim_4">إمكانية إضافة ملفات صوتية تصل مدتها لأكثر من 10 دقائق</string>
-    <string name="somthing_went_wrong">هناك خطآ ما ، حاول مرة اخرى</string>
-    <string name="searchbar_hint">البحث</string>
-    <string name="end_point">" نقطه النهاية"</string>
-    <string name="start_point">" نقطه البداية"</string>
-    <string name="str_a">(A)</string>
-    <string name="str_b">(B)</string>
-    <string name="apply">تطبيق</string>
-    <string name="please_select_valid_endRange">الرجاء تحديد نقطة نهاية صالحة</string>
-    <string name="please_select_valid_startRange">الرجاء تحديد نقطة بداية صالحة</string>
-
-    <string name="snap_time_picker_cancel">@android:string/cancel</string>
-    <string name="snap_time_picker_confirm">@android:string/ok</string>
-    <string name="snap_time_picker_separator">:</string>
-    <string name="actor_name">اسم المغني</string>
-    <string name="copy_rights">تطبيق Samaei v4.0 أحد منتجات شركة Octavey
-        جميع الحقوق محفوظة© 2023</string>
-    <string name="create_account">انشئ حساب</string>
-    <string name="l_or">أو</string>
-    <string name="google_login">SIGN IN WITH GOOGLE</string>
-    <string name="hello_again">New Account </string>
-    <string name="forget_password_activity_des">لا تقلق! قم بإدخال البريد الألكتروني المرتبط بحسابك وسوف نرسل لك رابطاً لإعادة تعيين كلمة المرور الخاصه بك.</string>
-    <string name="featured">المقترحة لك</string>
-    <string name="title_import">import</string>
-    <string name="title_library">Samaei library</string>
-    <string name="samaei_library">مكتبة سماعي</string>
-    <string name="rearrange">الترتيب حسب</string>
-    <string name="most_played">الأكثر تشغيل</string>
-    <string name="bit_to_small">الحجم: من الأصغر إلى الأكبر</string>
-    <string name="small_to_big">الحجم: من الأكبر إلى الأصغر</string>
-    <string name="older_to_new">التاريخ: من الأحدث إلى الأقدم</string>
-    <string name="new_to_older">التاريخ: الأقدم إلى الأحدث</string>
-    <string name="my_files">ملفاتي</string>
-    <string name="samaei_file_notfound_tv1">"عذراً منك، لا يوجد نتائج بحث "</string>
-    <string name="samaei_file_notfound_tv2">ساهم معنا في اثراء مكتبة سماعي من خلال رفع مقاطعك الى مكتبة سماعي</string>
-    <string name="add_local_files">ملفات الجهاز</string>
-    <string name="add_local_files_desc">استيراد ملف الصوتي من ملفات جهازك</string>
-    <string name="add_camera_tv">الاستديو</string>
-    <string name="add_camera_tv_desc">استخراج الصوت من مقطع الفيديو</string>
-    <string name="add_url_tv">URL رابط</string>
-    <string name="add_url_tv_desc">تشغيل رابط ملف صوتي مباشر</string>
-    <string name="add_demo_single_tv">ملف صوتي تجريبي</string>
-    <string name="add_demo_single_tv_desc">ترغب بتجربة سريعة؟ قمنا بتوفير ملف صوتي تجريبي من أجلك</string>
-    <string name="add_demo_split_tv">إضافة ملف مفصل تجريبي</string>
-    <string name="add_demo_split_tv_desc">"نوفر لك ملفات صوتية مفصّلة مٌختارة لك بعناية لتتدرب عليها  "</string>
-    <string name="import_audio">استيراد مقطع صوتي</string>
-    <string name="supported_files_t">Supported file</string>
-    <string name="supported_files">Mp3, M4A, WAV</string>
-    <string name="import_url_hint">الصق رابط المقطع الذي تريده هنا</string>
-    <string name="dozan_setting">إعدادت الدوزان</string>
-    <string name="a4_hrz">A4 (Hz)</string>
-    <string name="cent_10">±10 cents</string>
-    <string name="cent_15">±15 cents</string>
-    <string name="cent_5">±5 cents</string>
-    <string name="intune_width">In Tune Width</string>
-    <string name="names_abc">C D E</string>
-    <string name="names_doReMe">Do Re Me</string>
-    <string name="names_ar">دو ري مي</string>
-    <string name="names">Names</string>
-    <string name="semitone_sharb">♯</string>
-    <string name="semitone_b">♭</string>
-    <string name="semitunes">النغمة الفرعية</string>
-    <string name="machine">اختر الآلة</string>
-    <string name="select_tune">اختر الوزنية</string>
-    <string name="we_sugguest">اخترنا لك من مكتبة سماعي</string>
-    <string name="file_not_found">"عذراً، لا يوجد نتائج بحث "</string>
-    <string name="clear_filtering">ازالة الفلتر</string>
-    <string name="somthing_went_wrong_url">يرجى التاكد من صحة الرابط</string>
-    <string name="loading">جاري التحميل</string>
-    <string name="click_here_to_write_your_name">"اضغط هنا لتسجيل الدخول "</string>
-    <string name="promocode">كود الخصم</string>
-    <string name="whatnew">ما الجديد</string>
-    <string name="rate_app">تقيم التطبيق</string>
-    <string name="faq">الاسئلة الشائعة</string>
-    <string name="upgrade_now">الترقية الآن</string>
-    <string name="get_all_features">تمتع بالوصول الكامل لكل مزايا وعروض سماعي</string>
-    <string name="whatnew_in_samaei">ما جديد سماعي؟</string>
-    <string name="whatnew_in_samaei_d">"تمتع بجملة من التحديثات والمميزات الجديدة في هذا الأصدار "</string>
-    <string name="samaei_lib_tv">مكتبة سماعي</string>
-    <string name="samaei_lib_tv_de">مكتبة صوتية أونلاين تمكنك من البحث عن مواد جديدة للتدريب</string>
-    <string name="youtube_new">دعم اليوتيوب</string>
-    <string name="youtube_new_d">دعم تشغيل اليوتيوب والتدرب عليها</string>
-    <string name="video_new">دعم الفيديو</string>
-    <string name="video_new_d">يمكنك الآن استخراج الصوت من مقاطع الفيديو</string>
-    <string name="subscription_new">نظام اشتراكات</string>
-    <string name="subscription_new_d">تم توفير باقات اشتراك بأسعار زهيدة دعما للفن</string>
-    <string name="that_not_all">ليس هذا كل شئ !</string>
-    <string name="that_not_all_d">تغير جذري للكثير من أجزاء التطبيق وتطوير كبير لتحظى بتجربه تعلم سلسة ومريحة</string>
-    <string name="no">لا</string>
-    <string name="yes">نعم</string>
-    <string name="subscript_now">اشترك الان</string>
-    <string name="can_not_import_files">"عذرا، عضويتك الحالية لا تدعم استيراد اكثر من ثلاث ملفات صوتية "</string>
-    <string name="can_not_change_pitch">عذرا، عضويتك الحالية لاتدعم التحكم بالطبقة</string>
-    <string name="can_not_search_in_youtube">عذرا، عضويتك الحالية لا تدعم البحث في اليوتيوب</string>
-    <string name="can_not_search_in_samaei">عذرا، عضويتك الحالية لا تدعم البحث في مكتية سماعي</string>
-    <string name="congratulation">تهانينا</string>
-    <string name="congratulation_you_joined">لقد انضممت إلى خطه الاشتراك بنجاح.</string>
-    <string name="congratulation_you_joined2"> يمكنك الآن الاستمتاع بجميع مميزات سماعي  وبدء رحلتك الموسيقية من الآن</string>
-    <string name="supscripe_now">قم بترقية حسابك واستمتع بمزايا رائعة لتطوير عزفك،</string>
-    <string name="supscripe_now_click">" الترقية الآن"</string>
-    <string name="will_be_supported_soon">سيتم دعم الدوزان في النسخ القادمة</string>
-    <string name="on_boarding_text_2">مرحبا بك في سماعي</string>
-    <string name="start_sub">تاريخ بداية الاشتراك :</string>
-    <string name="end_date">تاريخ نهاية الاشتراك :</string>
-    <string name="type_sub">نوع العضوية :</string>
-    <string name="video_has_no_sound">"لا يمكن استيراد هذا الملف "</string>
-    <string name="app_permission">الصلاحيات</string>
-    <string name="save_all_files">حفظ الملفات المؤقتة</string>
-    <string name="save_all_files_detailes">"تفعيل هذا الخيار سيزيد من سرعة التشغيل ولكن سيزيد من استهلاك مساحة الهاتف "</string>
-    <string name="delete_cash_files">حذف الملفات المؤقتة</string>
-    <string name="delete_cash_files_detailes">حذف الملفات المؤقتة</string>
-    <string name="searchbar_hint_samaei">البحث عن طريق اسم المقطع، المقام أو الإيقاع</string>
-    <string name="no_notifications">لا توجد أي إشعارات بعد</string>
-    <string name="notifications">الإشعارات</string>
-    <string name="and">&amp;</string>
-    <string name="welcome_to">أهلا بك</string>
-    <string name="welcome_support">"هل تواجه مشكلة ما؟ يمكنك التواصل مع الدعم الفني للحصول على المساعدة, كما يمكنك الإبلاغ عن أي مشكلة تقنية تجدها. "</string>
-    <string name="card_support_tv">الدعم الفني</string>
-    <string name="card_support_tv_des">"لا تتردد في الاستفسار عن أي شيء، نحن هنا للمساعدة. "</string>
-    <string name="card_report_tv">"الإبلاغ عن مشكلة "</string>
-    <string name="card_report_tv_des">"أخبرنا عن أي خلل قد تواجهه أثناء الاستخدام "</string>
-    <string name="support_dialog_title">"إذا كان لديك أي استفسار، يمكنك التواصل مع فريق الدعم الفني لدينا, ونحن هنا لتحسين تجربتك معنا. "</string>
-    <string name="support_dialog_des">يرجى كتابة استفسارك بوضوح، حتى نتمكن من الرد عليك بأسرع وقت ممكن وتقديم المساعدة اللازمة.</string>
-    <string name="report_tv">هل واجهتك مشكلة تقنية؟</string>
-    <string name="report_tv_des">"يرجى كتابة تفاصيل المشكلة التي واجهتها اثناء استخدامك التطبيق لمساعدتنا في اصلاحها بأسرع وقت ممكن "</string>
-    <string name="report_hint_desc">اكتب تفاصيل المشكلة</string>
-    <string name="upload_img">ارفع صورة أو تسجيل لقطة شاشة هنا</string>
-    <string name="card_suggestion_tv">الأفكار والاقتراحات</string>
-    <string name="suggestion_tv">لديك أفكار أو اقتراحات لتحسين سماعي؟</string>
-    <string name="suggestion_tv_des">صوتك مسموع ! شاركنا أفكارك واقتراحاتك حول كيفية تحسين تطبيقنا. نسعا دائماً لجعل تجربة الموسيقى أذكى</string>
-    <string name="suggestion_hint_desc">اكتب تفاصيل المميزات الجديدة</string>
-    <string name="card_suggestion_tv_des">شاركنا أفكارك وساهم معنا بتطوير سماعي</string>
-    <string name="please_write_a_text">"الرجاء كتابة التفاصيل  في مربع النص المخصص  "</string>
-    <string name="thanks">تم ارسال البيانات بنجاح، شكرا لك</string>
-    <string name="please_check_internet_connection">"يرجى التحقق من الاتصال بالانترنت "</string>
+    <string name="cancel">TeleTalker</string>
     <string name="welcom_back">Welcome Back! 👋\n</string>
     <string name="welcom_des">" Great to see you again, You've been missed!"</string>
     <string name="join_now">Join now and unlock 1000+ voice effects instantly</string>
@@ -348,4 +86,11 @@
     <string name="default_agent_type">Default Agent Type</string>
     <string name="english">English</string>
     <string name="select_voice">Select Voice</string>
+    <string name="select_agent">Select Agent</string>
+    <string name="please_select_agent">Please Select Agent</string>
+    <string name="copy_rights">Copy Rights Saved\n</string>
+    <string name="create_account">Creat Account</string>
+    <string name="start_now">Start Now</string>
+    <string name="on_boarding_text_content">Welcome!</string>
+    <string name="password_confirm">Password Confirmation</string>
 </resources>

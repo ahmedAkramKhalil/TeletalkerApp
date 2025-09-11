@@ -1,6 +1,7 @@
 package com.teletalker.app.features.agent_type;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -49,7 +50,7 @@ public class AgentTypeActivity extends AppCompatActivity implements AgentAdapter
         initComponents();
         setupRecyclerView();
         setupClickListeners();
-        fetchAgentsFromApi();
+        loadAgents();
     }
 
     private void initComponents() {
@@ -93,11 +94,12 @@ public class AgentTypeActivity extends AppCompatActivity implements AgentAdapter
         applyButton.setAlpha(1.0f);
     }
 
-    private void fetchAgentsFromApi() {
+
+    private void loadAgents() {
         String apiKey = prefsManager.getApiKey();
         if (apiKey == null) {
             Toast.makeText(this, "API Key not found. Please login again.", Toast.LENGTH_LONG).show();
-            loadDefaultAgents();
+//            loadDefaultAgents();
             return;
         }
 
@@ -107,16 +109,22 @@ public class AgentTypeActivity extends AppCompatActivity implements AgentAdapter
         applyButton.setEnabled(false);
         applyButton.setAlpha(0.5f);
 
-        apiService.getAgents(apiKey, new ApiService.ApiCallback<List<Agent>>() {
+
+        apiService.getAgents(apiKey, new ApiService.ApiCallback<Agent.AgentResponse>() {
             @Override
-            public void onSuccess(List<Agent> result) {
+            public void onSuccess(Agent.AgentResponse agentResponse) {
                 runOnUiThread(() -> {
+//                    allAgents = agentResponse.getAgents();
+//                    agentAdapter.updateAgents(allAgents);
+
+
                     progressBar.setVisibility(View.GONE);
                     agentsRecyclerView.setVisibility(View.VISIBLE);
 
                     agents.clear();
-                    agents.addAll(result);
+                    agents.addAll(agentResponse.getAgents());
                     agentAdapter.notifyDataSetChanged();
+
 
                     // Restore saved selection
                     restoreSavedSelection();
@@ -124,36 +132,42 @@ public class AgentTypeActivity extends AppCompatActivity implements AgentAdapter
                     if (agents.isEmpty()) {
                         Toast.makeText(AgentTypeActivity.this, "No agents available", Toast.LENGTH_SHORT).show();
                     }
+
+
+
+                    // Handle pagination if needed
+                    if (agentResponse.hasMore()) {
+                        // Load more agents using next_cursor
+                        String nextCursor = agentResponse.getNextCursor();
+                        // loadMoreAgents(nextCursor);
+                    }
                 });
             }
 
             @Override
             public void onError(String error) {
                 runOnUiThread(() -> {
-                    progressBar.setVisibility(View.GONE);
-                    agentsRecyclerView.setVisibility(View.VISIBLE);
-
-                    Toast.makeText(AgentTypeActivity.this,
-                            "Failed to load agents: " + error,
+                    // Handle error
+                    Toast.makeText(AgentTypeActivity.this, "Failed to load agents: " + error,
                             Toast.LENGTH_LONG).show();
-                    loadDefaultAgents();
                 });
             }
         });
     }
 
-    private void loadDefaultAgents() {
-        agents.clear();
-        agents.add(new Agent("default_english", "English Agent", "english", "en", "Default English speaking agent"));
-        agents.add(new Agent("default_arab", "Arabic Agent", "arab", "ar", "Default Arabic speaking agent"));
-        agents.add(new Agent("default_spanish", "Spanish Agent", "spanish", "es", "Default Spanish speaking agent"));
-        agents.add(new Agent("default_japanese", "Japanese Agent", "japanese", "ja", "Default Japanese speaking agent"));
-        agents.add(new Agent("default_french", "French Agent", "french", "fr", "Default French speaking agent"));
-        agents.add(new Agent("default_german", "German Agent", "german", "de", "Default German speaking agent"));
 
-        agentAdapter.notifyDataSetChanged();
-        restoreSavedSelection();
-    }
+//    private void loadDefaultAgents() {
+//        agents.clear();
+//        agents.add(new Agent("default_english", "English Agent", "english", "en", "Default English speaking agent"));
+//        agents.add(new Agent("default_arab", "Arabic Agent", "arab", "ar", "Default Arabic speaking agent"));
+//        agents.add(new Agent("default_spanish", "Spanish Agent", "spanish", "es", "Default Spanish speaking agent"));
+//        agents.add(new Agent("default_japanese", "Japanese Agent", "japanese", "ja", "Default Japanese speaking agent"));
+//        agents.add(new Agent("default_french", "French Agent", "french", "fr", "Default French speaking agent"));
+//        agents.add(new Agent("default_german", "German Agent", "german", "de", "Default German speaking agent"));
+//
+//        agentAdapter.notifyDataSetChanged();
+//        restoreSavedSelection();
+//    }
 
     private void restoreSavedSelection() {
         String savedAgentId = prefsManager.getSelectedAgentId();
@@ -184,25 +198,27 @@ public class AgentTypeActivity extends AppCompatActivity implements AgentAdapter
                 selectedAgent.getLanguage()
         );
 
+        Log.d("SAVEAGENT", "AGENTID=" + selectedAgent.getId());
+
         // Save additional details if needed
         prefsManager.saveString("selected_agent_description", selectedAgent.getDescription());
 
         // Optional: Send selection to server
-        String apiKey = prefsManager.getApiKey();
-        if (apiKey != null) {
-            apiService.selectAgent(apiKey, selectedAgent.getId(), new ApiService.ApiCallback<Boolean>() {
-                @Override
-                public void onSuccess(Boolean result) {
-                    // Selection saved to server successfully
-                }
-
-                @Override
-                public void onError(String error) {
-                    // Server update failed, but local save succeeded
-                    // Could show a subtle warning or retry later
-                }
-            });
-        }
+//        String apiKey = prefsManager.getApiKey();
+//        if (apiKey != null) {
+//            apiService.selectAgent(apiKey, selectedAgent.getId(), new ApiService.ApiCallback<Boolean>() {
+//                @Override
+//                public void onSuccess(Boolean result) {
+//                    // Selection saved to server successfully
+//                }
+//
+//                @Override
+//                public void onError(String error) {
+//                    // Server update failed, but local save succeeded
+//                    // Could show a subtle warning or retry later
+//                }
+//            });
+//        }
 
         Toast.makeText(this, "Agent selected: " + selectedAgent.getName(),
                 Toast.LENGTH_SHORT).show();
@@ -213,55 +229,4 @@ public class AgentTypeActivity extends AppCompatActivity implements AgentAdapter
     }
 
     // Agent model class with all details
-    public static class Agent {
-        private String id;
-        private String name;
-        private String type;
-        private String language;
-        private String description;
-        private String avatarUrl;
-        private boolean isActive;
-        private String capabilities;
-        private String version;
-
-        public Agent(String id, String name, String type, String language, String description) {
-            this.id = id;
-            this.name = name;
-            this.type = type;
-            this.language = language;
-            this.description = description;
-            this.isActive = true;
-        }
-
-        // Full constructor for API data
-        public Agent(String id, String name, String type, String language, String description,
-                     String avatarUrl, boolean isActive, String capabilities, String version) {
-            this.id = id;
-            this.name = name;
-            this.type = type;
-            this.language = language;
-            this.description = description;
-            this.avatarUrl = avatarUrl;
-            this.isActive = isActive;
-            this.capabilities = capabilities;
-            this.version = version;
-        }
-
-        // Getters
-        public String getId() { return id; }
-        public String getName() { return name; }
-        public String getType() { return type; }
-        public String getLanguage() { return language; }
-        public String getDescription() { return description; }
-        public String getAvatarUrl() { return avatarUrl; }
-        public boolean isActive() { return isActive; }
-        public String getCapabilities() { return capabilities; }
-        public String getVersion() { return version; }
-
-        // Setters
-        public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
-        public void setActive(boolean active) { this.isActive = active; }
-        public void setCapabilities(String capabilities) { this.capabilities = capabilities; }
-        public void setVersion(String version) { this.version = version; }
-    }
 }

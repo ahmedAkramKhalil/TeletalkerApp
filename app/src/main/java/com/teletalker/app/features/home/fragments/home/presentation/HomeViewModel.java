@@ -67,13 +67,13 @@ public class HomeViewModel extends AndroidViewModel {
     private MutableLiveData<CallEntity> currentlyPlaying = new MutableLiveData<>();
 
     public void togglePlayback(Context context, CallEntity call) {
-        if (call == null || call.recordingFilePath == null) return;
+        if (call == null || call.getRecordingFilePath() == null) return;
 
         MediaPlayer player = getMediaPlayer();
         CallEntity current = currentlyPlaying.getValue();
 
         // If same call is playing, pause it
-        if (current != null && current.recordingFilePath.equals(call.recordingFilePath) && player.isPlaying()) {
+        if (current != null && current.getRecordingFilePath().equals(call.getRecordingFilePath()) && player.isPlaying()) {
             player.pause();
             currentlyPlaying.setValue(null);
             return;
@@ -87,7 +87,7 @@ public class HomeViewModel extends AndroidViewModel {
 
         // Start new playback
         try {
-            player.setDataSource(call.recordingFilePath);
+            player.setDataSource(call.getRecordingFilePath());
             player.prepare();
             player.start();
             currentlyPlaying.setValue(call);

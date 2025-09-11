@@ -20,6 +20,8 @@ import android.widget.Toast;
 import androidx.annotation.RequiresPermission;
 import androidx.core.content.ContextCompat;
 
+import com.teletalker.app.utils.PreferencesManager;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -216,12 +218,13 @@ public class AICallRecorder {
         this.context = context;
         this.executorService = Executors.newFixedThreadPool(4);
         this.mainHandler = new Handler(Looper.getMainLooper());
-
+        setElevenLabsConfig();
         // Initialize core capabilities
         executorService.execute(this::initializeCapabilities);
 
         // Initialize AI components
         initializeAIComponents();
+
 
         // Initialize Audio Injection
         initializeAudioInjection();
@@ -231,12 +234,13 @@ public class AICallRecorder {
         this.callback = callback;
     }
 
-    public void setElevenLabsConfig(String apiKey, String agentId) {
-        this.elevenLabsApiKey = apiKey;
-        this.agentId = agentId;
-        this.isAIEnabled.set(apiKey != null && agentId != null);
+    public void setElevenLabsConfig() {
+        PreferencesManager manager = PreferencesManager.getInstance(context);
+        this.elevenLabsApiKey = manager.getApiKey();
+        this.agentId = manager.getSelectedAgentId();
+        this.isAIEnabled.set(manager.isBotActive());
         Log.d(TAG, "ElevenLabs config - AI Enabled: " + isAIEnabled.get() +
-                ", API Key: " + (apiKey != null ? "***set***" : "null") +
+                ", API Key: " + (this.elevenLabsApiKey != null ? "***set***= " + elevenLabsApiKey : "null") +
                 ", Agent ID: " + agentId);
     }
 

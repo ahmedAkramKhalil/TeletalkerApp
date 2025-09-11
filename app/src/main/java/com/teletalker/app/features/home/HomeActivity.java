@@ -1,7 +1,9 @@
 package com.teletalker.app.features.home;
 
+import android.Manifest;
 import android.accessibilityservice.AccessibilityService;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -17,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
@@ -29,6 +32,7 @@ import com.teletalker.app.services.ServiceManager;
 import com.teletalker.app.services.VoIPCallService;
 import com.teletalker.app.utils.AIConfigurationHelper;
 import com.teletalker.app.utils.PermissionUtils;
+import com.teletalker.app.utils.PreferencesManager;
 import com.teletalker.app.utils.RootPermissionManager;
 import com.teletalker.app.utils.RootSetupManager;
 
@@ -45,7 +49,8 @@ public class HomeActivity extends AppCompatActivity implements
 
     // Request codes
     private static final int REQUEST_PERMISSIONS_CODE = 1001;
-
+    private static final int REQUEST_ANSWER_PHONE_CALLS = 100;
+    private PreferencesManager prefsManager;
     // UI components
     private ActivityHomeBinding binding;
     private NavController navController;
@@ -63,23 +68,38 @@ public class HomeActivity extends AppCompatActivity implements
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        prefsManager = PreferencesManager.getInstance(this);
 
         setupUI();
         initializeManagers();
         startInitializationFlow();
         //TODO: remove this
         setupAiAgent();
+        requestAutoAnswerPermission() ;
+
     }
 
+    private void requestAutoAnswerPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (this instanceof Activity) {
+                ActivityCompat.requestPermissions((Activity) this,
+                        new String[]{Manifest.permission.ANSWER_PHONE_CALLS},
+                        REQUEST_ANSWER_PHONE_CALLS);
+            }
+        }
+    }
+
+
     private void setupAiAgent() {
-        AIConfigurationHelper.configureAI(
-                this,
-                //this is Jeff Account
-                "sk_691d29f40ed72ac79857e3132d83dceb494cc2af495d5fae",
-                "agent_7901k363gp7mfyxrmsrfjzxhxn1y",
-                AICallRecorder.AIMode.SMART_ASSISTANT,
-                true // AI enabled
-        );
+
+        PreferencesManager.getInstance(this).saveApiKey("sk_691d29f40ed72ac79857e3132d83dceb494cc2af495d5fae");
+//        AIConfigurationHelper.configureAI(
+//                this,
+//                //this is Jeff Account
+//                "",
+//                prefsManager.getSelectedAgentId(),
+//                true // AI enabled
+//        );
 
 
     }
@@ -313,11 +333,11 @@ public class HomeActivity extends AppCompatActivity implements
     // ============ ACCESSIBILITY SETUP ============
 
     private void proceedToAccessibilitySetup() {
-        if (!isAccessibilityServiceEnabled(this, VoIPCallService.class)) {
-            showAccessibilityServiceDialog();
-        } else {
-            completeInitialization();
-        }
+//        if (!isAccessibilityServiceEnabled(this, VoIPCallService.class)) {
+//            showAccessibilityServiceDialog();
+//        } else {
+//            completeInitialization();
+//        }
     }
 
     private void showAccessibilityServiceDialog() {

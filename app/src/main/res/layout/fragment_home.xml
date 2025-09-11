@@ -170,18 +170,29 @@
 
 
             </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <com.teletalker.app.features.home.TeleTalkerStatusWidget
+                android:id="@+id/status_indicator"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_margin="16dp" />
+
+
             <ImageButton
                 android:id="@+id/aiActivationButton"
                 android:layout_width="180dp"
                 android:layout_height="180dp"
                 android:foregroundGravity="center"
                 android:layout_marginTop="26dp"
-                android:src="@drawable/inactive_button"
+                android:src="@drawable/active_button"
                 android:background="@android:color/transparent"
 
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/status_indicator"
                 />
 
 
@@ -210,6 +221,7 @@
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
+                        android:padding="5dp"
                         android:orientation="vertical">
 
                         <com.google.android.material.card.MaterialCardView
@@ -235,7 +247,7 @@
                         </com.google.android.material.card.MaterialCardView>
 
                         <TextView
-                            android:id="@+id/nameTv"
+                            android:id="@+id/agentName"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="12dp"
@@ -246,30 +258,32 @@
                             app:layout_constraintTop_toBottomOf="@+id/materialCardView5" />
 
                         <TextView
-                            android:id="@+id/languageTv"
+                            android:id="@+id/agentLanguage"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/support_agent"
                             android:textColor="@color/black"
                             android:textSize="12sp"
-                            app:layout_constraintStart_toStartOf="@+id/nameTv"
-                            app:layout_constraintTop_toBottomOf="@+id/nameTv" />
+                            app:layout_constraintStart_toStartOf="@+id/agentName"
+                            app:layout_constraintTop_toBottomOf="@+id/agentName" />
 
                         <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/changeAgentButton"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:layout_marginEnd="12dp"
-                            android:id="@+id/changeAgentButton"
                             app:cardBackgroundColor="@color/shadowGray"
                             app:cardCornerRadius="8dp"
+                            app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="@+id/languageTv"
-                            app:layout_constraintTop_toBottomOf="@+id/languageTv"
+                            app:layout_constraintStart_toStartOf="@+id/agentLanguage"
+                            app:layout_constraintTop_toBottomOf="@+id/agentLanguage"
                             app:strokeWidth="0dp">
 
 
                             <TextView
+                                android:id="@+id/AgentButtonText"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_gravity="center"
@@ -395,6 +409,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:orientation="horizontal"
+                android:paddingVertical="10dp"
                 app:layout_constraintEnd_toEndOf="@+id/linearLayout2"
                 app:layout_constraintStart_toStartOf="@+id/linearLayout2"
                 app:layout_constraintTop_toBottomOf="@+id/linearLayout2">
@@ -424,6 +439,19 @@
 
 
             </LinearLayout>
+
+            <ImageView
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:id="@+id/nodata_icon"
+                android:visibility="gone"
+                android:layout_marginTop="10dp"
+                android:src="@drawable/ic_nodata"
+                app:layout_constraintTop_toBottomOf="@id/seeAllHistoryTv"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:elevation="10dp"
+                />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerView"

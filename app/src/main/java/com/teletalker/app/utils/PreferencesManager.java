@@ -2,15 +2,19 @@ package com.teletalker.app.utils;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
 
-import com.teletalker.app.features.agent_type.AgentTypeActivity.Agent;
+
+import com.teletalker.app.features.agent_type.Agent;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class PreferencesManager {
 
+    public static final String PREF_AI_MODE = "PREF_AI_MODE";
     private static final String PREFS_NAME = "TeleTalkerPrefs";
+    public static final String PREF_INJECTION_ENABLED = "injection_enabled";
 
     // Keys
     public static final String API_KEY = "api_key";
@@ -25,6 +29,14 @@ public class PreferencesManager {
     public static final String SELECTED_AGENT_IS_ACTIVE = "selected_agent_is_active";
     public static final String SELECTED_AGENT_JSON = "selected_agent_json";
     public static final String IS_BOT_ACTIVE = "IS_BOT_ACTIVE";
+
+
+
+
+    public static final String PREF_CALL_RECORDING_ENABLED = "call_recording_enabled";
+    public static final String PREF_AUTO_ANSWER_ENABLED = "auto_answer_enabled";
+    public static final String PREF_AUTO_ANSWER_DELAY = "auto_answer_delay";
+//    public static final String PREF_AUTO_ANSWER_SPEAKER = "auto_answer_speaker";
 
 
 
@@ -47,6 +59,10 @@ public class PreferencesManager {
             instance = new PreferencesManager(context.getApplicationContext());
         }
         return instance;
+    }
+
+    public boolean isAutoAnswerEnabled(){
+        return prefs.getBoolean(PREF_AUTO_ANSWER_ENABLED, true);
     }
 
     // Generic methods
@@ -111,82 +127,89 @@ public class PreferencesManager {
         editor.putString(SELECTED_AGENT_LANGUAGE, agentLanguage);
         editor.putLong(LAST_AGENT_SYNC, System.currentTimeMillis());
         editor.apply();
+
+        Log.d("Agent Detailes","SELECTED_AGENT_ID=" + agentId);
+        Log.d("Agent Detailes","agentName=" +agentName );
+        Log.d("Agent Detailes","agentType=" + agentType);
+        Log.d("Agent Detailes","agentLanguage=" + agentLanguage);
+
+
     }
 
     // Save complete agent with all details
-    public void saveSelectedAgentComplete(Agent agent) {
-        editor.putString(SELECTED_AGENT_ID, agent.getId());
-        editor.putString(SELECTED_AGENT, agent.getName());
-        editor.putString(SELECTED_AGENT_TYPE, agent.getType());
-        editor.putString(SELECTED_AGENT_LANGUAGE, agent.getLanguage());
-        editor.putString(SELECTED_AGENT_DESCRIPTION, agent.getDescription());
-        editor.putString(SELECTED_AGENT_AVATAR_URL, agent.getAvatarUrl());
-        editor.putString(SELECTED_AGENT_CAPABILITIES, agent.getCapabilities());
-        editor.putString(SELECTED_AGENT_VERSION, agent.getVersion());
-        editor.putBoolean(SELECTED_AGENT_IS_ACTIVE, agent.isActive());
-        editor.putLong(LAST_AGENT_SYNC, System.currentTimeMillis());
-
-        // Save as JSON for easy retrieval
-        try {
-            JSONObject agentJson = new JSONObject();
-            agentJson.put("id", agent.getId());
-            agentJson.put("name", agent.getName());
-            agentJson.put("type", agent.getType());
-            agentJson.put("language", agent.getLanguage());
-            agentJson.put("description", agent.getDescription());
-            agentJson.put("avatar_url", agent.getAvatarUrl());
-            agentJson.put("capabilities", agent.getCapabilities());
-            agentJson.put("version", agent.getVersion());
-            agentJson.put("is_active", agent.isActive());
-
-            editor.putString(SELECTED_AGENT_JSON, agentJson.toString());
-        } catch (JSONException e) {
-            // JSON save failed, but individual fields are still saved
-        }
-
-        editor.apply();
-    }
+//    public void saveSelectedAgentComplete(Agent agent) {
+//        editor.putString(SELECTED_AGENT_ID, agent.getId());
+//        editor.putString(SELECTED_AGENT, agent.getName());
+//        editor.putString(SELECTED_AGENT_TYPE, agent.getType());
+//        editor.putString(SELECTED_AGENT_LANGUAGE, agent.getLanguage());
+//        editor.putString(SELECTED_AGENT_DESCRIPTION, agent.getDescription());
+//        editor.putString(SELECTED_AGENT_AVATAR_URL, agent.getAvatarUrl());
+//        editor.putString(SELECTED_AGENT_CAPABILITIES, agent.getCapabilities());
+//        editor.putString(SELECTED_AGENT_VERSION, agent.getVersion());
+//        editor.putBoolean(SELECTED_AGENT_IS_ACTIVE, agent.isActive());
+//        editor.putLong(LAST_AGENT_SYNC, System.currentTimeMillis());
+//
+//        // Save as JSON for easy retrieval
+//        try {
+//            JSONObject agentJson = new JSONObject();
+//            agentJson.put("id", agent.getId());
+//            agentJson.put("name", agent.getName());
+//            agentJson.put("type", agent.getType());
+//            agentJson.put("language", agent.getLanguage());
+//            agentJson.put("description", agent.getDescription());
+//            agentJson.put("avatar_url", agent.getAvatarUrl());
+//            agentJson.put("capabilities", agent.getCapabilities());
+//            agentJson.put("version", agent.getVersion());
+//            agentJson.put("is_active", agent.isActive());
+//
+//            editor.putString(SELECTED_AGENT_JSON, agentJson.toString());
+//        } catch (JSONException e) {
+//            // JSON save failed, but individual fields are still saved
+//        }
+//
+//        editor.apply();
+//    }
 
     // Get complete agent from preferences
-    public Agent getSelectedAgentComplete() {
-        String agentJson = prefs.getString(SELECTED_AGENT_JSON, null);
-        if (agentJson != null) {
-            try {
-                JSONObject json = new JSONObject(agentJson);
-                return new Agent(
-                        json.optString("id", ""),
-                        json.optString("name", ""),
-                        json.optString("type", ""),
-                        json.optString("language", ""),
-                        json.optString("description", ""),
-                        json.optString("avatar_url", ""),
-                        json.optBoolean("is_active", true),
-                        json.optString("capabilities", ""),
-                        json.optString("version", "")
-                );
-            } catch (JSONException e) {
-                // Fall back to individual fields
-            }
-        }
-
-        // Fallback to individual fields
-        String id = getSelectedAgentId();
-        if (id != null) {
-            return new Agent(
-                    id,
-                    getSelectedAgentName(),
-                    getSelectedAgentType(),
-                    getSelectedAgentLanguage(),
-                    getSelectedAgentDescription(),
-                    getSelectedAgentAvatarUrl(),
-                    getSelectedAgentIsActive(),
-                    getSelectedAgentCapabilities(),
-                    getSelectedAgentVersion()
-            );
-        }
-
-        return null;
-    }
+//    public Agent getSelectedAgentComplete() {
+//        String agentJson = prefs.getString(SELECTED_AGENT_JSON, null);
+//        if (agentJson != null) {
+//            try {
+//                JSONObject json = new JSONObject(agentJson);
+//                return new Agent(
+//                        json.optString("id", ""),
+//                        json.optString("name", ""),
+//                        json.optString("type", ""),
+//                        json.optString("language", ""),
+//                        json.optString("description", ""),
+//                        json.optString("avatar_url", ""),
+//                        json.optBoolean("is_active", true),
+//                        json.optString("capabilities", ""),
+//                        json.optString("version", "")
+//                );
+//            } catch (JSONException e) {
+//                // Fall back to individual fields
+//            }
+//        }
+//
+//        // Fallback to individual fields
+//        String id = getSelectedAgentId();
+//        if (id != null) {
+//            return new Agent(
+//                    id,
+//                    getSelectedAgentName(),
+//                    getSelectedAgentType(),
+//                    getSelectedAgentLanguage(),
+//                    getSelectedAgentDescription(),
+//                    getSelectedAgentAvatarUrl(),
+//                    getSelectedAgentIsActive(),
+//                    getSelectedAgentCapabilities(),
+//                    getSelectedAgentVersion()
+//            );
+//        }
+//
+//        return null;
+//    }
 
     public String getSelectedAgentId() {
         return prefs.getString(SELECTED_AGENT_ID, null);
@@ -311,33 +334,33 @@ public class PreferencesManager {
     }
 
     // Export agent settings for backup/restore
-    public String exportAgentSettings() {
-        try {
-            JSONObject settings = new JSONObject();
-            settings.put("agent_id", getSelectedAgentId());
-            settings.put("agent_name", getSelectedAgentName());
-            settings.put("agent_type", getSelectedAgentType());
-            settings.put("agent_language", getSelectedAgentLanguage());
-            settings.put("last_sync", getLastAgentSync());
-            return settings.toString();
-        } catch (JSONException e) {
-            return null;
-        }
-    }
+//    public String exportAgentSettings() {
+//        try {
+//            JSONObject settings = new JSONObject();
+//            settings.put("agent_id", getSelectedAgentId());
+//            settings.put("agent_name", getSelectedAgentName());
+//            settings.put("agent_type", getSelectedAgentType());
+//            settings.put("agent_language", getSelectedAgentLanguage());
+//            settings.put("last_sync", getLastAgentSync());
+//            return settings.toString();
+//        } catch (JSONException e) {
+//            return null;
+//        }
+//    }
 
     // Import agent settings from backup
-    public boolean importAgentSettings(String settingsJson) {
-        try {
-            JSONObject settings = new JSONObject(settingsJson);
-            editor.putString(SELECTED_AGENT_ID, settings.optString("agent_id"));
-            editor.putString(SELECTED_AGENT, settings.optString("agent_name"));
-            editor.putString(SELECTED_AGENT_TYPE, settings.optString("agent_type"));
-            editor.putString(SELECTED_AGENT_LANGUAGE, settings.optString("agent_language"));
-            editor.putLong(LAST_AGENT_SYNC, settings.optLong("last_sync", 0));
-            editor.apply();
-            return true;
-        } catch (JSONException e) {
-            return false;
-        }
-    }
+//    public boolean importAgentSettings(String settingsJson) {
+//        try {
+//            JSONObject settings = new JSONObject(settingsJson);
+//            editor.putString(SELECTED_AGENT_ID, settings.optString("agent_id"));
+//            editor.putString(SELECTED_AGENT, settings.optString("agent_name"));
+//            editor.putString(SELECTED_AGENT_TYPE, settings.optString("agent_type"));
+//            editor.putString(SELECTED_AGENT_LANGUAGE, settings.optString("agent_language"));
+//            editor.putLong(LAST_AGENT_SYNC, settings.optLong("last_sync", 0));
+//            editor.apply();
+//            return true;
+//        } catch (JSONException e) {
+//            return false;
+//        }
+//    }
 }

@@ -1,11 +1,8 @@
 package com.teletalker.app.features.home.fragments.callhistory.presentation.adapters;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
-import android.media.MediaPlayer;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -13,40 +10,69 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.teletalker.app.R;
 import com.teletalker.app.databinding.SeeAllHistoryItemBinding;
 import com.teletalker.app.features.home.fragments.callhistory.data.models.CallEntity;
-import com.teletalker.app.services.CallRecorderManager;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class SeeAllHistoryAdapter extends RecyclerView.Adapter<SeeAllHistoryAdapter.ViewHolder> {
     private List<CallEntity> callHistoryItems;
+    private int currentlyPlayingId = -1;
 
-    private OnItemClickListener listener;
-    private MediaPlayer mediaPlayer;
-    private int currentPlayingPosition = -1;
-    public SeeAllHistoryAdapter(List<CallEntity> callHistoryItems, OnItemClickListener listener
-    ) {
+    public interface OnItemClickListener {
+        void onItemClick(CallEntity item);
+    }
+
+    private OnItemClickListener clickListener;
+
+    public SeeAllHistoryAdapter(List<CallEntity> callHistoryItems, OnItemClickListener listener) {
         this.callHistoryItems = callHistoryItems;
-        this.listener = listener;
+        this.clickListener = listener;
     }
 
-    @NonNull
-    @Override
-    public SeeAllHistoryAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
-        SeeAllHistoryItemBinding binding = SeeAllHistoryItemBinding.inflate(layoutInflater, parent, false);
-        return new ViewHolder(binding);
+    /**
+     * Reset all play icons to "play" state (idle)
+     */
+    @SuppressLint("NotifyDataSetChanged")
+    public void resetAllPlayIcons() {
+        currentlyPlayingId = -1;
+        notifyDataSetChanged();
     }
 
-    @Override
-    public void onBindViewHolder(@NonNull SeeAllHistoryAdapter.ViewHolder holder, int position) {
-        holder.bind(callHistoryItems.get(position), position);
+    /**
+     * Set a specific item as playing
+     * @param itemId The ID of the call item
+     * @param isPlaying Whether the item is currently playing
+     */
+    public void setItemPlaying(int itemId, boolean isPlaying) {
+        int previousPlayingId = currentlyPlayingId;
+
+        if (isPlaying) {
+            currentlyPlayingId = itemId;
+        } else {
+            currentlyPlayingId = -1;
+        }
+
+        // Update the previous playing item (if any)
+        if (previousPlayingId != -1) {
+            int previousPosition = getPositionForCallId(previousPlayingId);
+            if (previousPosition >= 0) {
+                notifyItemChanged(previousPosition);
+            }
+        }
+
+        // Update the current item
+        int currentPosition = getPositionForCallId(itemId);
+        if (currentPosition >= 0) {
+            notifyItemChanged(currentPosition);
+        }
     }
 
-    @Override
-    public int getItemCount() {
-        return callHistoryItems.size();
+    private int getPositionForCallId(int callId) {
+        for (int i = 0; i < callHistoryItems.size(); i++) {
+            if (callHistoryItems.get(i).id == callId) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
@@ -57,78 +83,78 @@ public class SeeAllHistoryAdapter extends RecyclerView.Adapter<SeeAllHistoryAdap
             this.binding = binding;
         }
 
-        public void bind(CallEntity call, int position) {
-            binding.numberTv.setText(call.phoneNumber != null ? call.phoneNumber : "Unknown");
-            binding.nameTv.setText(call.callerName != null ? call.callerName : "Unknown");
-            binding.durationTv.setText(call.duration != null ? call.duration : "0 sec");
+        public void bind(CallEntity callEntity) {
+            // Basic info binding
+            binding.nameTv.setText(callEntity.callerName);
+            binding.numberTv.setText(callEntity.phoneNumber);
+            binding.durationTv.setText(callEntity.duration);
 
-            String status = call.callStatus != null ? call.callStatus : "";
-            switch (status) {
-                case "IncomingAnswered":
-                    binding.callStateImg.setImageResource(R.drawable.ic_call_incoming);
-                    break;
-                case "Outgoing":
-                    binding.callStateImg.setImageResource(R.drawable.ic_call_outgoing);
-                    break;
-                case "Missed":
-                    binding.callStateImg.setImageResource(R.drawable.ic_call_slash);
-                    break;
-            }
+            // Set call state icon (incoming/outgoing/missed)
+            binding.callStateImg.setImageResource(getCallStateIcon(callEntity.callType));
 
-            if (call.isCallRecordingPlay() && call.isCallRecorded()) {
-                binding.icPlayRecorde.setImageResource(R.drawable.ic_call_running);
+            // Determine if this call is currently playing
+            boolean isCurrentlyPlaying = callEntity.id == currentlyPlayingId;
+
+            // Set play/pause icon based on playing state
+            if (isCurrentlyPlaying) {
+                binding.icPlayRecorde.setImageResource(R.drawable.ic_call_running); // pause/playing icon
             } else {
-                binding.icPlayRecorde.setImageResource(R.drawable.ic_big_play);
+                binding.icPlayRecorde.setImageResource(R.drawable.ic_big_play); // play icon (idle)
             }
 
-            binding.icPlayRecorde.setOnClickListener(v -> {
-                if (call.isCallRecordingPlay()) {
-
-                    call.toggleCallRecordingPlay();
-                    mediaPlayer.pause();
-                    binding.icPlayRecorde.setImageResource(R.drawable.ic_big_play);
-                    currentPlayingPosition = -1;
-                } else {
-                    stopAllOtherRecordings(position);
-
-                    call.setCallRecordingPlay(true);
-                    mediaPlayer = new MediaPlayer();
-                    try {
-                        mediaPlayer.setDataSource(call.recordingFilePath);
-                        mediaPlayer.prepare();
-                        mediaPlayer.start();
-                        binding.icPlayRecorde.setImageResource(R.drawable.ic_call_running);
-                        currentPlayingPosition = position;
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+            // Set click listener for play/pause button
+            binding.materialCardView6.setOnClickListener(v -> {
+                if (clickListener != null) {
+                    clickListener.onItemClick(callEntity);
                 }
-                notifyDataSetChanged();
+            });
+
+            // Optional: Sound toggle button (you can implement this later if needed)
+            binding.materialCardView7.setOnClickListener(v -> {
+                // Sound toggle functionality can be added here
             });
         }
 
-    }
-
-    public void updateData(List<CallEntity> newItems) {
-        callHistoryItems = newItems;
-        notifyDataSetChanged();
-    }
-
-    public interface OnItemClickListener {
-        void onItemClick(CallEntity item);
-    }
-
-    private void stopAllOtherRecordings(int position) {
-        for (int i = 0; i < callHistoryItems.size(); i++) {
-            if (i != position) {
-                CallEntity callEntity = callHistoryItems.get(i);
-                if (callEntity.isCallRecordingPlay()) {
-                    callEntity.setCallRecordingPlay(false);
-                    if (mediaPlayer.isPlaying()) {
-                        mediaPlayer.stop();
-                    }
-                }
+        private int getCallStateIcon(String callType) {
+            switch (callType) {
+                case "INCOMING":
+                    return R.drawable.ic_call_incoming;
+                case "OUTGOING":
+                    return R.drawable.ic_call_outgoing;
+                case "MISSED":
+                    return R.drawable.ic_call_outgoing; // Use outgoing as fallback, add missed icon later
+                default:
+                    return R.drawable.ic_call_outgoing;
             }
         }
     }
+
+    @NonNull
+    @Override
+    public SeeAllHistoryAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
+        SeeAllHistoryItemBinding binding = SeeAllHistoryItemBinding.inflate(layoutInflater, parent, false);
+        return new SeeAllHistoryAdapter.ViewHolder(binding);
     }
+
+    @Override
+    public void onBindViewHolder(@NonNull SeeAllHistoryAdapter.ViewHolder holder, int position) {
+        holder.bind(callHistoryItems.get(position));
+    }
+
+    @Override
+    public int getItemCount() {
+        return callHistoryItems.size();
+    }
+
+    /**
+     * Method to update the adapter data
+     */
+    @SuppressLint("NotifyDataSetChanged")
+    public void updateData(List<CallEntity> newCallHistory) {
+        this.callHistoryItems = newCallHistory;
+        // Reset playing state when data updates
+        currentlyPlayingId = -1;
+        notifyDataSetChanged();
+    }
+}

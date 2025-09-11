@@ -18,7 +18,7 @@ public class BindingAdapters {
     @BindingAdapter("onPlaybackClick")
     public static void setOnPlaybackClickListener(ImageView imageView, CallEntity call) {
         imageView.setOnClickListener(v -> {
-            if (call != null && call.isCallRecorded() && call.recordingFilePath != null) {
+            if (call != null && call.isCallRecorded() && call.getRecordingFilePath() != null) {
                 Context context = imageView.getContext();
                 if (context instanceof FragmentActivity) {
                     FragmentActivity activity = (FragmentActivity) context;
@@ -49,8 +49,8 @@ public class BindingAdapters {
             if (lifecycleOwner != null) {
                 viewModel.getCurrentlyPlaying().observe(lifecycleOwner, playingCall -> {
                     boolean isPlaying = playingCall != null &&
-                            playingCall.recordingFilePath != null &&
-                            playingCall.recordingFilePath.equals(call.recordingFilePath);
+                            playingCall.getRecordingFilePath() != null &&
+                            playingCall.getRecordingFilePath().equals(call.getRecordingFilePath());
 
                     imageView.setImageResource(
                             isPlaying ? R.drawable.ic_call_running : R.drawable.ic_big_play

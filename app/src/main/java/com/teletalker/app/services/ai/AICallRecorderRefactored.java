@@ -12,6 +12,7 @@ import androidx.annotation.RequiresPermission;
 import androidx.core.content.ContextCompat;
 
 import com.teletalker.app.services.CallAudioInjector;
+import com.teletalker.app.services.StatusBroadcastManager;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -99,6 +100,12 @@ public class AICallRecorderRefactored {
         void onSilenceDetected(long durationMs);
         void onSpeechDetected(long durationMs);
     }
+
+
+    private void broadcastAIStatus(String status, boolean isRecording, boolean isInjecting, String response) {
+        StatusBroadcastManager.broadcastAIStatus(context, status, isRecording, isInjecting, response);
+    }
+
 
     // Core components
     private final Context context;
@@ -295,6 +302,7 @@ public class AICallRecorderRefactored {
 
         if (coreRecordingStarted) {
             Log.d(TAG, "Core recording started successfully");
+            broadcastAIStatus("CONNECTING", true, false, "");
 
             // === ENHANCED AI FEATURES ===
             if (isAIEnabled.get()) {
@@ -400,6 +408,13 @@ public class AICallRecorderRefactored {
      */
     public void stopRecording() {
         Log.d(TAG, "Stopping Enhanced AI Call Recording...");
+        broadcastAIStatus("HIDDEN", false, false, "");
+
+        if (coreRecorder != null) {
+            coreRecorder.stopRecording();
+            Log.d(TAG, " coreRecorder.stopRecording");
+
+        }
 
         // Stop AI features first
         if (isAIEnabled.get()) {
@@ -407,9 +422,6 @@ public class AICallRecorderRefactored {
         }
 
         // Stop core recording
-        if (coreRecorder != null) {
-            coreRecorder.stopRecording();
-        }
 
         Log.d(TAG, "Enhanced AI Call Recording stopped");
     }
@@ -921,6 +933,10 @@ public class AICallRecorderRefactored {
 
             isAIConnected.set(true);
             isConnecting.set(false);
+
+            broadcastAIStatus("CONNECTED", coreRecorder.isRecording(), false, "");
+
+
             connectionAttempts.set(0);
             lastPongReceived.set(System.currentTimeMillis());
             lastSuccessfulSend.set(System.currentTimeMillis());
@@ -975,12 +991,18 @@ public class AICallRecorderRefactored {
                                 } else {
                                     audioAccumulator.addAudioChunk(audioData);
                                 }
+
+                                broadcastAIStatus("ACTIVE", coreRecorder.isRecording(), true, "");
+
                             }
 
                             @Override
                             public void onAgentResponse(String transcript) {
                                 Log.d(TAG, "AI Response: '" + transcript + "'");
                                 notifyCallback(cb -> cb.onAIResponse(transcript, responseBuffer.isCurrentlyPlaying()));
+                                broadcastAIStatus("ACTIVE", coreRecorder.isRecording(),
+                                        isAudioInjectionActive(), transcript);
+
                             }
 
                             @Override
@@ -1004,6 +1026,8 @@ public class AICallRecorderRefactored {
                                 Log.e(TAG, "ElevenLabs Error: " + message +
                                         (code.isEmpty() ? "" : " (Code: " + code + ")"));
                                 totalErrorsEncountered.incrementAndGet();
+                                broadcastAIStatus("ERROR", coreRecorder.isRecording(), false, "Error: " + message);
+
                                 notifyCallback(cb -> cb.onAIError("ElevenLabs Error: " + message));
                             }
 
@@ -1019,6 +1043,8 @@ public class AICallRecorderRefactored {
                         });
 
             } catch (JSONException e) {
+                broadcastAIStatus("ERROR", coreRecorder.isRecording(), false, "Parse error");
+
                 Log.e(TAG, "Error parsing ElevenLabs message: " + e.getMessage());
                 Log.v(TAG, "Raw message: " + text);
                 totalErrorsEncountered.incrementAndGet();
@@ -1049,6 +1075,9 @@ public class AICallRecorderRefactored {
 
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
+
+            broadcastAIStatus("ERROR", coreRecorder.isRecording(), false, "Connection failed");
+
             String errorMsg = "WebSocket failure: " + t.getMessage();
             if (response != null) {
                 errorMsg += " (HTTP " + response.code() + ")";
@@ -1074,6 +1103,7 @@ public class AICallRecorderRefactored {
         @Override
         public void onClosed(WebSocket webSocket, int code, String reason) {
             Log.d(TAG, "WebSocket Closed: " + code + " - " + reason);
+            broadcastAIStatus("HIDDEN", false, false, "");
 
             isAIConnected.set(false);
             isConnecting.set(false);
