@@ -237,11 +237,13 @@ public class HomeActivity extends AppCompatActivity implements
     public void onPermissionsDenied(List<String> deniedPermissions) {
         Log.w(TAG, "❌ Denied permissions: " + deniedPermissions.size());
 
-        if (deniedPermissions.size() == 0) {
-            proceedToAccessibilitySetup();
-        } else {
+//        if (deniedPermissions.size() == 0) {
+//
+//        } else {
             showPermissionDeniedDialog(deniedPermissions);
-        }
+//        }
+
+        proceedToAccessibilitySetup();
     }
 
     private void showPermissionDeniedDialog(List<String> deniedPermissions) {
@@ -251,7 +253,7 @@ public class HomeActivity extends AppCompatActivity implements
                         "Denied permissions: " + deniedPermissions.size() + "\n" +
                         "You can grant them later in Settings.")
                 .setPositiveButton("Continue Anyway", (dialog, which) -> {
-                    proceedToAccessibilitySetup();
+//                    proceedToAccessibilitySetup();
                 })
                 .setNeutralButton("Open Settings", (dialog, which) -> {
                     openAppSettings();
@@ -333,22 +335,18 @@ public class HomeActivity extends AppCompatActivity implements
     // ============ ACCESSIBILITY SETUP ============
 
     private void proceedToAccessibilitySetup() {
-//        if (!isAccessibilityServiceEnabled(this, VoIPCallService.class)) {
-//            showAccessibilityServiceDialog();
-//        } else {
-//            completeInitialization();
-//        }
+        if (!isAccessibilityServiceEnabled(this, VoIPCallService.class)) {
+            showAccessibilityServiceDialog();
+        } else {
+            completeInitialization();
+        }
     }
 
     private void showAccessibilityServiceDialog() {
         new AlertDialog.Builder(this)
-                .setTitle("📞 VoIP Call Detection")
-                .setMessage("Enable accessibility service for VoIP call detection?\n\n" +
-                        "This allows the app to detect calls from:\n" +
-                        "• WhatsApp\n" +
-                        "• Telegram\n" +
-                        "• Skype\n" +
-                        "• Other VoIP apps")
+                .setTitle("📞 Background Call Detection")
+                .setMessage("Enable accessibility service for call detection?\n\n" +
+                        "This allows the app to  access call audio in background:\n" )
                 .setPositiveButton("Enable", (dialog, which) -> {
                     Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
                     startActivity(intent);
