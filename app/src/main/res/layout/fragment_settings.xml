@@ -4,9 +4,20 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:layoutDirection="ltr"
     tools:context=".features.home.fragments.callhistory.presentation.CallHistoryFragment">
 
-    <TextView
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layoutDirection="ltr"
+           >
+
+        <TextView
         android:id="@+id/textView12"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -24,11 +35,14 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
         android:layout_marginTop="8dp"
+        android:clickable="true"
+        android:focusable="true"
         android:layout_marginEnd="24dp"
         app:cardBackgroundColor="@color/darkMidnightBlue"
         app:cardCornerRadius="12dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:cardElevation="0dp"
         app:layout_constraintTop_toBottomOf="@+id/textView12"
         app:strokeWidth="0dp">
 
@@ -54,7 +68,7 @@
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="4dp"
                 android:text="Dexy Labs"
-                android:textColor="@color/white"
+                android:textColor="@color/gunmetalTextGray"
                 android:textSize="13sp"
                 app:layout_constraintStart_toEndOf="@+id/personImg"
                 app:layout_constraintTop_toTopOf="@+id/personImg" />
@@ -77,7 +91,7 @@
                 app:layout_constraintBottom_toBottomOf="@+id/personImg"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="@+id/personImg"
-                app:tint="@color/blue_gray" />
+                app:tint="@color/gunmetalTextGray" />
 
 
         </androidx.constraintlayout.widget.ConstraintLayout>
@@ -89,9 +103,13 @@
         android:id="@+id/materialCardView4"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:clickable="true"
+        android:focusable="true"
         android:layout_marginTop="16dp"
         app:cardBackgroundColor="@color/darkMidnightBlue"
         app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+
         app:layout_constraintEnd_toEndOf="@+id/materialCardView3"
         app:layout_constraintStart_toStartOf="@+id/materialCardView3"
         app:layout_constraintTop_toBottomOf="@+id/materialCardView3"
@@ -107,7 +125,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/payment_amp_membership"
-                android:textColor="@color/white"
+                android:textColor="@color/gunmetalTextGray"
                 android:textSize="13sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -121,7 +139,54 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:tint="@color/blue_gray" />
+                app:tint="@color/gunmetalTextGray" />
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    </com.google.android.material.card.MaterialCardView>
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/materialCardView7"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:focusable="true"
+        android:layout_marginTop="16dp"
+        app:cardBackgroundColor="@color/darkMidnightBlue"
+        app:cardCornerRadius="12dp"
+        app:layout_constraintEnd_toEndOf="@+id/materialCardView4"
+        app:layout_constraintStart_toStartOf="@+id/materialCardView4"
+        app:layout_constraintTop_toBottomOf="@+id/materialCardView4"
+        app:cardElevation="0dp"
+
+        app:strokeWidth="0dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="22dp">
+
+            <TextView
+                android:id="@+id/textView161"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/invoices"
+                android:textColor="@color/gunmetalTextGray"
+                android:textSize="13sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_back_arrow"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="@color/gunmetalTextGray" />
 
 
         </androidx.constraintlayout.widget.ConstraintLayout>
@@ -136,9 +201,11 @@
         android:layout_marginTop="16dp"
         app:cardBackgroundColor="@color/darkMidnightBlue"
         app:cardCornerRadius="12dp"
-        app:layout_constraintEnd_toEndOf="@+id/materialCardView3"
-        app:layout_constraintStart_toStartOf="@+id/materialCardView3"
-        app:layout_constraintTop_toBottomOf="@+id/materialCardView4"
+        app:cardElevation="0dp"
+
+        app:layout_constraintEnd_toEndOf="@+id/materialCardView7"
+        app:layout_constraintStart_toStartOf="@+id/materialCardView7"
+        app:layout_constraintTop_toBottomOf="@+id/materialCardView7"
         app:strokeWidth="0dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -146,7 +213,7 @@
             android:layout_height="wrap_content">
 
             <LinearLayout
-                android:id="@+id/linearLayout3"
+                android:id="@+id/agent_type_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
@@ -160,7 +227,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/change_default_agent"
-                    android:textColor="@color/white"
+                    android:textColor="@color/gunmetalTextGray"
                     android:textSize="13sp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -176,7 +243,7 @@
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
-                    app:tint="@color/blue_gray" />
+                    app:tint="@color/gunmetalTextGray" />
 
 
             </LinearLayout>
@@ -186,10 +253,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
+                android:visibility="gone"
                 android:padding="16dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/linearLayout3">
+                app:layout_constraintTop_toBottomOf="@+id/agent_type_container">
 
                 <TextView
                     android:layout_width="0dp"
@@ -232,7 +300,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/auto_answer"
-                    android:textColor="@color/white"
+                    android:textColor="@color/gunmetalTextGray"
                     android:textSize="13sp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -240,9 +308,12 @@
 
 
                 <Switch
-                    android:id="@+id/switch1"
+                    android:id="@+id/autoAnswer"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:textColorHighlight="@color/gunmetalTextGray"
+
+                    />
 
 
             </LinearLayout>
@@ -261,7 +332,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/privacy_policy"
-                    android:textColor="@color/white"
+                    android:textColor="@color/gunmetalTextGray"
                     android:textSize="13sp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -276,7 +347,7 @@
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
-                    app:tint="@color/blue_gray" />
+                    app:tint="@color/gunmetalTextGray" />
 
 
             </LinearLayout>
@@ -292,6 +363,8 @@
         android:layout_marginTop="16dp"
         app:cardBackgroundColor="@color/darkMidnightBlue"
         app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+
         app:layout_constraintEnd_toEndOf="@+id/materialCardView8"
         app:layout_constraintStart_toStartOf="@+id/materialCardView8"
         app:layout_constraintTop_toBottomOf="@+id/materialCardView8"
@@ -300,13 +373,14 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:id="@+id/logout_container"
             android:padding="22dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Logout"
-                android:textColor="#FF9999"
+                android:textColor="@color/red"
                 android:textSize="13sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -320,7 +394,7 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:tint="#FF9999" />
+                app:tint="@color/red" />
 
 
         </androidx.constraintlayout.widget.ConstraintLayout>
@@ -328,6 +402,8 @@
 
     </com.google.android.material.card.MaterialCardView>
 
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

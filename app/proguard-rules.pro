@@ -12,6 +12,10 @@
 #   public *;
 #}
 
+
+-keep class com.teletalker.app.services.scheduler.ScheduledCallAlarmReceiver { *; }
+
+
 # Uncomment this to preserve the line number information for
 # debugging stack traces.
 #-keepattributes SourceFile,LineNumberTable

@@ -33,4 +33,10 @@ public class CallRepositoryImpl implements CallRepository {
         Executors.newSingleThreadExecutor().execute(()
                 -> callLocalDataSource.deleteCall(callEntity));
     }
+
+    @Override
+    public List<CallEntity> getLastTwoCallRecords() {
+        return callLocalDataSource.getLastTwoCallRecords();
+    }
+
 }

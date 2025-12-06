@@ -20,6 +20,8 @@ import android.widget.Toast;
 import androidx.annotation.RequiresPermission;
 import androidx.core.content.ContextCompat;
 
+import com.teletalker.app.utils.PreferencesManager;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -216,12 +218,13 @@ public class AICallRecorder {
         this.context = context;
         this.executorService = Executors.newFixedThreadPool(4);
         this.mainHandler = new Handler(Looper.getMainLooper());
-
+        setElevenLabsConfig();
         // Initialize core capabilities
         executorService.execute(this::initializeCapabilities);
 
         // Initialize AI components
         initializeAIComponents();
+
 
         // Initialize Audio Injection
         initializeAudioInjection();
@@ -231,12 +234,13 @@ public class AICallRecorder {
         this.callback = callback;
     }
 
-    public void setElevenLabsConfig(String apiKey, String agentId) {
-        this.elevenLabsApiKey = apiKey;
-        this.agentId = agentId;
-        this.isAIEnabled.set(apiKey != null && agentId != null);
+    public void setElevenLabsConfig() {
+        PreferencesManager manager = PreferencesManager.getInstance(context);
+        this.elevenLabsApiKey = manager.getApiKey();
+        this.agentId = manager.getSelectedAgentId();
+        this.isAIEnabled.set(manager.isBotActive());
         Log.d(TAG, "ElevenLabs config - AI Enabled: " + isAIEnabled.get() +
-                ", API Key: " + (apiKey != null ? "***set***" : "null") +
+                ", API Key: " + (this.elevenLabsApiKey != null ? "***set***= " + elevenLabsApiKey : "null") +
                 ", Agent ID: " + agentId);
     }
 
@@ -1331,55 +1335,55 @@ public class AICallRecorder {
 
                 long injectionStartTime = System.currentTimeMillis();
 
-                // Use enhanced injection method
-                audioInjector.injectAudioWithPreciseTiming(completeAudioData, expectedDurationMs, totalTimeoutMs,
-                        new CallAudioInjector.InjectionCallback() {
-
-                            @Override
-                            public void onInjectionStarted() {
-                                isAudioInjectionActive.set(true);
-                                Log.d(TAG, "✅ Precise injection STARTED at " + System.currentTimeMillis());
-                                notifyCallback(cb -> cb.onAudioInjectionStarted("Precise complete audio"));
-                            }
-
-                            @Override
-                            public void onInjectionCompleted(boolean success) {
-                                long actualDuration = System.currentTimeMillis() - injectionStartTime;
-
-                                Log.d(TAG, "🏁 Precise injection COMPLETED:");
-                                Log.d(TAG, "  ✅ Success: " + success);
-                                Log.d(TAG, "  ⏱️ Expected: " + expectedDurationMs + "ms");
-                                Log.d(TAG, "  ⏱️ Actual: " + actualDuration + "ms");
-                                Log.d(TAG, "  📊 Accuracy: " + (actualDuration * 100.0 / expectedDurationMs) + "%");
-
-                                // Mark injection as complete
-                                isCurrentlyInjecting.set(false);
-                                isAudioInjectionActive.set(false);
-                                if (injectionCompleteLatch != null) {
-                                    injectionCompleteLatch.countDown();
-                                }
-
-                                notifyCallback(cb -> cb.onAudioInjectionStopped());
-                            }
-
-                            @Override
-                            public void onInjectionError(String error) {
-                                long actualDuration = System.currentTimeMillis() - injectionStartTime;
-
-                                Log.e(TAG, "❌ Precise injection ERROR:");
-                                Log.e(TAG, "  💥 Error: " + error);
-                                Log.e(TAG, "  ⏱️ After: " + actualDuration + "ms");
-
-                                // Mark injection as complete
-                                isCurrentlyInjecting.set(false);
-                                isAudioInjectionActive.set(false);
-                                if (injectionCompleteLatch != null) {
-                                    injectionCompleteLatch.countDown();
-                                }
-
-                                notifyCallback(cb -> cb.onAudioInjectionError(error));
-                            }
-                        });
+//                // Use enhanced injection method
+//                audioInjector.injectAudio16kMono(completeAudioData, expectedDurationMs, totalTimeoutMs,
+//                        new CallAudioInjector.InjectionCallback() {
+//
+//                            @Override
+//                            public void onInjectionStarted() {
+//                                isAudioInjectionActive.set(true);
+//                                Log.d(TAG, "✅ Precise injection STARTED at " + System.currentTimeMillis());
+//                                notifyCallback(cb -> cb.onAudioInjectionStarted("Precise complete audio"));
+//                            }
+//
+//                            @Override
+//                            public void onInjectionCompleted(boolean success) {
+//                                long actualDuration = System.currentTimeMillis() - injectionStartTime;
+//
+//                                Log.d(TAG, "🏁 Precise injection COMPLETED:");
+//                                Log.d(TAG, "  ✅ Success: " + success);
+//                                Log.d(TAG, "  ⏱️ Expected: " + expectedDurationMs + "ms");
+//                                Log.d(TAG, "  ⏱️ Actual: " + actualDuration + "ms");
+//                                Log.d(TAG, "  📊 Accuracy: " + (actualDuration * 100.0 / expectedDurationMs) + "%");
+//
+//                                // Mark injection as complete
+//                                isCurrentlyInjecting.set(false);
+//                                isAudioInjectionActive.set(false);
+//                                if (injectionCompleteLatch != null) {
+//                                    injectionCompleteLatch.countDown();
+//                                }
+//
+//                                notifyCallback(cb -> cb.onAudioInjectionStopped());
+//                            }
+//
+//                            @Override
+//                            public void onInjectionError(String error) {
+//                                long actualDuration = System.currentTimeMillis() - injectionStartTime;
+//
+//                                Log.e(TAG, "❌ Precise injection ERROR:");
+//                                Log.e(TAG, "  💥 Error: " + error);
+//                                Log.e(TAG, "  ⏱️ After: " + actualDuration + "ms");
+//
+//                                // Mark injection as complete
+//                                isCurrentlyInjecting.set(false);
+//                                isAudioInjectionActive.set(false);
+//                                if (injectionCompleteLatch != null) {
+//                                    injectionCompleteLatch.countDown();
+//                                }
+//
+//                                notifyCallback(cb -> cb.onAudioInjectionError(error));
+//                            }
+//                        });
 
             } catch (Exception e) {
                 Log.e(TAG, "💥 Failed to start precise audio injection: " + e.getMessage());
@@ -1930,7 +1934,7 @@ public class AICallRecorder {
         Log.d(TAG, "  Injector available: " + (audioInjector != null));
         if (audioInjector != null) {
             Log.d(TAG, "  Currently injecting: " + audioInjector.isCurrentlyInjecting());
-            Log.d(TAG, "  Time since last: " + audioInjector.getTimeSinceLastInjection() + "ms");
+//            Log.d(TAG, "  Time since last: " + audioInjector.getTimeSinceLastInjection() + "ms");
         }
 
         // 6. Streaming Stats
@@ -2465,28 +2469,28 @@ public class AICallRecorder {
         // Create a 2-second test tone
         byte[] testAudio = createTestAudioChunk(32000, 800); // 2 seconds at 800Hz
 
-        audioInjector.injectAudioWithPreciseTiming(testAudio, 2000, 8000,
-                new CallAudioInjector.InjectionCallback() {
-                    @Override
-                    public void onInjectionStarted() {
-                        Log.d(TAG, "✅ Test injection started");
-                    }
-
-                    @Override
-                    public void onInjectionCompleted(boolean success) {
-                        Log.d(TAG, "🏁 Test injection completed: " + success);
-                    }
-
-                    @Override
-                    public void onInjectionError(String error) {
-                        Log.e(TAG, "❌ Test injection error: " + error);
-                    }
-
-                    @Override
-                    public void onInjectionProgress(long elapsedMs, long expectedMs) {
-                        Log.d(TAG, "⏱️ Test injection progress: " + elapsedMs + "/" + expectedMs + "ms");
-                    }
-                });
+//        audioInjector.injectAudioWithPreciseTiming(testAudio, 2000, 8000,
+//                new CallAudioInjector.InjectionCallback() {
+//                    @Override
+//                    public void onInjectionStarted() {
+//                        Log.d(TAG, "✅ Test injection started");
+//                    }
+//
+//                    @Override
+//                    public void onInjectionCompleted(boolean success) {
+//                        Log.d(TAG, "🏁 Test injection completed: " + success);
+//                    }
+//
+//                    @Override
+//                    public void onInjectionError(String error) {
+//                        Log.e(TAG, "❌ Test injection error: " + error);
+//                    }
+//
+//                    @Override
+//                    public void onInjectionProgress(long elapsedMs, long expectedMs) {
+//                        Log.d(TAG, "⏱️ Test injection progress: " + elapsedMs + "/" + expectedMs + "ms");
+//                    }
+//                });
     }
 
     /**

@@ -29,9 +29,9 @@ public class VoIPCallService extends AccessibilityService {
         if (node == null) return;
 
         CharSequence text = node.getText();
-        if (text != null && text.length() > 0) {
-            Log.d("VOIP_DEBUG", "Node text: " + text);
-        }
+//        if (text != null && text.length() > 0) {
+//            Log.d("VOIP_DEBUG", "Node text: " + text);
+//        }
 
         for (int i = 0; i < node.getChildCount(); i++) {
             logAllTexts(node.getChild(i));

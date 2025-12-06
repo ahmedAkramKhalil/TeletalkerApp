@@ -1,6 +1,9 @@
 package com.teletalker.app.features.authentication.presentation;
 
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,6 +15,7 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.teletalker.app.R;
 import com.teletalker.app.databinding.ActivityAuthBinding;
+import com.teletalker.app.features.home.PhoneAccountCleaner;
 
 public class AuthActivity extends AppCompatActivity {
     private NavController navController;
@@ -29,6 +33,7 @@ public class AuthActivity extends AppCompatActivity {
             return insets;
         });
         initNavController();
+
 
     }
     private void initNavController() {

@@ -1,96 +1,168 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.teletalker.app">
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Notification permission (Android 13+) -->
-    <uses-permission
-        android:name="android.permission.CAPTURE_AUDIO_OUTPUT"
-        tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <!--
-         This system app permission is required to allow the telephony service to bind to this app's
-         InCallService without this app being a wearable companion app or the default dialer. This
-         method of monitoring incoming/outgoing calls is more reliable than listening for
-         PHONE_STATE broadcasts.
-    -->
+    <!-- ========== CRITICAL: PHONE CALL PERMISSIONS ========== -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission
+        android:name="android.permission.CALL_PRIVILEGED"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <!--    <uses-permission android:name="android.permission.READ_CALL_LOG" />-->
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
     <uses-permission
         android:name="android.permission.CONTROL_INCALL_EXPERIENCE"
         tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.MODIFY_PHONE_STATE"
+        tools:ignore="ProtectedPermissions" />
+
+
+    <!-- ========== AUDIO
+
+     PERMISSIONS ========== -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission
+        android:name="android.permission.CAPTURE_AUDIO_OUTPUT"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- ========== FOREGROUND SERVICE PERMISSIONS ========== -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+
+    <!-- Android 12+ exact alarm permissions -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+
+
+    <!-- ========== NOTIFICATION PERMISSIONS ========== -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.READ_CALL_LOG" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+    <!--    <uses-permission android:name="android.permission.WRITE_CALL_LOG" />-->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <!-- ========== OTHER PERMISSIONS ========== -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
-
 
     <uses-feature
         android:name="android.hardware.telephony"
-        android:required="true" />
+        android:required="false" />
     <uses-feature
         android:name="android.hardware.microphone"
         android:required="true" />
 
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permissions.READ_PHONE_NUMBERS" />
-
-     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-
 
     <application
+        android:name=".TeletalkerApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:networkSecurityConfig="@xml/network_security_config"
         android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
+        android:supportsRtl="false"
         android:theme="@style/Theme.Teletalker"
         tools:targetApi="tiramisu">
+        <activity
+            android:name=".features.home.fragments.settings.InvoicesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".features.home.fragments.settings.VersionSwitcherActivity"
+            android:exported="false" />
+        <activity
+            android:name=".features.home.fragments.settings.SubscriptionActivity"
+            android:exported="false" />
+        <activity
+            android:name=".subscription.CheckoutActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+
+            <!-- Deep link intent filter for success -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="checkout"
+                    android:pathPrefix="/success"
+                    android:scheme="teletalker" />
+            </intent-filter>
+
+            <!-- Deep link intent filter for cancel -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="checkout"
+                    android:pathPrefix="/cancel"
+                    android:scheme="teletalker" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".features.select_voice.presentation.SelectVoiceActivity"
             android:exported="false" />
         <activity
             android:name=".features.subscription.presentation.SubscriptionActivity"
-            android:exported="true">
-
-        </activity>
+            android:exported="true" />
         <activity
             android:name=".features.splash.SplashActivity"
-            android:exported="true">
-        </activity>
+            android:exported="true" />
+
         <activity
             android:name=".features.authentication.presentation.AuthActivity"
-            android:exported="true">
-
-        </activity>
-        <activity
-            android:name=".features.home.HomeActivity"
-            android:exported="true"
-            android:label="@string/title_activity_home">
-
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+
+        </activity>
+        <activity
+            android:name=".features.home.HomeActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            tools:ignore="RedundantLabel"
+
+            >
             <intent-filter>
                 <action android:name="android.intent.action.DIAL" />
                 <action android:name="android.intent.action.CALL" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data android:scheme="tel" />
             </intent-filter>
+
+
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
 
         </activity>
         <activity
@@ -110,11 +182,10 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
-
         <service
             android:name=".services.CallDetector"
-            android:permission="android.permission.BIND_INCALL_SERVICE"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.BIND_INCALL_SERVICE">
             <intent-filter>
                 <action android:name="android.telecom.InCallService" />
             </intent-filter>
@@ -124,9 +195,6 @@
 
         </service>
 
-        <!-- Legacy CallDetector Service (keep as fallback if needed) -->
-
-        <!-- FileProvider for sharing recordings -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -137,14 +205,65 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <receiver android:name=".receiver.BootCompletedReceiver"
+        <receiver
+            android:name=".receiver.BootCompletedReceiver"
             android:exported="true">
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
+
+        <!--        <service-->
+        <!--            android:name=".services.TeleTalkerConnectionService"-->
+        <!--            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"-->
+        <!--            android:exported="true">-->
+        <!--            <intent-filter>-->
+        <!--                <action android:name="android.telecom.ConnectionService" />-->
+        <!--            </intent-filter>-->
+        <!--        </service>-->
+
+        <service
+            android:name=".services.scheduler.ScheduledCallExecutor"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="phoneCall"
+            tools:ignore="ForegroundServicePermission" />
+
+        <!-- Boot Receiver to restart scheduled calls after reboot -->
+        <receiver
+            android:name=".services.scheduler.BootCompletedReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".services.scheduler.ScheduledCallAlarmReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.teletalker.EXECUTE_SCHEDULED_CALL" />
+            </intent-filter>
+        </receiver>
+
+
+    <!-- WorkManager Configuration (if needed) -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:ignore="MissingClass"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup" />
+        </provider>
 
 
     </application>

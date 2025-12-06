@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-  
-</selector>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="@color/gray">
+
+    <path
+        android:fillColor="@color/gray"
+        android:pathData="M12,2C13.1,2 14,2.9 14,4C14,5.1 13.1,6 12,6C10.9,6 10,5.1 10,4C10,2.9 10.9,2 12,2ZM21,9V7L15,7V9C15,10.65 13.65,12 12,12C10.35,12 9,10.65 9,9V7L3,7V9C3,11.76 5.24,14 8,14V16H16V14C18.76,14 21,11.76 21,9Z" />
+
+    <!-- Inactive indicator as circle path -->
+    <path
+        android:fillColor="@color/selected_color"
+        android:pathData="M20,2C21.1,2 22,2.9 22,4C22,5.1 21.1,6 20,6C18.9,6 18,5.1 18,4C18,2.9 18.9,2 20,2Z" />
+
+</vector>

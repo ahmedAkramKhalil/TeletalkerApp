@@ -14,318 +14,427 @@ import java.io.InputStreamReader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * CallAudioInjector with COMPLETE FIXES and Enhancements
+ * CallAudioInjector with Streaming Mode Support
  *
- * FIXES APPLIED:
- * ✅ Enhanced call state detection
- * ✅ Better audio validation
- * ✅ Injection monitoring and progress callbacks
- * ✅ Concurrent injection prevention
- * ✅ Optimized WAV file creation
- * ✅ Enhanced script execution with timeout handling
- * ✅ Comprehensive error handling and logging
+ * Uses streaming mode to avoid gaps between audio chunks
  */
 public class CallAudioInjector {
 
     private static final String TAG = "CallAudioInjector";
-    private static final String INJECT_SCRIPT = "/data/adb/modules/com.teletalker.app/inject_audio.sh";
 
+    // Script paths
+    private static final String SCRIPTS_DIR = "/data/adb/modules/com.teletalker.app/scripts";
+    private static final String INJECT_SCRIPT = SCRIPTS_DIR + "/inject_stream.sh";
+
+    // Streaming pipe path (must match script)
+    private static final String STREAM_PIPE = "/data/local/tmp/call_injector/audio_stream.pipe";
+
+    // Audio configuration
+    private static final int SAMPLE_RATE = 16000;
+    private static final int CHANNELS = 1;
+    private static final int BITS_PER_SAMPLE = 16;
+
+    // Instance management
+    private static final AtomicInteger instanceCounter = new AtomicInteger(0);
+    private final int instanceId;
+    private final String instanceTag;
+
+    // Threading and state
     private final Context context;
-    private ExecutorService executor;
+    private final ExecutorService executor;
     private final Handler mainHandler;
+    private final AtomicBoolean isInjecting = new AtomicBoolean(false);
+    private final AtomicBoolean streamingModeActive = new AtomicBoolean(false);
 
-    // NEW: Injection monitoring
-    private volatile boolean isCurrentlyInjecting = false;
-    private volatile long lastInjectionTime = 0;
-    private final Object injectionLock = new Object();
+    // Global synchronization
+    private static final Object INJECTION_LOCK = new Object();
+    private static volatile boolean globalInjectionRunning = false;
+    private static Process streamingProcess = null;
 
     public interface InjectionCallback {
         void onInjectionStarted();
         void onInjectionCompleted(boolean success);
         void onInjectionError(String error);
-
-        // NEW: Enhanced progress callbacks
-        default void onInjectionProgress(long elapsedMs, long expectedMs) {}
-        default void onScriptOutput(String output) {}
-        default void onAudioValidated(long durationMs, int sampleRate) {}
-        default void onCallStateValidated(String audioMode) {}
+        default void onInjectionProgress(String output) {}
+        default void onStreamingStarted() {}
+        default void onStreamingStopped() {}
     }
 
     public CallAudioInjector(Context context) {
         this.context = context;
-        this.executor = Executors.newSingleThreadExecutor();
+        this.instanceId = instanceCounter.incrementAndGet();
+        this.instanceTag = TAG + "-" + instanceId;
+
+        this.executor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "AudioInjector-" + instanceId);
+            t.setDaemon(true);
+            return t;
+        });
+
         this.mainHandler = new Handler(Looper.getMainLooper());
+
+        Log.i(instanceTag, "CallAudioInjector with streaming mode created");
     }
 
-    // === MAIN WORKING METHOD (ORIGINAL) ===
+    /**
+     * Start streaming mode - creates persistent pipe for continuous injection
+     */
+    public void startStreamingMode(InjectionCallback callback) {
+        Log.d(instanceTag, "Starting streaming mode");
+
+        executor.execute(() -> {
+            synchronized (INJECTION_LOCK) {
+                if (streamingModeActive.get() || streamingProcess != null) {
+                    Log.w(instanceTag, "Streaming mode already active");
+                    if (callback != null) {
+                        mainHandler.post(() -> callback.onInjectionError("Streaming mode already active"));
+                    }
+                    return;
+                }
+
+                try {
+                    // Start streaming script
+                    String[] command = {"su", "-c", INJECT_SCRIPT + " stream"};
+
+                    Log.d(instanceTag, "Starting streaming process: " + String.join(" ", command));
+
+                    streamingProcess = Runtime.getRuntime().exec(command);
+                    streamingModeActive.set(true);
+                    globalInjectionRunning = true;
+
+                    // Monitor streaming process
+                    Thread streamMonitor = new Thread(() -> {
+                        try (BufferedReader reader = new BufferedReader(new InputStreamReader(streamingProcess.getInputStream()));
+                             BufferedReader errorReader = new BufferedReader(new InputStreamReader(streamingProcess.getErrorStream()))) {
+
+                            String line;
+
+                            // Read stdout
+                            while ((line = reader.readLine()) != null && streamingModeActive.get()) {
+                                final String outputLine = line;
+                                Log.d(instanceTag, "Stream output: " + outputLine);
+
+                                if (callback != null) {
+                                    mainHandler.post(() -> callback.onInjectionProgress("OUT: " + outputLine));
+                                }
+                            }
+
+                            // Read stderr
+                            while ((line = errorReader.readLine()) != null && streamingModeActive.get()) {
+                                final String errorLine = line;
+                                Log.w(instanceTag, "Stream error: " + errorLine);
+
+                                if (callback != null) {
+                                    mainHandler.post(() -> callback.onInjectionProgress("ERR: " + errorLine));
+                                }
+                            }
+
+                        } catch (IOException e) {
+                            Log.e(instanceTag, "Error reading streaming process output: " + e.getMessage());
+                        }
+                    }, "StreamMonitor-" + instanceId);
+
+                    streamMonitor.setDaemon(true);
+                    streamMonitor.start();
+
+                    // Wait a bit for pipe to be created
+                    Thread.sleep(1000);
+
+                    // Check if pipe was created
+                    if (new File(STREAM_PIPE).exists()) {
+                        Log.d(instanceTag, "Streaming mode started successfully");
+                        if (callback != null) {
+                            mainHandler.post(() -> {
+                                callback.onInjectionStarted();
+                                callback.onStreamingStarted();
+                            });
+                        }
+                    } else {
+                        throw new IOException("Stream pipe was not created");
+                    }
+
+                } catch (Exception e) {
+                    Log.e(instanceTag, "Failed to start streaming mode: " + e.getMessage());
+
+                    streamingModeActive.set(false);
+                    globalInjectionRunning = false;
+
+                    if (streamingProcess != null) {
+                        streamingProcess.destroyForcibly();
+                        streamingProcess = null;
+                    }
+
+                    if (callback != null) {
+                        mainHandler.post(() -> callback.onInjectionError("Failed to start streaming: " + e.getMessage()));
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Stop streaming mode
+     */
+    public void stopStreamingMode(InjectionCallback callback) {
+        Log.d(instanceTag, "Stopping streaming mode");
+
+        executor.execute(() -> {
+            synchronized (INJECTION_LOCK) {
+                try {
+                    streamingModeActive.set(false);
+
+                    // Remove pipe to signal script to stop
+                    if (new File(STREAM_PIPE).exists()) {
+                        new File(STREAM_PIPE).delete();
+                    }
+
+                    // Stop streaming process
+                    if (streamingProcess != null) {
+                        streamingProcess.destroyForcibly();
+                        streamingProcess.waitFor(5, TimeUnit.SECONDS);
+                        streamingProcess = null;
+                    }
+
+                    globalInjectionRunning = false;
+
+                    Log.d(instanceTag, "Streaming mode stopped");
+
+                    if (callback != null) {
+                        mainHandler.post(() -> {
+                            callback.onStreamingStopped();
+                            callback.onInjectionCompleted(true);
+                        });
+                    }
+
+                } catch (Exception e) {
+                    Log.e(instanceTag, "Error stopping streaming mode: " + e.getMessage());
+
+                    if (callback != null) {
+                        mainHandler.post(() -> callback.onInjectionError("Error stopping streaming: " + e.getMessage()));
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Inject audio data using streaming mode
+     */
     public void injectAudio16kMono(byte[] pcmData, InjectionCallback callback) {
         if (pcmData == null || pcmData.length == 0) {
+            Log.w(instanceTag, "No audio data provided");
             if (callback != null) {
                 mainHandler.post(() -> callback.onInjectionError("No audio data provided"));
             }
             return;
         }
 
-        if (executor == null || executor.isShutdown() || executor.isTerminated()) {
-            Log.d(TAG, "🔄 Recreating executor for injection");
-            executor = Executors.newSingleThreadExecutor();
+        if (!streamingModeActive.get()) {
+            Log.w(instanceTag, "Streaming mode not active, cannot inject audio");
+            if (callback != null) {
+                mainHandler.post(() -> callback.onInjectionError("Streaming mode not active"));
+            }
+            return;
         }
 
+        Log.d(instanceTag, "Injecting audio to stream: " + pcmData.length + " bytes");
 
         executor.execute(() -> {
-            File tempWav = null;
             try {
-                Log.d(TAG, "🎧 Starting audio injection: " + pcmData.length + " bytes");
+                // Write PCM data directly to stream pipe
+                boolean success = writeToStreamPipe(pcmData);
 
-                // Validate call state
-                if (!isInCall()) {
-                    throw new IllegalStateException("No active call detected");
-                }
-
-                // Create WAV file
-                tempWav = File.createTempFile("ai_audio_", ".wav", context.getCacheDir());
-                writeWavFile(pcmData, 1, 16000, 16, tempWav);
-
-                Log.d(TAG, "📁 WAV file created: " + tempWav.length() + " bytes");
-
-                if (callback != null) {
-                    mainHandler.post(callback::onInjectionStarted);
-                }
-
-                // Execute injection
-                boolean success = executeInjectionScript(tempWav.getAbsolutePath());
-
-                if (callback != null) {
-                    final boolean finalSuccess = success;
-                    if (success) {
-                        mainHandler.post(() -> callback.onInjectionCompleted(finalSuccess));
-                    } else {
-                        mainHandler.post(() -> callback.onInjectionError("Script execution failed"));
+                if (success) {
+                    Log.d(instanceTag, "Audio written to stream successfully");
+                    if (callback != null) {
+                        mainHandler.post(() -> callback.onInjectionCompleted(true));
+                    }
+                } else {
+                    Log.e(instanceTag, "Failed to write audio to stream");
+                    if (callback != null) {
+                        mainHandler.post(() -> callback.onInjectionError("Failed to write to stream"));
                     }
                 }
 
             } catch (Exception e) {
-                Log.e(TAG, "💥 Audio injection failed", e);
+                Log.e(instanceTag, "Error injecting audio: " + e.getMessage());
                 if (callback != null) {
-                    mainHandler.post(() -> callback.onInjectionError("Failed: " + e.getMessage()));
-                }
-            } finally {
-                // Cleanup
-                if (tempWav != null && tempWav.exists()) {
-                    boolean deleted = tempWav.delete();
-                    Log.d(TAG, "🗑️ Temp file cleanup: " + deleted);
+                    mainHandler.post(() -> callback.onInjectionError("Injection error: " + e.getMessage()));
                 }
             }
         });
     }
 
-    // === ENHANCED METHOD FOR PRECISE TIMING ===
-    public void injectAudioWithPreciseTiming(byte[] pcmData, long expectedDurationMs, long timeoutMs, InjectionCallback callback) {
+    /**
+     * Write PCM data directly to the streaming pipe
+     */
+    private boolean writeToStreamPipe(byte[] pcmData) {
+        try {
+            File pipeFile = new File(STREAM_PIPE);
+
+            if (!pipeFile.exists()) {
+                Log.e(instanceTag, "Stream pipe does not exist: " + STREAM_PIPE);
+                return false;
+            }
+
+            // Write raw PCM data directly to pipe
+            try (FileOutputStream pipeOutput = new FileOutputStream(pipeFile)) {
+                pipeOutput.write(pcmData);
+                pipeOutput.flush();
+
+                Log.v(instanceTag, "Wrote " + pcmData.length + " bytes to stream pipe");
+                return true;
+
+            } catch (IOException e) {
+                Log.e(instanceTag, "Error writing to pipe: " + e.getMessage());
+                return false;
+            }
+
+        } catch (Exception e) {
+            Log.e(instanceTag, "Error accessing stream pipe: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Alternative: inject using temporary file (fallback method)
+     */
+    public void injectAudio16kMonoFile(byte[] pcmData, InjectionCallback callback) {
         if (pcmData == null || pcmData.length == 0) {
+            Log.w(instanceTag, "No audio data provided");
             if (callback != null) {
                 mainHandler.post(() -> callback.onInjectionError("No audio data provided"));
             }
             return;
         }
 
-        // Prevent concurrent injections
-        synchronized (injectionLock) {
-            if (isCurrentlyInjecting) {
-                Log.w(TAG, "⚠️ Injection already in progress, rejecting new request");
-                if (callback != null) {
-                    mainHandler.post(() -> callback.onInjectionError("Injection already in progress"));
-                }
-                return;
-            }
-            isCurrentlyInjecting = true;
-        }
+        Log.d(instanceTag, "Using file-based injection: " + pcmData.length + " bytes");
 
-        executor.execute(() -> {
-            File tempWav = null;
-            long startTime = System.currentTimeMillis();
-
-            try {
-                Log.d(TAG, "🎯 PRECISE INJECTION START:");
-                Log.d(TAG, "  📊 Audio: " + pcmData.length + " bytes");
-                Log.d(TAG, "  ⏱️ Expected: " + expectedDurationMs + "ms");
-                Log.d(TAG, "  ⏰ Timeout: " + timeoutMs + "ms");
-
-                // Enhanced call state validation
-                if (!isInCallEnhanced()) {
-                    throw new IllegalStateException("No active call detected for injection");
-                }
-
-                // Validate audio data quality
-                validateAudioData(pcmData, callback);
-
-                // Create optimized WAV file
-                tempWav = createOptimizedWavFile(pcmData);
-                Log.d(TAG, "📁 Optimized WAV created: " + tempWav.length() + " bytes");
-
-                if (callback != null) {
-                    mainHandler.post(callback::onInjectionStarted);
-                }
-
-                // Execute with enhanced monitoring
-                boolean success = executeInjectionWithMonitoring(tempWav.getAbsolutePath(),
-                        expectedDurationMs, timeoutMs, callback);
-
-                // Calculate final timing
-                long actualDuration = System.currentTimeMillis() - startTime;
-                double accuracy = expectedDurationMs > 0 ? (actualDuration * 100.0 / expectedDurationMs) : 0;
-
-                Log.d(TAG, "📊 INJECTION COMPLETED:");
-                Log.d(TAG, "  ✅ Success: " + success);
-                Log.d(TAG, "  ⏱️ Expected: " + expectedDurationMs + "ms");
-                Log.d(TAG, "  ⏱️ Actual: " + actualDuration + "ms");
-                Log.d(TAG, "  📈 Accuracy: " + String.format("%.1f", accuracy) + "%");
-
-                lastInjectionTime = System.currentTimeMillis();
-
-                if (callback != null) {
-                    final boolean finalSuccess = success;
-                    mainHandler.post(() -> callback.onInjectionCompleted(finalSuccess));
-                }
-
-            } catch (Exception e) {
-                long actualDuration = System.currentTimeMillis() - startTime;
-                Log.e(TAG, "💥 Injection failed after " + actualDuration + "ms", e);
-
-                if (callback != null) {
-                    mainHandler.post(() -> callback.onInjectionError("Failed after " + actualDuration + "ms: " + e.getMessage()));
-                }
-            } finally {
-                // Always cleanup
-                synchronized (injectionLock) {
-                    isCurrentlyInjecting = false;
-                }
-
-                if (tempWav != null && tempWav.exists()) {
-                    boolean deleted = tempWav.delete();
-                    Log.d(TAG, "🗑️ Temp file cleanup: " + deleted);
-                }
-            }
-        });
+        executor.execute(() -> executeFileInjection(pcmData, callback));
     }
 
-    // === ENHANCED CALL STATE DETECTION ===
-    private boolean isInCall() {
+    private void executeFileInjection(byte[] pcmData, InjectionCallback callback) {
+        File tempWav = null;
+
         try {
-            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            if (am == null) {
-                Log.w(TAG, "⚠️ AudioManager not available");
+            // Validate call state
+            if (!isInCall()) {
+                throw new IllegalStateException("No active call detected");
+            }
+
+            if (callback != null) {
+                mainHandler.post(callback::onInjectionStarted);
+            }
+
+            // Create temporary WAV file
+            tempWav = createTempWavFile(pcmData);
+            Log.d(instanceTag, "Created temp WAV: " + tempWav.getAbsolutePath() + " (" + tempWav.length() + " bytes)");
+
+            // Execute injection using script
+            boolean success = executeInjectionScript(tempWav.getAbsolutePath(), callback);
+
+            Log.d(instanceTag, "File injection completed: " + (success ? "SUCCESS" : "FAILED"));
+
+            if (callback != null) {
+                final boolean finalSuccess = success;
+                mainHandler.post(() -> callback.onInjectionCompleted(finalSuccess));
+            }
+
+        } catch (Exception e) {
+            Log.e(instanceTag, "File injection failed", e);
+            if (callback != null) {
+                mainHandler.post(() -> callback.onInjectionError("Injection failed: " + e.getMessage()));
+            }
+        } finally {
+            // Cleanup
+            if (tempWav != null && tempWav.exists()) {
+                boolean deleted = tempWav.delete();
+                Log.d(instanceTag, "Temp file cleanup: " + deleted);
+            }
+        }
+    }
+
+    private boolean executeInjectionScript(String audioFilePath, InjectionCallback callback) {
+        try {
+            String[] command = {
+                    "su", "-c",
+                    INJECT_SCRIPT + " file '" + audioFilePath.replace("'", "'\"'\"'") + "'"
+            };
+
+            Log.d(instanceTag, "Executing: " + String.join(" ", command));
+
+            Process process = Runtime.getRuntime().exec(command);
+
+            // Monitor output
+            StringBuilder output = new StringBuilder();
+            Thread outputReader = new Thread(() -> {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                     BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+
+                    String line;
+
+                    while ((line = reader.readLine()) != null) {
+                        output.append("OUT: ").append(line).append("\n");
+                        Log.d(instanceTag, "Script output: " + line);
+
+                        if (callback != null) {
+                            final String outputLine = line;
+                            mainHandler.post(() -> callback.onInjectionProgress("OUT: " + outputLine));
+                        }
+                    }
+
+                    while ((line = errorReader.readLine()) != null) {
+                        output.append("ERR: ").append(line).append("\n");
+                        Log.w(instanceTag, "Script error: " + line);
+
+                        if (callback != null) {
+                            final String errorLine = line;
+                            mainHandler.post(() -> callback.onInjectionProgress("ERR: " + errorLine));
+                        }
+                    }
+
+                } catch (IOException e) {
+                    Log.e(instanceTag, "Error reading script output", e);
+                }
+            }, "ScriptReader-" + instanceId);
+
+            outputReader.start();
+
+            boolean finished = process.waitFor(30, TimeUnit.SECONDS);
+
+            if (!finished) {
+                Log.w(instanceTag, "Script timeout, force killing");
+                process.destroyForcibly();
+                process.waitFor(5, TimeUnit.SECONDS);
                 return false;
             }
 
-            int mode = am.getMode();
-            boolean inCall = (mode == AudioManager.MODE_IN_CALL || mode == AudioManager.MODE_IN_COMMUNICATION);
+            outputReader.join(3000);
 
-            Log.d(TAG, "📞 Call state: " + getAudioModeString(mode) + " (In call: " + inCall + ")");
-            return inCall;
+            int exitCode = process.exitValue();
+            Log.d(instanceTag, "Script exit code: " + exitCode);
+
+            return exitCode == 0;
 
         } catch (Exception e) {
-            Log.e(TAG, "❌ Error checking call state", e);
+            Log.e(instanceTag, "Script execution error", e);
             return false;
         }
     }
 
-    // NEW: Enhanced call state detection with detailed info
-    public boolean isInCallEnhanced() {
-        try {
-            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            if (am == null) {
-                Log.w(TAG, "⚠️ AudioManager not available");
-                return false;
-            }
+    private File createTempWavFile(byte[] pcmData) throws IOException {
+        String fileName = "inject_" + instanceId + "_" + System.currentTimeMillis() + ".wav";
+        File tempFile = new File(context.getCacheDir(), fileName);
 
-            int mode = am.getMode();
-            boolean inCall = (mode == AudioManager.MODE_IN_CALL || mode == AudioManager.MODE_IN_COMMUNICATION);
+        writeWavFile(pcmData, CHANNELS, SAMPLE_RATE, BITS_PER_SAMPLE, tempFile);
 
-            // Additional checks for better validation
-            boolean isSpeakerphoneOn = am.isSpeakerphoneOn();
-            boolean isBluetoothA2dpOn = am.isBluetoothA2dpOn();
-            boolean isMicrophoneMute = am.isMicrophoneMute();
-
-            Log.d(TAG, "📞 Enhanced call state:");
-            Log.d(TAG, "  🎯 Mode: " + getAudioModeString(mode) + " (In call: " + inCall + ")");
-            Log.d(TAG, "  🔊 Speakerphone: " + isSpeakerphoneOn);
-            Log.d(TAG, "  🎧 Bluetooth A2DP: " + isBluetoothA2dpOn);
-            Log.d(TAG, "  🎤 Mic muted: " + isMicrophoneMute);
-
-            return inCall;
-
-        } catch (Exception e) {
-            Log.e(TAG, "❌ Error checking enhanced call state", e);
-            return false;
-        }
+        return tempFile;
     }
 
-    // NEW: Validate audio data quality with detailed analysis
-    private void validateAudioData(byte[] pcmData, InjectionCallback callback) throws IllegalArgumentException {
-        if (pcmData.length < 1600) { // Less than 0.1s at 16kHz mono
-            throw new IllegalArgumentException("Audio data too short: " + pcmData.length + " bytes");
-        }
-
-        // Check for completely silent audio
-        boolean hasAudio = false;
-        int samplesAboveThreshold = 0;
-        int totalSamples = pcmData.length / 2;
-        int maxAmplitude = 0;
-        long rmsSum = 0;
-
-        for (int i = 0; i < pcmData.length - 1; i += 2) {
-            short sample = (short) ((pcmData[i + 1] << 8) | (pcmData[i] & 0xFF));
-            int amplitude = Math.abs(sample);
-
-            rmsSum += sample * sample;
-
-            if (amplitude > 100) {
-                hasAudio = true;
-                samplesAboveThreshold++;
-            }
-
-            if (amplitude > maxAmplitude) {
-                maxAmplitude = amplitude;
-            }
-        }
-
-        if (!hasAudio) {
-            throw new IllegalArgumentException("Audio data appears to be silent");
-        }
-
-        // Calculate audio quality metrics
-        double audioPercentage = totalSamples > 0 ? (double) samplesAboveThreshold / totalSamples : 0;
-        double rms = Math.sqrt((double) rmsSum / totalSamples);
-        long durationMs = (totalSamples * 1000L) / 16000; // 16kHz sample rate
-
-        Log.d(TAG, "✅ Audio validation passed:");
-        Log.d(TAG, "  📊 Duration: " + durationMs + "ms");
-        Log.d(TAG, "  🎵 Audio samples: " + samplesAboveThreshold + "/" + totalSamples + " (" + String.format("%.1f", audioPercentage * 100) + "%)");
-        Log.d(TAG, "  📈 Max amplitude: " + maxAmplitude);
-        Log.d(TAG, "  📊 RMS: " + String.format("%.1f", rms));
-
-        // Notify callback with validation results
-        if (callback != null) {
-            mainHandler.post(() -> callback.onAudioValidated(durationMs, 16000));
-        }
-    }
-
-    // IMPROVED: Optimized WAV file creation
-    private File createOptimizedWavFile(byte[] pcmData) throws IOException {
-        File wavFile = File.createTempFile("precise_audio_", ".wav", context.getCacheDir());
-
-        // Use optimized parameters for call injection
-        int sampleRate = 16000; // Optimal for call audio
-        int numChannels = 1;    // Mono
-        int bitsPerSample = 16; // 16-bit
-
-        writeWavFileOptimized(pcmData, numChannels, sampleRate, bitsPerSample, wavFile);
-        return wavFile;
-    }
-
-    // === WAV FILE CREATION (ORIGINAL) ===
     private void writeWavFile(byte[] pcmData, int numChannels, int sampleRate, int bitsPerSample, File wavFile) throws IOException {
         int byteRate = sampleRate * numChannels * bitsPerSample / 8;
         int blockAlign = numChannels * bitsPerSample / 8;
@@ -333,478 +442,134 @@ public class CallAudioInjector {
         int chunkSize = 36 + dataLength;
 
         try (FileOutputStream out = new FileOutputStream(wavFile)) {
-            // Write WAV header (44 bytes)
             out.write(new byte[] {
                     'R','I','F','F',
-                    (byte) (chunkSize      ), (byte)(chunkSize >>  8), (byte)(chunkSize >> 16), (byte)(chunkSize >> 24),
+                    (byte) chunkSize, (byte)(chunkSize >> 8), (byte)(chunkSize >> 16), (byte)(chunkSize >> 24),
                     'W','A','V','E',
                     'f','m','t',' ',
-                    16,0,0,0,                 // Subchunk1Size (16 for PCM)
-                    1,0,                      // AudioFormat (1 for PCM)
-                    (byte) numChannels, 0,    // NumChannels
-                    (byte) (sampleRate      ), (byte) (sampleRate >> 8), (byte) (sampleRate >> 16), (byte) (sampleRate >> 24),
-                    (byte) (byteRate      ), (byte) (byteRate >>  8), (byte) (byteRate >> 16), (byte) (byteRate >> 24),
-                    (byte) blockAlign, 0,     // BlockAlign
-                    (byte) bitsPerSample, 0,  // BitsPerSample
+                    16,0,0,0,
+                    1,0,
+                    (byte) numChannels, 0,
+                    (byte) sampleRate, (byte)(sampleRate >> 8), (byte)(sampleRate >> 16), (byte)(sampleRate >> 24),
+                    (byte) byteRate, (byte)(byteRate >> 8), (byte)(byteRate >> 16), (byte)(byteRate >> 24),
+                    (byte) blockAlign, 0,
+                    (byte) bitsPerSample, 0,
                     'd','a','t','a',
-                    (byte) (dataLength      ), (byte) (dataLength >>  8), (byte) (dataLength >> 16), (byte) (dataLength >> 24)
+                    (byte) dataLength, (byte)(dataLength >> 8), (byte)(dataLength >> 16), (byte)(dataLength >> 24)
             });
+
             out.write(pcmData);
             out.flush();
         }
     }
 
-    // IMPROVED: Optimized WAV writing with better header structure
-    private void writeWavFileOptimized(byte[] pcmData, int numChannels, int sampleRate, int bitsPerSample, File wavFile) throws IOException {
-        int byteRate = sampleRate * numChannels * bitsPerSample / 8;
-        int blockAlign = numChannels * bitsPerSample / 8;
-        int dataLength = pcmData.length;
-        int chunkSize = 36 + dataLength;
-
-        try (FileOutputStream out = new FileOutputStream(wavFile)) {
-            // Write optimized WAV header with proper endianness
-            writeInt(out, 0x46464952);      // "RIFF"
-            writeInt(out, chunkSize);       // File size - 8
-            writeInt(out, 0x45564157);      // "WAVE"
-            writeInt(out, 0x20746d66);      // "fmt "
-            writeInt(out, 16);              // Subchunk1Size
-            writeShort(out, (short) 1);     // AudioFormat (PCM)
-            writeShort(out, (short) numChannels);
-            writeInt(out, sampleRate);
-            writeInt(out, byteRate);
-            writeShort(out, (short) blockAlign);
-            writeShort(out, (short) bitsPerSample);
-            writeInt(out, 0x61746164);      // "data"
-            writeInt(out, dataLength);
-
-            // Write audio data
-            out.write(pcmData);
-            out.flush();
-        }
-    }
-
-    public boolean isReady() {
-        return executor != null && !executor.isShutdown() && !executor.isTerminated();
-
-    }
-
-
-        // Helper methods for optimized WAV writing
-    private void writeInt(FileOutputStream out, int value) throws IOException {
-        out.write(value & 0xFF);
-        out.write((value >> 8) & 0xFF);
-        out.write((value >> 16) & 0xFF);
-        out.write((value >> 24) & 0xFF);
-    }
-
-    private void writeShort(FileOutputStream out, short value) throws IOException {
-        out.write(value & 0xFF);
-        out.write((value >> 8) & 0xFF);
-    }
-
-    // === SCRIPT EXECUTION (ORIGINAL) ===
-    private boolean executeInjectionScript(String audioFilePath) {
-        return executeInjectionScript(audioFilePath, 30); // Default 30 second timeout
-    }
-
-    private boolean executeInjectionScript(String audioFilePath, long timeoutSeconds) {
-        Process process = null;
+    private boolean isInCall() {
         try {
-            Log.d(TAG, "🚀 Executing injection script with " + timeoutSeconds + "s timeout");
+            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            if (am == null) return false;
 
-            // Escape the file path properly
-            String escapedPath = audioFilePath.replace("'", "'\"'\"'");
-
-            // Execute with proper shell escaping
-            String[] command = {"su", "-c", INJECT_SCRIPT + " '" + escapedPath + "' file"};
-
-            process = Runtime.getRuntime().exec(command);
-
-            // Monitor output
-            StringBuilder output = new StringBuilder();
-            Process finalProcess = process;
-            Thread outputReader = new Thread(() -> {
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(finalProcess.getInputStream()))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        output.append(line).append("\n");
-                        Log.d(TAG, "SCRIPT: " + line);
-                    }
-                } catch (IOException e) {
-                    Log.w(TAG, "Error reading output: " + e.getMessage());
-                }
-            });
-
-            outputReader.start();
-
-            // Wait for completion with timeout
-            boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
-            outputReader.join(2000);
-
-            if (!finished) {
-                Log.e(TAG, "❌ Script timed out after " + timeoutSeconds + "s");
-                process.destroyForcibly();
-                return false;
-            }
-
-            int exitCode = process.exitValue();
-            Log.d(TAG, "📊 Script completed with exit code: " + exitCode);
-
-            return exitCode == 0;
-
+            int mode = am.getMode();
+            return (mode == AudioManager.MODE_IN_CALL || mode == AudioManager.MODE_IN_COMMUNICATION);
         } catch (Exception e) {
-            Log.e(TAG, "💥 Script execution error", e);
+            Log.e(instanceTag, "Error checking call state", e);
             return false;
-        } finally {
-            if (process != null) {
-                try {
-                    process.destroyForcibly();
-                } catch (Exception ignored) {}
-            }
         }
     }
 
-    // IMPROVED: Enhanced script execution with comprehensive monitoring
-    private boolean executeInjectionWithMonitoring(String audioFilePath, long expectedDurationMs,
-                                                   long timeoutMs, InjectionCallback callback) {
-        Process process = null;
-        try {
-            Log.d(TAG, "🚀 Executing injection with comprehensive monitoring");
-            Log.d(TAG, "  📁 File: " + audioFilePath);
-            Log.d(TAG, "  ⏱️ Expected: " + expectedDurationMs + "ms");
-            Log.d(TAG, "  ⏰ Timeout: " + timeoutMs + "ms");
+    // Test methods
+    public void testInjectionSystem(InjectionCallback callback) {
+        Log.i(instanceTag, "Testing injection system");
 
-            // Prepare enhanced command with better error handling
-            String escapedPath = audioFilePath.replace("'", "'\"'\"'");
-            String[] command = {"su", "-c", INJECT_SCRIPT + " '" + escapedPath + "' file enhanced"};
-
-            long scriptStartTime = System.currentTimeMillis();
-            process = Runtime.getRuntime().exec(command);
-
-            // Enhanced progress monitoring with real-time reporting
-            final Process monitoredProcess = process;
-            Thread progressMonitor = new Thread(() -> {
-                try {
-                    long lastReportTime = System.currentTimeMillis();
-
-                    while (!monitoredProcess.waitFor(500, TimeUnit.MILLISECONDS)) {
-                        long elapsed = System.currentTimeMillis() - scriptStartTime;
-                        long currentTime = System.currentTimeMillis();
-
-                        // Report progress every 1 second
-                        if (currentTime - lastReportTime >= 1000) {
-                            Log.d(TAG, "⏱️ Injection progress: " + elapsed + "ms / " + expectedDurationMs + "ms (" +
-                                    String.format("%.1f", (elapsed * 100.0 / expectedDurationMs)) + "%)");
-
-                            if (callback != null) {
-                                mainHandler.post(() -> callback.onInjectionProgress(elapsed, expectedDurationMs));
-                            }
-
-                            lastReportTime = currentTime;
-                        }
-
-                        // Check if we've exceeded reasonable time
-                        if (elapsed > timeoutMs) {
-                            Log.w(TAG, "⚠️ Injection timeout exceeded in monitor");
-                            break;
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    Log.d(TAG, "Progress monitor interrupted");
+        executor.execute(() -> {
+            try {
+                if (callback != null) {
+                    mainHandler.post(callback::onInjectionStarted);
                 }
-            });
 
-            // Enhanced output monitoring with callback notifications
-            StringBuilder output = new StringBuilder();
-            Thread outputReader = new Thread(() -> {
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(monitoredProcess.getInputStream()));
-                     BufferedReader errorReader = new BufferedReader(new InputStreamReader(monitoredProcess.getErrorStream()))) {
+                String[] command = {"su", "-c", SCRIPTS_DIR + "/test_injection.sh"};
+                Process testProcess = Runtime.getRuntime().exec(command);
 
-                    String line;
+                int result = testProcess.waitFor();
+                boolean success = result == 0;
 
-                    // Read stdout
-                    while ((line = reader.readLine()) != null) {
-                        output.append("OUT: ").append(line).append("\n");
-                        Log.d(TAG, "SCRIPT OUT: " + line);
+                Log.i(instanceTag, "Test completed: " + (success ? "SUCCESS" : "FAILED"));
 
-                        if (callback != null) {
-                            final String outputLine = line;
-                            mainHandler.post(() -> callback.onScriptOutput("OUT: " + outputLine));
-                        }
-                    }
-
-                    // Read stderr
-                    while ((line = errorReader.readLine()) != null) {
-                        output.append("ERR: ").append(line).append("\n");
-                        Log.w(TAG, "SCRIPT ERR: " + line);
-
-                        if (callback != null) {
-                            final String errorLine = line;
-                            mainHandler.post(() -> callback.onScriptOutput("ERR: " + errorLine));
-                        }
-                    }
-
-                } catch (IOException e) {
-                    Log.w(TAG, "Error reading script output: " + e.getMessage());
+                if (callback != null) {
+                    mainHandler.post(() -> callback.onInjectionCompleted(success));
                 }
-            });
 
-            progressMonitor.start();
-            outputReader.start();
-
-            // Wait for completion with enhanced timeout handling
-            long timeoutSeconds = Math.max(30, timeoutMs / 1000);
-            boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
-
-            // Cleanup monitoring threads with timeout
-            progressMonitor.interrupt();
-            outputReader.join(3000); // Wait up to 3 seconds for output reader
-
-            if (!finished) {
-                Log.e(TAG, "❌ Script timed out after " + timeoutSeconds + "s");
-                process.destroyForcibly();
-                return false;
-            }
-
-            int exitCode = process.exitValue();
-            long actualDuration = System.currentTimeMillis() - scriptStartTime;
-
-            Log.d(TAG, "📊 Enhanced script execution completed:");
-            Log.d(TAG, "  🎯 Exit code: " + exitCode);
-            Log.d(TAG, "  ⏱️ Duration: " + actualDuration + "ms");
-            Log.d(TAG, "  📝 Output lines: " + output.toString().split("\n").length);
-
-            // Log a summary of output if verbose logging is enabled
-            if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                Log.v(TAG, "📝 Complete script output:\n" + output.toString());
-            }
-
-            return exitCode == 0;
-
-        } catch (Exception e) {
-            Log.e(TAG, "💥 Enhanced script execution error", e);
-            return false;
-        } finally {
-            if (process != null) {
-                try {
-                    process.destroyForcibly();
-                } catch (Exception ignored) {}
-            }
-        }
-    }
-
-    // === UTILITY METHODS ===
-    private String getAudioModeString(int mode) {
-        switch (mode) {
-            case AudioManager.MODE_NORMAL: return "NORMAL";
-            case AudioManager.MODE_RINGTONE: return "RINGTONE";
-            case AudioManager.MODE_IN_CALL: return "IN_CALL";
-            case AudioManager.MODE_IN_COMMUNICATION: return "IN_COMMUNICATION";
-            default: return "UNKNOWN(" + mode + ")";
-        }
-    }
-
-    // === STATUS AND MONITORING METHODS ===
-
-    // NEW: Check if injection is currently active
-    public boolean isCurrentlyInjecting() {
-        synchronized (injectionLock) {
-            return isCurrentlyInjecting;
-        }
-    }
-
-    // NEW: Get time since last injection
-    public long getTimeSinceLastInjection() {
-        return lastInjectionTime > 0 ? System.currentTimeMillis() - lastInjectionTime : -1;
-    }
-
-    // NEW: Get detailed injection status
-    public String getInjectionStatus() {
-        synchronized (injectionLock) {
-            if (isCurrentlyInjecting) {
-                return "ACTIVE";
-            } else if (lastInjectionTime > 0) {
-                long timeSince = getTimeSinceLastInjection();
-                return "IDLE (last: " + timeSince + "ms ago)";
-            } else {
-                return "NEVER_USED";
-            }
-        }
-    }
-
-    // NEW: Validate injection environment
-    public boolean validateInjectionEnvironment() {
-        Log.d(TAG, "🔍 VALIDATING INJECTION ENVIRONMENT:");
-
-        boolean valid = true;
-
-        // Check script file existence
-        File scriptFile = new File(INJECT_SCRIPT);
-        if (!scriptFile.exists()) {
-            Log.e(TAG, "❌ Injection script not found: " + INJECT_SCRIPT);
-            valid = false;
-        } else {
-            Log.d(TAG, "✅ Injection script found: " + scriptFile.length() + " bytes");
-        }
-
-        // Check root access
-        try {
-            Process testRoot = Runtime.getRuntime().exec("su -c echo test");
-            testRoot.waitFor();
-            if (testRoot.exitValue() == 0) {
-                Log.d(TAG, "✅ Root access available");
-            } else {
-                Log.e(TAG, "❌ Root access denied");
-                valid = false;
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "❌ Root access test failed: " + e.getMessage());
-            valid = false;
-        }
-
-        // Check call state
-        boolean inCall = isInCallEnhanced();
-        if (inCall) {
-            Log.d(TAG, "✅ Currently in call");
-        } else {
-            Log.w(TAG, "⚠️ Not currently in call");
-            // Don't mark as invalid since this might be tested outside of calls
-        }
-
-        // Check temp directory access
-        try {
-            File tempTest = File.createTempFile("injection_test_", ".tmp", context.getCacheDir());
-            tempTest.delete();
-            Log.d(TAG, "✅ Temp directory accessible");
-        } catch (Exception e) {
-            Log.e(TAG, "❌ Temp directory not accessible: " + e.getMessage());
-            valid = false;
-        }
-
-        Log.d(TAG, "🏁 Environment validation: " + (valid ? "PASSED" : "FAILED"));
-        return valid;
-    }
-
-    // === TESTING AND DEBUGGING ===
-
-    // NEW: Test injection with a simple tone
-    public void testInjection(InjectionCallback callback) {
-        Log.d(TAG, "🧪 STARTING INJECTION TEST");
-
-        // Create a 1-second test tone at 800Hz
-        byte[] testTone = createTestTone(800, 1000); // 800Hz, 1 second
-
-        injectAudioWithPreciseTiming(testTone, 1000, 5000, new InjectionCallback() {
-            @Override
-            public void onInjectionStarted() {
-                Log.d(TAG, "🧪 Test injection started");
-                if (callback != null) callback.onInjectionStarted();
-            }
-
-            @Override
-            public void onInjectionCompleted(boolean success) {
-                Log.d(TAG, "🧪 Test injection completed: " + (success ? "SUCCESS" : "FAILED"));
-                if (callback != null) callback.onInjectionCompleted(success);
-            }
-
-            @Override
-            public void onInjectionError(String error) {
-                Log.e(TAG, "🧪 Test injection error: " + error);
-                if (callback != null) callback.onInjectionError(error);
-            }
-
-            @Override
-            public void onInjectionProgress(long elapsedMs, long expectedMs) {
-                Log.d(TAG, "🧪 Test progress: " + elapsedMs + "/" + expectedMs + "ms");
-                if (callback != null) callback.onInjectionProgress(elapsedMs, expectedMs);
-            }
-
-            @Override
-            public void onAudioValidated(long durationMs, int sampleRate) {
-                Log.d(TAG, "🧪 Test audio validated: " + durationMs + "ms @ " + sampleRate + "Hz");
-                if (callback != null) callback.onAudioValidated(durationMs, sampleRate);
-            }
-
-            @Override
-            public void onScriptOutput(String output) {
-                Log.d(TAG, "🧪 Test script: " + output);
-                if (callback != null) callback.onScriptOutput(output);
+            } catch (Exception e) {
+                Log.e(instanceTag, "Test failed", e);
+                if (callback != null) {
+                    mainHandler.post(() -> callback.onInjectionError("Test failed: " + e.getMessage()));
+                }
             }
         });
     }
 
-    // NEW: Create test tone for testing
-    private byte[] createTestTone(double frequency, long durationMs) {
-        int sampleRate = 16000;
-        int totalSamples = (int) ((sampleRate * durationMs) / 1000);
-        byte[] audioData = new byte[totalSamples * 2]; // 16-bit = 2 bytes per sample
+    public void testWithTone(int frequency, int durationMs, InjectionCallback callback) {
+        byte[] toneData = generateTestTone(frequency, durationMs);
+
+        if (streamingModeActive.get()) {
+            injectAudio16kMono(toneData, callback);
+        } else {
+            injectAudio16kMonoFile(toneData, callback);
+        }
+    }
+
+    private byte[] generateTestTone(double frequency, long durationMs) {
+        int totalSamples = (int) ((SAMPLE_RATE * durationMs) / 1000);
+        byte[] audioData = new byte[totalSamples * 2];
 
         for (int i = 0; i < totalSamples; i++) {
-            double time = i / (double) sampleRate;
-            short sample = (short) (Math.sin(2 * Math.PI * frequency * time) * 16000);
-
-            // Convert to little-endian bytes
+            double time = i / (double) SAMPLE_RATE;
+            short sample = (short) (Math.sin(2 * Math.PI * frequency * time) * 8000);
             audioData[i * 2] = (byte) (sample & 0xFF);
             audioData[i * 2 + 1] = (byte) ((sample >> 8) & 0xFF);
         }
 
-        Log.d(TAG, "🎵 Created test tone: " + frequency + "Hz, " + durationMs + "ms, " + audioData.length + " bytes");
         return audioData;
     }
 
-    // NEW: Log comprehensive status
-    public void logStatus() {
-        Log.d(TAG, "=== CALL AUDIO INJECTOR STATUS ===");
-        Log.d(TAG, "Injection Status: " + getInjectionStatus());
-        Log.d(TAG, "Call State: " + (isInCallEnhanced() ? "IN_CALL" : "NOT_IN_CALL"));
-        Log.d(TAG, "Environment Valid: " + validateInjectionEnvironment());
-        Log.d(TAG, "Last Injection: " + (lastInjectionTime > 0 ?
-                getTimeSinceLastInjection() + "ms ago" : "NEVER"));
-
-        // Audio manager details
-        try {
-            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            if (am != null) {
-                Log.d(TAG, "Audio Mode: " + getAudioModeString(am.getMode()));
-                Log.d(TAG, "Volume (Voice Call): " + am.getStreamVolume(AudioManager.STREAM_VOICE_CALL));
-                Log.d(TAG, "Volume (Music): " + am.getStreamVolume(AudioManager.STREAM_MUSIC));
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "Error getting audio manager info: " + e.getMessage());
-        }
-
-        Log.d(TAG, "=====================================");
+    public boolean isStreamingModeActive() {
+        return streamingModeActive.get();
     }
 
-    // === CLEANUP ===
-    public void cleanup() {
-        Log.d(TAG, "🧹 Cleaning up CallAudioInjector");
+    public boolean isCurrentlyInjecting() {
+        return isInjecting.get() || globalInjectionRunning;
+    }
 
-        synchronized (injectionLock) {
-            if (isCurrentlyInjecting) {
-                Log.w(TAG, "⚠️ Cleanup called while injection active - waiting...");
-                // Wait a bit for current injection to complete
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    Log.w(TAG, "Interrupted while waiting for injection to complete");
-                }
-            }
+    public String getStatus() {
+        if (streamingModeActive.get()) {
+            return String.format("Instance %d: STREAMING_ACTIVE", instanceId);
+        } else {
+            return String.format("Instance %d: %s",
+                    instanceId,
+                    isInjecting.get() ? "INJECTING" : "IDLE");
+        }
+    }
+
+    public void cleanup() {
+        Log.i(instanceTag, "Cleaning up CallAudioInjector");
+
+        // Stop streaming mode if active
+        if (streamingModeActive.get()) {
+            stopStreamingMode(null);
         }
 
         if (executor != null && !executor.isShutdown()) {
             executor.shutdown();
             try {
                 if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                    Log.w(TAG, "Executor did not terminate gracefully, forcing shutdown");
+                    Log.w(instanceTag, "Executor did not terminate, forcing shutdown");
                     executor.shutdownNow();
                 }
             } catch (InterruptedException e) {
-                Log.w(TAG, "Interrupted while waiting for executor termination");
                 executor.shutdownNow();
+                Thread.currentThread().interrupt();
             }
         }
 
-        Log.d(TAG, "✅ CallAudioInjector cleanup completed");
+        Log.i(instanceTag, "Cleanup completed");
     }
 }

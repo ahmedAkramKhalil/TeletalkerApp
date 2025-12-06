@@ -5,18 +5,20 @@ import android.os.Looper;
 import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Accumulates AI audio chunks and injects complete responses
- * Prevents fragmented audio injection by buffering until response is complete
+ * ✅ FIXED: Accumulates AI audio chunks and injects complete responses
+ * Now uses background thread (ExecutorService) instead of main thread (Handler)
+ * This restores the original working thread context for injection
  */
 public class AudioResponseAccumulator {
     private static final String TAG = "AudioAccumulator";
 
     // Timing constants for detecting end of response
-    private static final long SILENCE_TIMEOUT_MS = 3000; // 3 seconds silence = end of response (increased)
-    private static final long MAX_RESPONSE_DURATION_MS = 45000; // 45 seconds max response (increased)
+    private static final long SILENCE_TIMEOUT_MS = 3000; // 3 seconds silence = end of response
+    private static final long MAX_RESPONSE_DURATION_MS = 45000; // 45 seconds max response
     private static final int MIN_CHUNK_SIZE = 320; // Minimum chunk size to consider (0.01s at 16kHz)
     private static final long MIN_RESPONSE_GAP_MS = 500; // Minimum gap between responses
 
@@ -28,6 +30,8 @@ public class AudioResponseAccumulator {
         void onAccumulatorError(String error);
     }
 
+    // ✅ FIXED: Use ExecutorService for callbacks instead of Handler
+    private final ExecutorService callbackExecutor;
     private final Handler timeoutHandler;
     private AccumulatorCallback callback;
 
@@ -36,16 +40,30 @@ public class AudioResponseAccumulator {
     private final AtomicBoolean isAccumulating = new AtomicBoolean(false);
     private long responseStartTime = 0;
     private long lastChunkTime = 0;
-    private long lastResponseCompletedTime = 0; // NEW: Track when last response completed
+    private long lastResponseCompletedTime = 0;
     private int totalChunksReceived = 0;
 
     // Timeout handling
     private Runnable silenceTimeoutRunnable;
     private Runnable maxDurationTimeoutRunnable;
 
-    public AudioResponseAccumulator() {
+    /**
+     * ✅ FIXED: Constructor now takes ExecutorService for proper thread context
+     */
+    public AudioResponseAccumulator(ExecutorService callbackExecutor) {
+        this.callbackExecutor = callbackExecutor;
         this.timeoutHandler = new Handler(Looper.getMainLooper());
         this.audioAccumulator = new ByteArrayOutputStream();
+
+        Log.d(TAG, "✅ AudioResponseAccumulator initialized with ExecutorService (background thread context)");
+    }
+
+    /**
+     * ✅ LEGACY: Default constructor for backward compatibility
+     */
+    public AudioResponseAccumulator() {
+        this(null); // Will use Handler for callbacks (old behavior)
+        Log.w(TAG, "⚠️ Using legacy Handler-based callbacks - consider passing ExecutorService for better performance");
     }
 
     public void setCallback(AccumulatorCallback callback) {
@@ -63,12 +81,11 @@ public class AudioResponseAccumulator {
 
         long currentTime = System.currentTimeMillis();
 
-        // NEW: Prevent starting new response too quickly after previous one
+        // Prevent starting new response too quickly after previous one
         if (!isAccumulating.get() && lastResponseCompletedTime > 0) {
             long timeSinceLastResponse = currentTime - lastResponseCompletedTime;
             if (timeSinceLastResponse < MIN_RESPONSE_GAP_MS) {
                 Log.d(TAG, "📦 Extending previous response - gap too short: " + timeSinceLastResponse + "ms");
-                // Continue accumulating instead of starting new response
                 isAccumulating.set(true);
             }
         }
@@ -88,7 +105,7 @@ public class AudioResponseAccumulator {
                     audioAccumulator.size() + " bytes, Chunks: " + totalChunksReceived +
                     ", Elapsed: " + (currentTime - responseStartTime) + "ms)");
 
-            // Notify callback
+            // ✅ FIXED: Notify callback on background thread
             notifyCallback(cb -> cb.onChunkAccumulated(audioChunk.length, audioAccumulator.size()));
 
             // Reset silence timeout
@@ -117,12 +134,13 @@ public class AudioResponseAccumulator {
         // Set maximum duration timeout
         setMaxDurationTimeout();
 
-        // Notify callback
+        // ✅ FIXED: Notify callback on background thread
         notifyCallback(cb -> cb.onResponseStarted());
     }
 
     /**
-     * Complete the current response and inject accumulated audio
+     * ✅ FIXED: Complete the current response and inject accumulated audio
+     * This now runs on background thread via ExecutorService (like original working code)
      */
     private synchronized void completeResponse(boolean isTimeout) {
         if (!isAccumulating.get()) {
@@ -130,7 +148,7 @@ public class AudioResponseAccumulator {
         }
 
         isAccumulating.set(false);
-        lastResponseCompletedTime = System.currentTimeMillis(); // NEW: Track completion time
+        lastResponseCompletedTime = System.currentTimeMillis();
 
         // Cancel all timeouts
         cancelTimeouts();
@@ -144,8 +162,11 @@ public class AudioResponseAccumulator {
         Log.d(TAG, "  📦 Chunks: " + totalChunksReceived);
         Log.d(TAG, "  🎵 Est. audio length: " + (completeAudio.length * 1000 / (16000 * 2)) + "ms");
         Log.d(TAG, "  ⏰ Reason: " + (isTimeout ? "TIMEOUT" : "SILENCE_DETECTED"));
+        Log.d(TAG, "  🔧 Thread: " + Thread.currentThread().getName());
 
         if (completeAudio.length > 0) {
+            // ✅ FIXED: Notify callback on background thread (ExecutorService)
+            // This restores the original working thread context for injection
             if (isTimeout) {
                 notifyCallback(cb -> cb.onResponseTimeout(completeAudio, responseDuration));
             } else {
@@ -245,6 +266,8 @@ public class AudioResponseAccumulator {
         Log.d(TAG, "Accumulating: " + isAccumulating.get());
         Log.d(TAG, "Buffer size: " + audioAccumulator.size() + " bytes");
         Log.d(TAG, "Total chunks: " + totalChunksReceived);
+        Log.d(TAG, "Callback Executor: " + (callbackExecutor != null ? "ExecutorService (background)" : "Handler (main thread)"));
+        Log.d(TAG, "Current Thread: " + Thread.currentThread().getName());
 
         if (isAccumulating.get()) {
             long elapsedTime = System.currentTimeMillis() - responseStartTime;
@@ -266,17 +289,20 @@ public class AudioResponseAccumulator {
         totalChunksReceived = 0;
         responseStartTime = 0;
         lastChunkTime = 0;
-        lastResponseCompletedTime = 0; // NEW: Reset completion time
+        lastResponseCompletedTime = 0;
     }
 
     /**
-     * Cleanup resources
+     * ✅ FIXED: Cleanup resources with proper executor shutdown
      */
     public void cleanup() {
         Log.d(TAG, "🧹 Cleaning up accumulator");
 
         reset();
         timeoutHandler.removeCallbacksAndMessages(null);
+
+        // Note: Don't shutdown callbackExecutor here as it's shared
+        // The parent class (AICallRecorderRefactored) will shut it down
 
         try {
             audioAccumulator.close();
@@ -285,9 +311,30 @@ public class AudioResponseAccumulator {
         }
     }
 
+    /**
+     * ✅ FIXED: Notify callback on appropriate thread
+     */
     private void notifyCallback(CallbackAction action) {
         if (callback != null) {
-            action.execute(callback);
+            if (callbackExecutor != null) {
+                // ✅ FIXED: Use ExecutorService for background thread (like original working code)
+                callbackExecutor.execute(() -> {
+                    try {
+                        action.execute(callback);
+                    } catch (Exception e) {
+                        Log.e(TAG, "❌ Error in callback execution: " + e.getMessage());
+                    }
+                });
+            } else {
+                // Legacy: Use Handler for main thread (old behavior)
+                timeoutHandler.post(() -> {
+                    try {
+                        action.execute(callback);
+                    } catch (Exception e) {
+                        Log.e(TAG, "❌ Error in callback execution: " + e.getMessage());
+                    }
+                });
+            }
         }
     }
 

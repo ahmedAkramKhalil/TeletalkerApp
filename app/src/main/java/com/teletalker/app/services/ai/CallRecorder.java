@@ -17,6 +17,8 @@ import android.widget.Toast;
 import androidx.annotation.RequiresPermission;
 import androidx.core.content.ContextCompat;
 
+import com.teletalker.app.features.home.fragments.callhistory.data.models.CallEntity;
+
 import java.io.File;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -344,8 +346,8 @@ public class CallRecorder {
     }
 
     private String createRecordingPath(String filename) {
-        File recordingDir = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_MUSIC), "TeleTalker/AI_Calls");
+
+        File recordingDir = CallEntity.getDirectory();
 
         if (!recordingDir.exists()) {
             boolean created = recordingDir.mkdirs();

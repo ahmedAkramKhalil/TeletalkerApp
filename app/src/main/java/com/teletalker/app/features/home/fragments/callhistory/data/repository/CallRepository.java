@@ -8,4 +8,7 @@ public interface CallRepository {
     void insertCall(CallEntity callData);
     List<CallEntity> getCallHistory();
     void deleteCall(CallEntity callEntity);
+    List<CallEntity> getLastTwoCallRecords();
+
+
 }

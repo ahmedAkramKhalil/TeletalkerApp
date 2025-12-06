@@ -4,7 +4,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/app_bg"
     tools:context=".features.home.fragments.home.presentation.HomeFragment">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -14,9 +13,11 @@
         android:layout_marginStart="24dp"
         android:layout_marginTop="32dp"
         android:layout_marginEnd="24dp"
-        android:background="@color/transpernt"
+        android:background="@drawable/card_back"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        android:padding="8dp"
+
         app:layout_constraintTop_toTopOf="parent">
 
         <androidx.appcompat.widget.Toolbar
@@ -27,50 +28,143 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-                <ImageView
-                    android:id="@+id/arrow_back"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/ic_avatar"
+                <!-- Profile Image with Generated Avatar -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/profileImageCard"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    app:cardCornerRadius="24dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    app:layout_constraintTop_toTopOf="parent">
 
-                <TextView
-                    android:id="@+id/durationTv"
-                    android:layout_width="wrap_content"
+                    <TextView
+                        android:id="@+id/profileInitials"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@color/colorPrimary"
+                        android:gravity="center"
+                        android:text="JD"
+                        android:textColor="@color/white"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- User Info -->
+                <LinearLayout
+                    android:id="@+id/userInfoLayout"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
-                    android:text="welcom_back!"
-                    android:textSize="17sp"
-                    android:textStyle="bold"
-                    app:layout_constraintBottom_toBottomOf="@+id/arrow_back"
-                    app:layout_constraintStart_toEndOf="@+id/arrow_back"
-                    app:layout_constraintTop_toTopOf="@+id/arrow_back" />
+                    android:layout_marginEnd="12dp"
+                    android:orientation="vertical"
+                    app:layout_constraintBottom_toBottomOf="@+id/profileImageCard"
+                    app:layout_constraintEnd_toStartOf="@+id/minutesProgressCard"
+                    app:layout_constraintStart_toEndOf="@+id/profileImageCard"
+                    app:layout_constraintTop_toTopOf="@+id/profileImageCard">
 
+                    <TextView
+                        android:id="@+id/nameTv"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Welcome back!"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/versionTv"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Lite Plan"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_secondary" />
+
+                </LinearLayout>
+
+                <!-- Minutes Left Progress Indicator -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/minutesProgressCard"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    app:cardCornerRadius="28dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp"
+                    app:cardBackgroundColor="@color/transpernt"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/materialCardView"
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:layout_marginEnd="12dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <!-- Circular Progress Bar -->
+                        <com.google.android.material.progressindicator.CircularProgressIndicator
+                            android:id="@+id/minutesProgress"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:indeterminate="false"
+                            app:indicatorColor="?attr/colorPrimary"
+                            app:trackColor="?attr/colorSurfaceVariant"
+                            app:trackThickness="4dp"
+                            android:elevation="0dp"
+                            app:indicatorSize="56dp" />
+                        <!-- Minutes Text -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerInParent="true"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/minutesLeftText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="75"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/text_primary" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="min"
+                                android:textSize="8sp"
+                                android:textColor="@color/text_secondary" />
+
+                        </LinearLayout>
+
+                    </RelativeLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Notification Button -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/materialCardView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     app:cardBackgroundColor="@color/darkMidnightBlue"
                     app:cardCornerRadius="8dp"
+                    android:visibility="gone"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
                     app:strokeWidth="0dp">
-
 
                     <ImageView
                         android:id="@+id/backButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:padding="12dp"
-                        android:src="@drawable/notification_bing"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintHorizontal_bias="0.263"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
+                        android:src="@drawable/notification_bing" />
 
                 </com.google.android.material.card.MaterialCardView>
 
@@ -78,9 +172,7 @@
 
         </androidx.appcompat.widget.Toolbar>
 
-
     </com.google.android.material.appbar.AppBarLayout>
-
     <androidx.core.widget.NestedScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -91,12 +183,14 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
+
             android:layout_height="match_parent">
 
             <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/constraintLayout2"
+                android:id="@+id/notSubscribed_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:visibility="visible"
                 app:layout_constraintTop_toTopOf="parent">
 
                 <ImageView
@@ -113,10 +207,11 @@
 
                 <ImageView
                     android:id="@+id/imageView7"
-                    android:layout_width="80dp"
-                    android:layout_height="80dp"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:layout_marginTop="10dp"
                     android:layout_marginStart="12dp"
-                    android:src="@drawable/teletalker_logo"
+                    android:src="@drawable/app_icon"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="@+id/imageView6" />
 
@@ -126,7 +221,8 @@
                     android:layout_height="wrap_content"
                     android:text="@string/don_t_lose_the_offer"
                     android:textColor="#040000"
-                    android:textSize="20sp"
+                    android:textSize="16sp"
+                    android:layout_marginStart="10dp"
                     android:textStyle="bold"
                     app:layout_constraintBottom_toBottomOf="@+id/imageView7"
                     app:layout_constraintStart_toEndOf="@+id/imageView7"
@@ -134,12 +230,16 @@
 
                 <TextView
                     android:id="@+id/textView3"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
+                    android:layout_marginTop="8dp"
                     android:text="@string/get_your_ai_powered_nvoice_companion"
                     android:textColor="#040000"
-                    android:textSize="15sp"
+                    android:lineSpacingExtra="2dp"
+                    android:layout_marginEnd="4dp"
+                    android:textSize="11sp"
+                    app:layout_constraintEnd_toStartOf="@+id/subscribeButton"
                     app:layout_constraintStart_toStartOf="@+id/imageView7"
                     app:layout_constraintTop_toBottomOf="@+id/imageView7" />
 
@@ -148,8 +248,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="0dp"
                     android:layout_marginEnd="12dp"
-                    app:cardBackgroundColor="@color/darkMidnightBlue"
+                    app:cardBackgroundColor="@color/gunmetalGray"
                     app:cardCornerRadius="8dp"
+                    android:clickable="true"
                     app:layout_constraintBottom_toBottomOf="@+id/textView3"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="@+id/textView3"
@@ -160,14 +261,41 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:paddingHorizontal="4dp"
-                        android:text="Subscript Now"
-                        android:textSize="15sp" />
+                        android:paddingHorizontal="6dp"
+                        android:layout_margin="2dp"
+                        android:textColor="@color/white"
+                        android:text="Upgrade Now"
+
+                        android:textSize="12sp" />
 
                 </com.google.android.material.card.MaterialCardView>
 
 
             </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <com.teletalker.app.features.home.TeleTalkerStatusWidget
+                android:id="@+id/status_indicator"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/notSubscribed_layout"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_goneMarginTop="16dp"
+                android:layout_margin="16dp" />
+
+            <ImageButton
+                android:id="@+id/aiActivationButton"
+                android:layout_width="180dp"
+                android:layout_height="180dp"
+                android:foregroundGravity="center"
+                android:layout_marginTop="26dp"
+                android:src="@drawable/active_button"
+                android:background="@android:color/transparent"
+
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/status_indicator"
+                />
 
 
             <LinearLayout
@@ -176,9 +304,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:orientation="horizontal"
-                app:layout_constraintEnd_toEndOf="@+id/constraintLayout2"
-                app:layout_constraintStart_toStartOf="@+id/constraintLayout2"
-                app:layout_constraintTop_toBottomOf="@+id/constraintLayout2">
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/aiActivationButton">
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
@@ -187,6 +315,9 @@
                     android:layout_weight="1"
                     app:cardBackgroundColor="@color/darkMidnightBlue"
                     app:cardCornerRadius="12dp"
+                    android:elevation="0dp"
+                    android:paddingBottom="10dp"
+                    app:cardElevation="0dp"
                     app:layout_constraintStart_toStartOf="@+id/constraintLayout2"
                     app:layout_constraintTop_toBottomOf="@+id/constraintLayout2"
                     app:strokeWidth="0dp">
@@ -195,6 +326,7 @@
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
+                        android:padding="5dp"
                         android:orientation="vertical">
 
                         <com.google.android.material.card.MaterialCardView
@@ -202,6 +334,7 @@
                             android:layout_width="40dp"
                             android:layout_height="40dp"
                             android:layout_marginStart="12dp"
+                            app:cardElevation="0dp"
                             android:layout_marginTop="12dp"
                             app:cardBackgroundColor="@color/gunmetalGray"
                             app:cardCornerRadius="12dp"
@@ -220,40 +353,46 @@
                         </com.google.android.material.card.MaterialCardView>
 
                         <TextView
-                            android:id="@+id/nameTv"
+                            android:id="@+id/agentName"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="12dp"
                             android:text="@string/default_agent"
-                            android:textColor="@color/white"
+                            android:textColor="@color/gunmetalTextGray"
                             android:textSize="15sp"
                             app:layout_constraintStart_toStartOf="@+id/materialCardView5"
                             app:layout_constraintTop_toBottomOf="@+id/materialCardView5" />
 
                         <TextView
-                            android:id="@+id/languageTv"
+                            android:id="@+id/agentLanguage"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/support_agent"
                             android:textColor="@color/black"
                             android:textSize="12sp"
-                            app:layout_constraintStart_toStartOf="@+id/nameTv"
-                            app:layout_constraintTop_toBottomOf="@+id/nameTv" />
+                            app:layout_constraintStart_toStartOf="@+id/agentName"
+                            app:layout_constraintTop_toBottomOf="@+id/agentName" />
 
                         <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/changeAgentButton"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:layout_marginEnd="12dp"
-                            app:cardBackgroundColor="@color/shadowGray"
+                            app:cardBackgroundColor="@color/gunmetalGray"
                             app:cardCornerRadius="8dp"
+                            android:elevation="0dp"
+                            app:cardElevation="0dp"
+                            android:layout_marginBottom="8dp"
+                            app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="@+id/languageTv"
-                            app:layout_constraintTop_toBottomOf="@+id/languageTv"
+                            app:layout_constraintStart_toStartOf="@+id/agentLanguage"
+                            app:layout_constraintTop_toBottomOf="@+id/agentLanguage"
                             app:strokeWidth="0dp">
 
 
                             <TextView
+                                android:id="@+id/AgentButtonText"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_gravity="center"
@@ -269,6 +408,11 @@
 
                 </com.google.android.material.card.MaterialCardView>
 
+
+
+
+
+
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -276,6 +420,8 @@
                     android:layout_weight="1"
                     app:cardBackgroundColor="@color/darkMidnightBlue"
                     app:cardCornerRadius="12dp"
+                    android:visibility="gone"
+
                     app:layout_constraintStart_toStartOf="@+id/constraintLayout2"
                     app:layout_constraintTop_toBottomOf="@+id/constraintLayout2"
                     app:strokeWidth="0dp">
@@ -289,6 +435,7 @@
                         <com.google.android.material.card.MaterialCardView
                             android:id="@+id/materialCardView6"
                             android:layout_width="40dp"
+
                             android:layout_height="40dp"
                             android:layout_marginStart="12dp"
                             android:layout_marginTop="12dp"
@@ -362,12 +509,16 @@
 
             </LinearLayout>
 
+
+
+
             <LinearLayout
                 android:id="@+id/seeAllHistoryTv"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:orientation="horizontal"
+                android:paddingVertical="10dp"
                 app:layout_constraintEnd_toEndOf="@+id/linearLayout2"
                 app:layout_constraintStart_toStartOf="@+id/linearLayout2"
                 app:layout_constraintTop_toBottomOf="@+id/linearLayout2">
@@ -397,6 +548,19 @@
 
 
             </LinearLayout>
+
+            <ImageView
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:id="@+id/nodata_icon"
+                android:visibility="gone"
+                android:layout_marginTop="10dp"
+                android:src="@drawable/ic_nodata"
+                app:layout_constraintTop_toBottomOf="@id/seeAllHistoryTv"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:elevation="10dp"
+                />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerView"

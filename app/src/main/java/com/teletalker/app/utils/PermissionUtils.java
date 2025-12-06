@@ -40,9 +40,13 @@ public class PermissionUtils {
 
         // Phone permissions
         permissionNames.put(Manifest.permission.READ_PHONE_STATE, "Phone State");
+        permissionNames.put(Manifest.permission.ANSWER_PHONE_CALLS, "ANSWER_PHONE_CALLS");
         permissionNames.put(Manifest.permission.CALL_PHONE, "Make Phone Calls");
         permissionNames.put(Manifest.permission.READ_CALL_LOG, "Call History");
         permissionNames.put(Manifest.permission.ANSWER_PHONE_CALLS, "Answer Calls");
+        permissionNames.put(Manifest.permission.FOREGROUND_SERVICE, "Answer Calls");
+        permissionNames.put(Manifest.permission.FOREGROUND_SERVICE_MICROPHONE, "Answer Calls");
+        permissionNames.put(Manifest.permission.FOREGROUND_SERVICE_PHONE_CALL, "Answer Calls");
 
         // Contact permissions
         permissionNames.put(Manifest.permission.READ_CONTACTS, "Contacts");
@@ -129,6 +133,7 @@ public class PermissionUtils {
         critical.add(Manifest.permission.READ_PHONE_STATE);
         critical.add(Manifest.permission.RECORD_AUDIO);
         critical.add(Manifest.permission.CALL_PHONE);
+        critical.add(Manifest.permission.ANSWER_PHONE_CALLS);
         return critical;
     }
 

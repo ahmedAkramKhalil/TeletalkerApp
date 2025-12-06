@@ -1,28 +1,36 @@
 package com.teletalker.app.utils;
 
-
 import android.app.Activity;
+import android.app.ProgressDialog;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
-import androidx.appcompat.app.AlertDialog;
-
-import com.teletalker.app.utils.RootPermissionManager;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Manages root permission setup and system-level permission granting
+ * Manages root permission setup for system-level features
+ * Follows the same pattern as PermissionManager
  */
 public class RootSetupManager {
     private static final String TAG = "RootSetupManager";
 
-    private final Activity activity;
+    private WeakReference<Activity> activityRef;
+    private ProgressDialog progressDialog;
     private RootSetupCallback callback;
-    private AlertDialog progressDialog;
+    private Handler mainHandler;
 
-    // Root permissions that we want to try to grant
-    private static final String[] ROOT_PERMISSIONS = {
-            "android.permission.MODIFY_AUDIO_SETTINGS",
-            "android.permission.CAPTURE_AUDIO_OUTPUT"
-    };
+    // System permissions that require root to grant
+    private static final List<String> SYSTEM_PERMISSIONS = Arrays.asList(
+            "android.permission.CAPTURE_AUDIO_OUTPUT",
+            "android.permission.CONTROL_INCALL_EXPERIENCE",
+            "android.permission.MODIFY_PHONE_STATE",
+            "android.permission.CALL_PRIVILEGED"
+    );
 
     public interface RootSetupCallback {
         void onRootSetupCompleted(boolean success, int grantedCount, int totalCount);
@@ -30,195 +38,247 @@ public class RootSetupManager {
     }
 
     public RootSetupManager(Activity activity) {
-        this.activity = activity;
+        this.activityRef = new WeakReference<>(activity);
+        this.mainHandler = new Handler(Looper.getMainLooper());
     }
 
     /**
-     * Start the root setup process
+     * Start root setup process
+     * Similar to PermissionManager.checkAndRequestAllPermissions()
      */
     public void startRootSetup(RootSetupCallback callback) {
         this.callback = callback;
 
-        if (!RootPermissionManager.isDeviceRooted()) {
-            if (callback != null) {
-                callback.onRootSetupFailed("Device is not rooted");
-            }
+        if (!isActivityValid()) {
+            Log.w(TAG, "Activity is not valid, cannot start root setup");
+            notifySetupFailed("Activity is not available");
             return;
         }
 
         Log.d(TAG, "Starting root setup process");
-        showProgressDialog();
-        requestRootAccess();
-    }
 
-    /**
-     * Show progress dialog during root setup
-     */
-    private void showProgressDialog() {
-        progressDialog = new AlertDialog.Builder(activity)
-                .setTitle("🔐 Requesting Root Access")
-                .setMessage("Please grant root access when prompted...\n\nThis may take a few seconds.")
-                .setCancelable(false)
-                .show();
-    }
+        // Show progress dialog on main thread
+        mainHandler.post(this::showProgressDialog);
 
-    /**
-     * Request root access from the user
-     */
-    private void requestRootAccess() {
-        RootPermissionManager.requestRootAccess(activity, new RootPermissionManager.RootPermissionCallback() {
+        // Step 1: Request root access
+        RootPermissionManager.requestRootAccess(new RootPermissionManager.RootPermissionCallback() {
             @Override
             public void onRootAccessGranted() {
-                activity.runOnUiThread(() -> {
-                    Log.d(TAG, "✅ Root access granted - requesting system permissions");
-                    updateProgressDialog("Root access granted!\n\nGranting system permissions...");
-                    grantSystemPermissions();
-                });
+                Log.d(TAG, "✅ Root access granted - requesting system permissions");
+
+                // Step 2: Grant all system permissions
+                grantAllSystemPermissions();
             }
 
             @Override
             public void onRootAccessDenied(String reason) {
-                activity.runOnUiThread(() -> {
-                    dismissProgressDialog();
-                    Log.w(TAG, "❌ Root access denied: " + reason);
-
-                    if (callback != null) {
-                        callback.onRootSetupFailed("Root access denied: " + reason);
-                    }
-                });
+                Log.e(TAG, "❌ Root access denied: " + reason);
+                dismissProgressDialogSafe();
+                notifySetupFailed("Root access denied: " + reason);
             }
 
             @Override
             public void onPermissionGranted(String permission) {
-                // Handled in grantSystemPermissions
+                // Not used in this callback
             }
 
             @Override
             public void onPermissionDenied(String permission) {
-                // Handled in grantSystemPermissions
+                // Not used in this callback
             }
         });
     }
 
     /**
-     * Grant system-level permissions using root
+     * Grant all system permissions using root
      */
-    private void grantSystemPermissions() {
-        final PermissionGrantTracker tracker = new PermissionGrantTracker(ROOT_PERMISSIONS.length);
+    private void grantAllSystemPermissions() {
+        Activity activity = activityRef.get();
+        if (activity == null) {
+            Log.e(TAG, "Activity is null, cannot grant permissions");
+            dismissProgressDialogSafe();
+            notifySetupFailed("Activity not available");
+            return;
+        }
 
-        for (String permission : ROOT_PERMISSIONS) {
-            RootPermissionManager.grantRootPermission(activity, permission, new RootPermissionManager.RootPermissionCallback() {
-                @Override
-                public void onRootAccessGranted() {
-                    // Not used here
-                }
+        final int totalPermissions = SYSTEM_PERMISSIONS.size();
+        final AtomicInteger grantedCount = new AtomicInteger(0);
+        final AtomicInteger completedCount = new AtomicInteger(0);
+        final List<String> failedPermissions = new ArrayList<>();
 
-                @Override
-                public void onRootAccessDenied(String reason) {
-                    // Not used here
-                }
+        Log.d(TAG, "Attempting to grant " + totalPermissions + " system permissions");
 
-                @Override
-                public void onPermissionGranted(String perm) {
-                    activity.runOnUiThread(() -> {
-                        tracker.onPermissionGranted(perm);
-                        Log.d(TAG, "✅ Granted: " + perm + " (" + tracker.getCompletedCount() + "/" + tracker.getTotalCount() + ")");
+        // Grant each permission
+        for (String permission : SYSTEM_PERMISSIONS) {
+            Log.d(TAG, "Attempting to grant permission: " + permission);
 
-                        updateProgressDialog("Root access granted!\n\nGranted " +
-                                tracker.getCompletedCount() + "/" + tracker.getTotalCount() + " permissions...");
-
-                        if (tracker.isComplete()) {
-                            onAllRootPermissionsComplete(tracker);
+            RootPermissionManager.grantRootPermission(
+                    activity,
+                    permission,
+                    new RootPermissionManager.RootPermissionCallback() {
+                        @Override
+                        public void onRootAccessGranted() {
+                            // Not used in this callback
                         }
-                    });
-                }
 
-                @Override
-                public void onPermissionDenied(String perm) {
-                    activity.runOnUiThread(() -> {
-                        tracker.onPermissionDenied(perm);
-                        Log.w(TAG, "❌ Failed: " + perm);
-
-                        if (tracker.isComplete()) {
-                            onAllRootPermissionsComplete(tracker);
+                        @Override
+                        public void onRootAccessDenied(String reason) {
+                            // Not used in this callback
                         }
-                    });
-                }
-            });
+
+                        @Override
+                        public void onPermissionGranted(String perm) {
+                            Log.d(TAG, "✅ Granted: " + perm);
+                            grantedCount.incrementAndGet();
+                            checkCompletion(completedCount, totalPermissions, grantedCount, failedPermissions);
+                        }
+
+                        @Override
+                        public void onPermissionDenied(String perm) {
+                            Log.w(TAG, "❌ Denied: " + perm);
+                            failedPermissions.add(perm);
+                            checkCompletion(completedCount, totalPermissions, grantedCount, failedPermissions);
+                        }
+                    }
+            );
         }
     }
 
     /**
-     * Handle completion of all root permission requests
+     * Check if all permission grant attempts are complete
      */
-    private void onAllRootPermissionsComplete(PermissionGrantTracker tracker) {
-        dismissProgressDialog();
+    private void checkCompletion(AtomicInteger completedCount, int totalPermissions,
+                                 AtomicInteger grantedCount, List<String> failedPermissions) {
+        int completed = completedCount.incrementAndGet();
 
-        boolean success = tracker.getGrantedCount() == tracker.getTotalCount();
+        Log.d(TAG, "Permission progress: " + completed + "/" + totalPermissions);
 
-        Log.d(TAG, "Root permission setup complete: " + tracker.getGrantedCount() + "/" + tracker.getTotalCount() + " granted");
+        // Check if all permissions have been processed
+        if (completed >= totalPermissions) {
+            int granted = grantedCount.get();
+            boolean success = granted == totalPermissions;
 
-        if (callback != null) {
-            callback.onRootSetupCompleted(success, tracker.getGrantedCount(), tracker.getTotalCount());
+            Log.d(TAG, "Root setup completed: " + granted + "/" + totalPermissions + " granted");
+
+            if (!failedPermissions.isEmpty()) {
+                Log.w(TAG, "Failed permissions: " + failedPermissions);
+            }
+
+            dismissProgressDialogSafe();
+            notifySetupCompleted(success, granted, totalPermissions);
         }
     }
 
-    /**
-     * Update progress dialog message
-     */
-    private void updateProgressDialog(String message) {
-        if (progressDialog != null && progressDialog.isShowing()) {
-            progressDialog.setMessage(message);
+    // ============ DIALOG MANAGEMENT ============
+
+    private void showProgressDialog() {
+        if (!isActivityValid()) {
+            Log.w(TAG, "Activity invalid, skipping progress dialog");
+            return;
+        }
+
+        Activity activity = activityRef.get();
+        if (activity == null || activity.isFinishing() || activity.isDestroyed()) {
+            Log.w(TAG, "Activity not available for dialog");
+            return;
+        }
+
+        try {
+            // Dismiss any existing dialog first
+            dismissProgressDialog();
+
+            progressDialog = new ProgressDialog(activity);
+            progressDialog.setMessage("Configuring root features...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing progress dialog", e);
         }
     }
 
-    /**
-     * Dismiss progress dialog
-     */
     private void dismissProgressDialog() {
-        if (progressDialog != null && progressDialog.isShowing()) {
-            progressDialog.dismiss();
+        try {
+            if (progressDialog != null && progressDialog.isShowing()) {
+                Activity activity = activityRef != null ? activityRef.get() : null;
+                if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
+                    progressDialog.dismiss();
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error dismissing progress dialog", e);
+        } finally {
+            progressDialog = null;
         }
     }
 
+    private void dismissProgressDialogSafe() {
+        if (mainHandler != null) {
+            mainHandler.post(this::dismissProgressDialog);
+        }
+    }
+
+    public void dismissAllDialogs() {
+        dismissProgressDialog();
+    }
+
+    // ============ LIFECYCLE MANAGEMENT ============
+
+    public void cleanup() {
+        Log.d(TAG, "Cleaning up RootSetupManager");
+
+        dismissAllDialogs();
+
+        if (activityRef != null) {
+            activityRef.clear();
+            activityRef = null;
+        }
+
+        callback = null;
+        mainHandler = null;
+    }
+
+    private boolean isActivityValid() {
+        if (activityRef == null) return false;
+
+        Activity activity = activityRef.get();
+        return activity != null && !activity.isFinishing() && !activity.isDestroyed();
+    }
+
+    // ============ CALLBACK NOTIFICATIONS ============
+
+    private void notifySetupCompleted(boolean success, int grantedCount, int totalCount) {
+        if (callback == null || mainHandler == null) return;
+
+        mainHandler.post(() -> {
+            if (callback != null && isActivityValid()) {
+                callback.onRootSetupCompleted(success, grantedCount, totalCount);
+            }
+        });
+    }
+
+    private void notifySetupFailed(String reason) {
+        if (callback == null || mainHandler == null) return;
+
+        mainHandler.post(() -> {
+            if (callback != null && isActivityValid()) {
+                callback.onRootSetupFailed(reason);
+            }
+        });
+    }
+
+    // ============ PUBLIC UTILITY METHODS ============
+
     /**
-     * Helper class to track permission granting progress
+     * Check if device is rooted
      */
-    private static class PermissionGrantTracker {
-        private final int totalCount;
-        private int grantedCount = 0;
-        private int deniedCount = 0;
+    public boolean isDeviceRooted() {
+        return RootPermissionManager.isDeviceRooted();
+    }
 
-        public PermissionGrantTracker(int totalCount) {
-            this.totalCount = totalCount;
-        }
-
-        public void onPermissionGranted(String permission) {
-            grantedCount++;
-        }
-
-        public void onPermissionDenied(String permission) {
-            deniedCount++;
-        }
-
-        public boolean isComplete() {
-            return (grantedCount + deniedCount) >= totalCount;
-        }
-
-        public int getTotalCount() {
-            return totalCount;
-        }
-
-        public int getGrantedCount() {
-            return grantedCount;
-        }
-
-        public int getDeniedCount() {
-            return deniedCount;
-        }
-
-        public int getCompletedCount() {
-            return grantedCount + deniedCount;
-        }
+    /**
+     * Get list of system permissions that will be granted
+     */
+    public List<String> getSystemPermissions() {
+        return new ArrayList<>(SYSTEM_PERMISSIONS);
     }
 }

@@ -1,7 +1,76 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.Teletalker" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+
+    <!-- ============================================ -->
+    <!-- STANDARD VERSION - DARK THEME -->
+    <!-- Used when ThemeManager sets "standard" version -->
+    <!-- ============================================ -->
+    <style name="Theme.Teletalker" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- Primary Colors -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+
+        <!-- Background -->
+        <item name="android:windowBackground">@drawable/app_bg</item>
+        <item name="android:colorBackground">@color/darkMidnightBlue</item>
+
+        <!-- Status Bar -->
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Navigation Bar -->
+        <item name="android:navigationBarColor">@color/darkMidnightBlue</item>
+        <item name="android:windowLightNavigationBar">false</item>
+
+        <!-- Text Colors -->
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColorSecondary">@color/text_primary</item>
+        <item name="android:textColorHint">@color/text_gray_hint</item>
+
+        <!-- Card -->
+        <item name="cardViewStyle">@style/AppCardView</item>
+
+        <!-- Material Components -->
+        <item name="materialCardViewStyle">@style/AppMaterialCard</item>
+        <item name="bottomNavigationStyle">@style/AppBottomNavigation</item>
     </style>
+
+    <!-- ============================================ -->
+    <!-- CARD STYLES - STANDARD/DARK -->
+    <!-- ============================================ -->
+    <style name="AppCardView" parent="CardView">
+        <item name="cardBackgroundColor">@color/charcoalBlue</item>
+        <item name="cardElevation">4dp</item>
+        <item name="cardCornerRadius">12dp</item>
+    </style>
+
+    <style name="AppMaterialCard" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardBackgroundColor">@color/charcoalBlue</item>
+        <item name="cardElevation">4dp</item>
+        <item name="cardCornerRadius">12dp</item>
+        <item name="strokeWidth">0dp</item>
+    </style>
+
+    <style name="AppBottomNavigation" parent="Widget.Material3.BottomNavigationView">
+        <item name="backgroundTint">@color/darkMidnightBlue</item>
+        <item name="itemIconTint">@color/standard_bottom_nav_selector</item>
+        <item name="itemTextColor">@color/standard_bottom_nav_selector</item>
+        <item name="elevation">8dp</item>
+    </style>
+
+    <!-- ============================================ -->
+    <!-- BUTTON STYLES -->
+    <!-- ============================================ -->
+    <style name="AppButton" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/purple_500</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="cornerRadius">8dp</item>
+    </style>
+
+    <style name="AppButton.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeColor">@color/purple_500</item>
+        <item name="android:textColor">@color/purple_500</item>
+        <item name="cornerRadius">8dp</item>
+    </style>
+
 </resources>

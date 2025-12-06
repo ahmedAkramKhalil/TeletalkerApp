@@ -12,8 +12,9 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
         android:layout_marginTop="32dp"
-        app:cardBackgroundColor="@color/darkMidnightBlue"
+        app:cardBackgroundColor="@color/gunmetalGray"
         app:cardCornerRadius="8dp"
+        app:cardElevation="0dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:strokeWidth="0dp">
@@ -70,13 +71,15 @@
             android:autofillHints="@string/prompt_email"
             android:background="@drawable/edit_text_back"
             android:drawableStart="@drawable/ic_email"
+            android:drawableTint="@color/gunmetalTextGray"
             android:drawablePadding="12dp"
             android:gravity="left|center"
             android:hint="@string/email"
             android:inputType="textEmailAddress"
             android:paddingHorizontal="16dp"
             android:selectAllOnFocus="true"
-            android:textColorHint="@color/black"
+            android:textColorHint="@color/gunmetalTextGray"
+            android:textColor="@color/gunmetalTextGray"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -93,13 +96,16 @@
         android:drawableStart="@drawable/ic_lock"
         android:drawablePadding="12dp"
         android:gravity="left|center"
+        android:drawableTint="@color/gunmetalTextGray"
+
         android:hint="@string/password"
         android:imeActionLabel="@string/action_sign_in_short"
+        android:textColor="@color/gunmetalTextGray"
         android:imeOptions="actionDone"
         android:inputType="textPassword"
         android:paddingHorizontal="16dp"
         android:selectAllOnFocus="true"
-        android:textColorHint="@color/black"
+        android:textColorHint="@color/gunmetalTextGray"
         android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -119,15 +125,31 @@
         android:hint="@string/password_confirm"
         android:imeActionLabel="@string/action_sign_in_short"
         android:imeOptions="actionDone"
+        android:drawableTint="@color/gunmetalTextGray"
+
         android:inputType="textPassword"
+        android:textColor="@color/gunmetalTextGray"
+
         android:paddingHorizontal="16dp"
         android:selectAllOnFocus="true"
-        android:textColorHint="@color/black"
+        android:textColorHint="@color/gunmetalTextGray"
         android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/password" />
 
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:elevation="10dp"
+        android:visibility="gone"
+
+        app:layout_constraintBottom_toBottomOf="@+id/signUpButton"
+        app:layout_constraintEnd_toEndOf="@+id/signUpButton"
+        app:layout_constraintStart_toStartOf="@+id/signUpButton"
+        app:layout_constraintTop_toTopOf="@+id/signUpButton" />
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/signUpButton"
@@ -135,12 +157,13 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:background="@drawable/button_bg"
-        android:backgroundTint="@color/purple_700"
+
+        android:backgroundTint="@color/gunmetalGray"
         android:inputType="text"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
         android:text="@string/sign_up"
-        android:textColor="#000000"
+        android:textColor="@color/white"
         app:layout_constraintEnd_toEndOf="@+id/rePassword"
         app:layout_constraintStart_toStartOf="@+id/rePassword"
         app:layout_constraintTop_toBottomOf="@+id/rePassword" />

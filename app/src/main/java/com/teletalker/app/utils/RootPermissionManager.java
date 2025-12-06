@@ -99,7 +99,7 @@ public class RootPermissionManager {
     }
 
     // Request root access from user
-    public static void requestRootAccess(Context context, RootPermissionCallback callback) {
+    public static boolean requestRootAccess(RootPermissionCallback callback) {
         new Thread(() -> {
             try {
                 Log.d(TAG, "Requesting root access...");
@@ -146,6 +146,7 @@ public class RootPermissionManager {
                 }
             }
         }).start();
+        return false;
     }
 
     // Check if specific permission is granted

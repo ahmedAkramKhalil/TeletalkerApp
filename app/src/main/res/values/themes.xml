@@ -1,11 +1,77 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.Teletalker" parent="Theme.Material3.Dark.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
-        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
-        <item name="android:windowBackground">@drawable/app_bg</item>
+
+    <!-- ============================================ -->
+    <!-- LITE VERSION - LIGHT THEME -->
+    <!-- Used when ThemeManager sets "lite" version -->
+    <!-- ============================================ -->
+    <style name="Theme.Teletalker" parent="Theme.Material3.Light.NoActionBar">
+        <!-- Primary Colors -->
+        <item name="colorPrimary">@color/lite_primary</item>
+        <item name="colorPrimaryDark">@color/lite_primary_dark</item>
+        <item name="colorAccent">@color/lite_accent</item>
+
+        <!-- Background -->
+        <item name="android:windowBackground">@color/white</item>
+        <item name="android:colorBackground">@color/lite_background</item>
+
+        <!-- Status Bar -->
+        <item name="android:statusBarColor">@color/lite_status_bar</item>
+        <item name="android:windowLightStatusBar">true</item>
+
+        <!-- Navigation Bar -->
+        <item name="android:navigationBarColor">@color/lite_background</item>
+        <item name="android:windowLightNavigationBar">true</item>
+
+        <!-- Text Colors -->
+        <item name="android:textColorPrimary">@color/lite_text_primary</item>
+        <item name="android:textColorSecondary">@color/lite_text_secondary</item>
+        <item name="android:textColorHint">@color/lite_text_hint</item>
+
+        <!-- Card -->
+        <item name="cardViewStyle">@style/AppCardView</item>
+
+        <!-- Material Components -->
+        <item name="materialCardViewStyle">@style/AppMaterialCard</item>
+        <item name="bottomNavigationStyle">@style/AppBottomNavigation</item>
     </style>
 
-    <style name="Theme.Teletalker" parent="Base.Theme.Teletalker" />
+    <!-- ============================================ -->
+    <!-- CARD STYLES - LITE/LIGHT -->
+    <!-- ============================================ -->
+    <style name="AppCardView" parent="CardView">
+        <item name="cardBackgroundColor">@color/white</item>
+        <item name="cardElevation">2dp</item>
+        <item name="cardCornerRadius">12dp</item>
+    </style>
+
+    <style name="AppMaterialCard" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardBackgroundColor">@color/white</item>
+        <item name="cardElevation">2dp</item>
+        <item name="cardCornerRadius">12dp</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="strokeColor">@color/lite_card_stroke</item>
+    </style>
+
+    <style name="AppBottomNavigation" parent="Widget.Material3.BottomNavigationView">
+        <item name="backgroundTint">@color/gunmetalGray</item>
+        <item name="itemIconTint">@color/standard_bottom_nav_selected</item>
+        <item name="itemTextColor">@color/standard_bottom_nav_selected</item>
+        <item name="elevation">8dp</item>
+    </style>
+
+    <!-- ============================================ -->
+    <!-- BUTTON STYLES -->
+    <!-- ============================================ -->
+    <style name="AppButton" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/lite_primary</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="cornerRadius">8dp</item>
+    </style>
+
+    <style name="AppButton.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeColor">@color/lite_primary</item>
+        <item name="android:textColor">@color/lite_primary</item>
+        <item name="cornerRadius">8dp</item>
+    </style>
+
 </resources>
