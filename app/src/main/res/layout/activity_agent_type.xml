@@ -49,12 +49,12 @@
                     android:layout_height="wrap_content"
                     android:clickable="true"
                     android:focusable="true"
-                    app:cardBackgroundColor="@color/darkMidnightBlue"
+                    app:cardBackgroundColor="@color/gunmetalGray"
                     app:cardCornerRadius="8dp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
-                    app:rippleColor="@color/purple_700"
+                    app:rippleColor="@color/gunmetalGray"
                     app:strokeWidth="0dp">
 
                     <ImageView
@@ -63,6 +63,7 @@
                         android:layout_height="wrap_content"
                         android:padding="12dp"
                         android:src="@drawable/arrow_back"
+                        app:tint="@color/white"
                         android:contentDescription="Back" />
 
                 </com.google.android.material.card.MaterialCardView>

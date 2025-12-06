@@ -33,7 +33,7 @@
             android:layout_marginStart="12dp"
             android:text="Checking connection..."
             android:textSize="14sp"
-            android:textColor="@color/white" />
+            android:textColor="@color/gunmetalTextGray" />
 
         <View
             android:id="@+id/internet_status_dot"
@@ -71,7 +71,7 @@
             android:layout_marginStart="6dp"
             android:text="Call Status"
             android:textSize="14sp"
-            android:textColor="@color/white" />
+            android:textColor="@color/gunmetalTextGray" />
 
         <TextView
             android:id="@+id/call_duration"
@@ -82,7 +82,7 @@
             android:gravity="end"
             android:layout_marginEnd="4dp"
             android:textSize="14sp"
-            android:textColor="@color/white" />
+            android:textColor="@color/gunmetalTextGray" />
 
 
         <View
@@ -121,7 +121,7 @@
             android:layout_marginStart="12dp"
             android:text="AI Status"
             android:textSize="14sp"
-            android:textColor="@color/white" />
+            android:textColor="@color/gunmetalTextGray" />
         <TextView
             android:id="@+id/ai_details"
             android:layout_width="0dp"
@@ -129,7 +129,7 @@
             android:layout_weight="1"
             android:layout_marginStart="12dp"
             android:textSize="10sp"
-            android:textColor="@color/white" />
+            android:textColor="@color/gunmetalTextGray" />
 
         <View
             android:id="@+id/ai_status_dot"

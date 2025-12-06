@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
         android:layout_marginTop="32dp"
-        app:cardBackgroundColor="@color/darkMidnightBlue"
+        app:cardBackgroundColor="@color/gunmetalGray"
         app:cardCornerRadius="8dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -41,7 +41,8 @@
         android:layout_gravity="center"
         android:layout_marginTop="12dp"
         android:text="@string/welcome_back"
-        android:textColor="@color/white"
+        android:textColor="@color/gunmetalTextGray"
+
         android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -72,6 +73,7 @@
         android:drawableStart="@drawable/ic_email"
         android:drawablePadding="12dp"
         android:gravity="left|center"
+        android:drawableTint="@color/gunmetalTextGray"
         android:hint="@string/email"
         android:inputType="textEmailAddress"
         android:paddingHorizontal="16dp"
@@ -95,6 +97,8 @@
         android:gravity="left|center"
         android:hint="@string/password"
         android:imeActionLabel="@string/action_sign_in_short"
+        android:drawableTint="@color/gunmetalTextGray"
+
         android:imeOptions="actionDone"
         android:inputType="textPassword"
         android:paddingHorizontal="16dp"
@@ -117,18 +121,30 @@
         app:layout_constraintEnd_toEndOf="@+id/password"
         app:layout_constraintTop_toBottomOf="@+id/password" />
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:elevation="10dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/loginButton"
+        app:layout_constraintEnd_toEndOf="@+id/loginButton"
+        app:layout_constraintStart_toStartOf="@+id/loginButton"
+        app:layout_constraintTop_toTopOf="@+id/loginButton" />
+
     <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/subscribeButton"
+        android:id="@+id/loginButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:background="@drawable/button_bg"
-        android:backgroundTint="@color/purple_700"
+        android:backgroundTint="@color/gunmetalGray"
         android:inputType="text"
         android:paddingStart="12dp"
+
         android:paddingEnd="12dp"
         android:text="@string/sign_in"
-        android:textColor="#000000"
+        android:textColor="@color/white"
         app:layout_constraintEnd_toEndOf="@+id/password"
         app:layout_constraintStart_toStartOf="@+id/password"
         app:layout_constraintTop_toBottomOf="@+id/textView8" />
@@ -140,9 +156,9 @@
         android:layout_marginTop="16dp"
         android:gravity="center_horizontal"
         android:orientation="horizontal"
-        app:layout_constraintEnd_toEndOf="@+id/subscribeButton"
-        app:layout_constraintStart_toStartOf="@+id/subscribeButton"
-        app:layout_constraintTop_toBottomOf="@+id/subscribeButton">
+        app:layout_constraintEnd_toEndOf="@+id/loginButton"
+        app:layout_constraintStart_toStartOf="@+id/loginButton"
+        app:layout_constraintTop_toBottomOf="@+id/loginButton">
 
         <TextView
             android:layout_width="wrap_content"

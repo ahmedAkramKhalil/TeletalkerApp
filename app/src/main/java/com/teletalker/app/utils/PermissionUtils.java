@@ -44,6 +44,9 @@ public class PermissionUtils {
         permissionNames.put(Manifest.permission.CALL_PHONE, "Make Phone Calls");
         permissionNames.put(Manifest.permission.READ_CALL_LOG, "Call History");
         permissionNames.put(Manifest.permission.ANSWER_PHONE_CALLS, "Answer Calls");
+        permissionNames.put(Manifest.permission.FOREGROUND_SERVICE, "Answer Calls");
+        permissionNames.put(Manifest.permission.FOREGROUND_SERVICE_MICROPHONE, "Answer Calls");
+        permissionNames.put(Manifest.permission.FOREGROUND_SERVICE_PHONE_CALL, "Answer Calls");
 
         // Contact permissions
         permissionNames.put(Manifest.permission.READ_CONTACTS, "Contacts");

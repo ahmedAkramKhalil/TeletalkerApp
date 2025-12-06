@@ -13,6 +13,8 @@ import androidx.core.content.ContextCompat;
 
 import com.teletalker.app.services.CallAudioInjector;
 import com.teletalker.app.services.StatusBroadcastManager;
+import com.teletalker.app.utils.CallContextManager;
+import com.teletalker.app.utils.ScheduledCallHelper;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -49,16 +51,17 @@ public class AICallRecorderRefactored {
     private static final String ELEVENLABS_WS_URL = "wss://api.elevenlabs.io/v1/convai/conversation";
 
     // Connection Management - RELAXED timeouts for call scenarios
-    private static final int MAX_CONNECTION_ATTEMPTS = 5;
-    private static final long INITIAL_RECONNECT_DELAY = 2000L; // 2 seconds
-    private static final long MAX_RECONNECT_DELAY = 30000L; // 30 seconds
-    private static final long CONNECTION_TIMEOUT = 30000L; // 30 seconds
-    private static final long PING_INTERVAL = 20000L; // 20 seconds
+    private static final int MAX_CONNECTION_ATTEMPTS = 10;
+    private static final long INITIAL_RECONNECT_DELAY = 500L; // 2 seconds
+    private static final long MAX_RECONNECT_DELAY = 10000L; // 30 seconds
+    private static final long CONNECTION_TIMEOUT = 60000L; // 30 seconds
+    private static final long PING_INTERVAL = 30000L; // 20 seconds
 
-    // Audio Configuration
-    private static final int OPTIMIZED_SAMPLE_RATE = 16000;
-    private static final int OPTIMIZED_CHUNK_SIZE_MS = 100;
-    private static final boolean USE_ENHANCED_PROCESSING = true;
+
+    private String conversationPurpose = null;
+    private String conversationNotes = null;
+    private boolean isOutboundCall = false;
+
 
     // Enhanced injection options
     private SequentialAudioInjector sequentialInjector;
@@ -155,10 +158,12 @@ public class AICallRecorderRefactored {
     private final AtomicLong totalMessagesReceived = new AtomicLong(0);
     private final AtomicLong totalAudioChunksReceived = new AtomicLong(0);
     private final AtomicLong totalErrorsEncountered = new AtomicLong(0);
+    private CallContextManager callContextManager;
 
     public AICallRecorderRefactored(Context context) {
         this.context = context;
         this.mainHandler = new Handler(Looper.getMainLooper());
+        this.callContextManager = new CallContextManager(context);
 
         // Initialize executors first
         this.sharedExecutor = Executors.newFixedThreadPool(3, r -> {
@@ -172,10 +177,173 @@ public class AICallRecorderRefactored {
             t.setDaemon(true);
             return t;
         });
-
         // FIXED: Initialize components sequentially
         initializeComponentsSequentially();
     }
+//    ScheduledCallHelper.CallInfo callInfo = null;
+
+    private void checkAndApplyScheduledCallContext(String phoneNumber) {
+        Log.d(TAG, "Checking for scheduled call context...");
+
+        // Try to find scheduled call by phone number first
+
+        if (phoneNumber != null) {
+//            callInfo = ScheduledCallHelper.findActiveCallByPhoneNumber(context, phoneNumber);
+
+            ScheduledCallHelper.findActiveCallByPhoneNumber(context, phoneNumber, new ScheduledCallHelper.CallInfoCallback() {
+                @Override
+                public void onCallInfoFound(ScheduledCallHelper.CallInfo callInfo) {
+                    if (callInfo == null) {
+                        Log.d(TAG, "No call found by phone number, checking for recent active call");
+                        callInfo = ScheduledCallHelper.getMostRecentActiveCall(context);
+                    }
+
+
+                    if (callInfo != null && callInfo.isValid()) {
+                        Log.d(TAG, "Found scheduled call context: " + callInfo);
+
+                        // Apply the context to this recording
+                        setCallContext(
+                                callInfo.purpose,
+                                callInfo.notes,
+                                true // it must be outbounding call
+                        );
+
+                        // Mark as in progress
+                        ScheduledCallHelper.markCallInProgress(context, callInfo.callId);
+
+                        Log.d(TAG, "Applied scheduled call context for call ID: " + callInfo.callId);
+
+                        // Store call ID for later reference
+                        AICallRecorderRefactored.currentScheduledCallId = callInfo.callId;
+
+                    }
+
+                }
+
+                @Override
+                public void onCallInfoNotFound() {
+                    Log.d(TAG, "No scheduled call context found - treating as regular call");
+
+                }
+
+                @Override
+                public void onError(Exception e) {
+
+                }
+            });
+        }
+    }
+
+    private static long currentScheduledCallId = -1;
+
+
+
+
+
+    public void setCallContext(String purpose, String notes, boolean isOutbound) {
+        this.conversationPurpose = purpose;
+        this.conversationNotes = notes;
+        this.isOutboundCall = isOutbound;
+
+        Log.d(TAG, "Call context set - Purpose: " + purpose +
+                ", Outbound: " + isOutbound +
+                ", Notes length: " + (notes != null ? notes.length() : 0));
+    }
+
+    // Add this method to build conversation initiation data
+    private JSONObject buildConversationInitiationData() {
+        try {
+            JSONObject initData = new JSONObject();
+
+            // Add dynamic variables
+            JSONObject dynamicVars = new JSONObject();
+            if (conversationPurpose != null) {
+                dynamicVars.put("call_purpose", conversationPurpose);
+                Log.d("buildConversationInitiationData","call_purpose= " + conversationPurpose);
+            }
+            if (conversationNotes != null) {
+                dynamicVars.put("call_notes", conversationNotes);
+                Log.d("buildConversationInitiationData","call_notes= " + conversationNotes);
+
+            }
+            dynamicVars.put("call_type", isOutboundCall ? "outbound" : "inbound");
+            dynamicVars.put("call_timestamp", System.currentTimeMillis());
+
+            initData.put("dynamic_variables", dynamicVars);
+
+            // Add conversation config overrides if this is an outbound call
+            if (isOutboundCall && conversationNotes != null) {
+                JSONObject configOverride = new JSONObject();
+                JSONObject agentOverride = new JSONObject();
+
+                // Override system prompt
+                JSONObject promptOverride = new JSONObject();
+                String enhancedPrompt = buildEnhancedPrompt();
+                promptOverride.put("prompt", enhancedPrompt);
+                agentOverride.put("prompt", promptOverride);
+
+                // Override first message
+                String firstMessage = buildFirstMessage();
+                agentOverride.put("first_message", firstMessage);
+
+                configOverride.put("agent", agentOverride);
+                initData.put("conversation_config_override", configOverride);
+            }
+
+            return initData;
+
+        } catch (JSONException e) {
+            Log.e(TAG, "Failed to build conversation initiation data: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private String buildEnhancedPrompt() {
+        StringBuilder prompt = new StringBuilder();
+
+        prompt.append("You are an AI assistant making an OUTBOUND phone call. ");
+        prompt.append("You are the one who initiated this call, not the person answering. ");
+
+        if (conversationPurpose != null) {
+            prompt.append("\n\nPURPOSE OF THIS CALL:\n");
+            prompt.append(conversationPurpose);
+        }
+
+        if (conversationNotes != null) {
+            prompt.append("\n\nCALL INSTRUCTIONS:\n");
+            prompt.append(conversationNotes);
+            prompt.append("\n\nFollow these instructions carefully during the call. ");
+            prompt.append("Be natural, friendly, and accomplish the stated purpose.");
+        }
+
+        prompt.append("\n\nIMPORTANT GUIDELINES:\n");
+        prompt.append("- You are calling them, so greet them appropriately\n");
+        prompt.append("- Be clear about why you're calling\n");
+        prompt.append("- Listen carefully to their responses\n");
+        prompt.append("- Stay on topic and accomplish your objective\n");
+        prompt.append("- Be respectful of their time\n");
+
+        return prompt.toString();
+    }
+
+    private String buildFirstMessage() {
+        StringBuilder firstMsg = new StringBuilder();
+
+        firstMsg.append("Hello! ");
+
+        if (conversationPurpose != null) {
+            firstMsg.append("I'm calling regarding ").append(conversationPurpose).append(". ");
+        } else {
+            firstMsg.append("I'm calling from TeleTalker. ");
+        }
+
+        firstMsg.append("Do you have a moment to speak?");
+
+        return firstMsg.toString();
+    }
+
+
 
     private void initializeComponentsSequentially() {
         if (isInitializing.get()) {
@@ -278,12 +446,22 @@ public class AICallRecorderRefactored {
         Log.d(TAG, "AI Mode set to: " + mode.getDescription());
     }
 
+
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
+    public boolean startRecording(String filename) {
+        return startRecording(filename, null);
+    }
+
+
     /**
      * FIXED: Start recording with proper initialization and state reset
      */
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-    public boolean startRecording(String filename) {
+    public boolean startRecording(String filename, String phoneNumber) {
         Log.d(TAG, "Starting Enhanced AI Call Recording: " + filename);
+
+        checkAndApplyScheduledCallContext(phoneNumber);
+
 
         // FIXED: Diagnostic logging for first call issues
         diagnoseFirstCallIssue();
@@ -410,18 +588,20 @@ public class AICallRecorderRefactored {
         Log.d(TAG, "Stopping Enhanced AI Call Recording...");
         broadcastAIStatus("HIDDEN", false, false, "");
 
-        if (coreRecorder != null) {
-            coreRecorder.stopRecording();
-            Log.d(TAG, " coreRecorder.stopRecording");
-
+        // Mark scheduled call as completed if applicable
+        if (currentScheduledCallId > 0) {
+            ScheduledCallHelper.markCallCompleted(context, currentScheduledCallId);
+            currentScheduledCallId = -1;
         }
 
-        // Stop AI features first
+        if (coreRecorder != null) {
+            coreRecorder.stopRecording();
+            Log.d(TAG, "coreRecorder.stopRecording");
+        }
+
         if (isAIEnabled.get()) {
             stopEnhancedAIFeatures();
         }
-
-        // Stop core recording
 
         Log.d(TAG, "Enhanced AI Call Recording stopped");
     }
@@ -434,8 +614,8 @@ public class AICallRecorderRefactored {
         try {
             // HTTP client with better configuration
             httpClient = new OkHttpClient.Builder()
-                    .readTimeout(45, TimeUnit.SECONDS)
-                    .writeTimeout(20, TimeUnit.SECONDS)
+                    .readTimeout(120, TimeUnit.SECONDS)
+                    .writeTimeout(60, TimeUnit.SECONDS)
                     .connectTimeout(CONNECTION_TIMEOUT, TimeUnit.MILLISECONDS)
                     .pingInterval(PING_INTERVAL, TimeUnit.MILLISECONDS)
                     .retryOnConnectionFailure(true)
@@ -705,6 +885,10 @@ public class AICallRecorderRefactored {
         });
     }
 
+    private static final AtomicInteger activeWebSocketCount = new AtomicInteger(0);
+    private static final AtomicLong totalWebSocketsCreated = new AtomicLong(0);
+
+
     private void attemptConnection() {
         if (!shouldReconnect.get() || isConnecting.get() || isAIConnected.get()) {
             return;
@@ -718,7 +902,7 @@ public class AICallRecorderRefactored {
         // Exponential backoff with jitter
         if (attempt > 1) {
             long delay = Math.min(INITIAL_RECONNECT_DELAY * (1L << (attempt - 1)), MAX_RECONNECT_DELAY);
-            delay += (long) (Math.random() * 1000);
+            delay += (long) (Math.random() * 500);
 
             Log.d(TAG, "Waiting " + delay + "ms before connection attempt...");
 
@@ -936,27 +1120,32 @@ public class AICallRecorderRefactored {
 
             broadcastAIStatus("CONNECTED", coreRecorder.isRecording(), false, "");
 
-
             connectionAttempts.set(0);
             lastPongReceived.set(System.currentTimeMillis());
             lastSuccessfulSend.set(System.currentTimeMillis());
 
-            // Send initial configuration
+            // Build and send initial configuration WITH conversation initiation data
             try {
-                ElevenLabsWebSocketConfig.sendInitialConfiguration(webSocket, agentId);
-                Log.d(TAG, "Initial configuration sent");
+                JSONObject initData = buildConversationInitiationData();
+                ElevenLabsWebSocketConfig.sendInitialConfiguration(webSocket, agentId, initData);
+
+                if (initData != null && isOutboundCall) {
+                    Log.d(TAG, "Outbound call configuration sent with purpose and notes");
+                } else {
+                    Log.d(TAG, "Standard initial configuration sent");
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Failed to send initial configuration: " + e.getMessage());
             }
 
-            // Start audio streaming with delay and verification
+            // Start audio streaming with delay
             mainHandler.postDelayed(() -> {
                 if (coreRecorder.isRecording() && isAIConnected.get()) {
                     startEnhancedAudioStreaming();
                 } else {
                     Log.w(TAG, "Skipping audio streaming - call not active or connection lost");
                 }
-            }, 2000); // 2 second delay
+            }, 2000);
 
             notifyCallback(cb -> cb.onAIConnected());
             notifyCallback(cb -> cb.onConnectionHealthChanged(true));
@@ -1231,12 +1420,22 @@ public class AICallRecorderRefactored {
         CallAudioInjector.InjectionCallback injectionCallback = new CallAudioInjector.InjectionCallback() {
             @Override
             public void onInjectionStarted() {
+                if (audioStreamer != null) {
+                    audioStreamer.pauseStreaming();
+                    Log.d(TAG, "Audio streaming PAUSED for injection");
+                }
                 Log.d(TAG, "Complete audio injection started");
                 notifyCallback(cb -> cb.onAudioInjectionStarted("Complete Response"));
             }
 
             @Override
             public void onInjectionCompleted(boolean success) {
+                if (audioStreamer != null) {
+                    audioStreamer.resumeStreaming();
+                    Log.d(TAG, "Audio streaming RESUMED after injection");
+                }
+
+
                 if (success) {
                     Log.d(TAG, "Complete audio injection completed successfully");
                     notifyCallback(cb -> cb.onAudioInjected(completeAudio.length, completeAudio.length));
@@ -1249,6 +1448,11 @@ public class AICallRecorderRefactored {
 
             @Override
             public void onInjectionError(String error) {
+                if (audioStreamer != null) {
+                    audioStreamer.resumeStreaming();
+                    Log.d(TAG, "Audio streaming RESUMED after injection");
+                }
+
                 Log.e(TAG, "Complete audio injection error: " + error);
                 totalErrorsEncountered.incrementAndGet();
                 notifyCallback(cb -> cb.onAudioInjectionError(error));
@@ -1260,6 +1464,11 @@ public class AICallRecorderRefactored {
         try {
             audioInjector.injectAudio16kMono(completeAudio, injectionCallback);
         } catch (Exception e) {
+            if (audioStreamer != null) {
+                audioStreamer.resumeStreaming();
+                Log.d(TAG, "Audio streaming RESUMED after injection");
+            }
+
             Log.e(TAG, "Failed to inject complete audio: " + e.getMessage(), e);
             totalErrorsEncountered.incrementAndGet();
             notifyCallback(cb -> cb.onAudioInjectionError("Complete injection failed: " + e.getMessage()));

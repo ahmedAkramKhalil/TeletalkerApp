@@ -1,14 +1,10 @@
 package com.teletalker.app.utils;
 
+import static android.provider.Telephony.Carriers.PASSWORD;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
-
-
-import com.teletalker.app.features.agent_type.Agent;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class PreferencesManager {
 
@@ -44,6 +40,8 @@ public class PreferencesManager {
     public static final String USER_ID = "user_id";
     public static final String IS_FIRST_TIME = "is_first_time";
     public static final String LAST_AGENT_SYNC = "last_agent_sync";
+    private static final String IS_LOGGED_IN = "IS_LOGGED_IN";
+    private static final String USERNAME = "USERNAME";
 
     private SharedPreferences prefs;
     private SharedPreferences.Editor editor;
@@ -291,7 +289,7 @@ public class PreferencesManager {
     }
 
     // Check if user is logged in
-    public boolean isLoggedIn() {
+    public boolean isLoginCredentialExist() {
         return getApiKey() != null && getUserToken() != null;
     }
 
@@ -332,6 +330,47 @@ public class PreferencesManager {
         clearSelectedAgent();
         editor.apply();
     }
+
+    public void putString(String currentCallAiNotes, String conversationNotes) {
+        editor.putString(currentCallAiNotes,conversationNotes);
+        editor.apply();
+    }
+
+    public void putLong(String pendingScheduledCallId, long callId) {
+        editor.putLong(pendingScheduledCallId,callId);
+        editor.apply();
+    }
+
+    public void setIsLoggedIn(boolean b) {
+        editor.putBoolean(IS_LOGGED_IN,b);
+        editor.apply();
+
+    }
+
+    public boolean  isUserLoggedIn() {
+        return prefs.getBoolean(IS_LOGGED_IN,false);
+    }
+
+    public  String getUsername() {
+        return prefs.getString(USERNAME,"");
+    }
+    public  String getPassword() {
+        return prefs.getString(PASSWORD,"");
+    }
+
+    public void setUsername(String email) {
+        putString(USERNAME,email);
+    }
+
+    public void setPassword(String password) {
+        putString(PASSWORD,password);
+    }
+
+    public void setUserID(String userId) {
+        putString(USER_ID,userId);
+    }
+
+
 
     // Export agent settings for backup/restore
 //    public String exportAgentSettings() {

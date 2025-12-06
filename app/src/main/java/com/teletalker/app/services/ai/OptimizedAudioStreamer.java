@@ -35,12 +35,12 @@ public class OptimizedAudioStreamer {
     private static final int SAMPLE_RATE = 16000;
     private static final int CHANNELS = 1;
     private static final int BITS_PER_SAMPLE = 16;
-    private static final int CHUNK_DURATION_MS = 100;
+    private static final int CHUNK_DURATION_MS = 40;
     private static final int CHUNK_SIZE_BYTES = (SAMPLE_RATE * CHANNELS * BITS_PER_SAMPLE / 8) * CHUNK_DURATION_MS / 1000;
 
     // Streaming parameters
     private static final int MAX_QUEUE_SIZE = 50;
-    private static final long STREAM_TIMEOUT_MS = 30000;
+    private static final long STREAM_TIMEOUT_MS = 60000;
 
     public interface StreamerCallback {
         void onStreamingStarted();

@@ -1,32 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#9DA5BE</color>
+    <!-- Base Colors - Light Theme -->
+    <color name="black">#1E1E1E</color>
     <color name="white">#FFFFFFFF</color>
     <color name="colorPrimary">#2249B3</color>
-    <color name="colorPrimaryDark">#161616</color>
-    <color name="colorAccent">#081A4A</color>
-    <color name="gunmetalGray">#292F3D</color>
-    <color name="charcoalBlue">#394156</color>
-    <color name="darkMidnightBlue">#181C25</color>
-    <color name="blue_gray">#49536E</color>
+    <color name="colorPrimaryDark">#1A3A8C</color>
+    <color name="colorAccent">#00A6FB</color>
 
+    <!-- Backgrounds - Light -->
+    <color name="gunmetalGray">#242038</color>
+    <color name="gunmetalTextGray">#242038</color>
+
+    <color name="charcoalBlue">#FFFFFF</color>
+    <color name="darkMidnightBlue">#3477E9F8</color>
+    <color name="blue_gray">#E0E0E0</color>
+
+    <!-- Pure Colors (unchanged) -->
     <color name="red">#FF0000</color>
     <color name="blue">#2249B3</color>
 
     <color name="purple_500">#00A6FB</color>
-
     <color name="purple_700">#51E3F6</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
     <color name="lightTurquoise">#77E9F8</color>
-    <color name="text_primary">#7D8597</color>
+
+    <!-- Text Colors - Light -->
+    <color name="text_primary">#1E1E1E</color>
     <color name="paragraph">#415A77</color>
     <color name="gray_dark">#5E5E5E</color>
-    <color name="input_field_border">#F3F3F3</color>
+    <color name="input_field_border">#E0E0E0</color>
     <color name="text_gray">#5E5E5E</color>
-    <color name="shadowGray"> #5D5E60</color>
-    <color name="text_gray_hint">#878787</color>
-    <color name="gray">#EFF0F7</color>
+    <color name="shadowGray">#5D5E60</color>
+    <color name="text_gray_hint">#9E9E9E</color>
+    <color name="gray">#F5F5F5</color>
     <color name="gray_bar">#45B6BCCB</color>
     <color name="light_blue">#0A00A6FB</color>
     <color name="light_blue_trimmer">#3300A6FB</color>
@@ -34,9 +41,11 @@
     <color name="button_red">#14FF2525</color>
     <color name="button_blue">#14374495</color>
     <color name="orange">#FF9800</color>
-    <color name="card_light_bg">#F9F9FB</color>
-    <color name="card_light_bg_gray">#F3F4F9</color>
-    <color name="card_rounded_light_bg_gray">#EEEFF0</color>
+
+    <!-- Cards - Light -->
+    <color name="card_light_bg">#FFFFFF</color>
+    <color name="card_light_bg_gray">#F9F9FB</color>
+    <color name="card_rounded_light_bg_gray">#F3F4F9</color>
 
     <array name="arc_colors_default">
         <item>#00458E</item>
@@ -49,15 +58,16 @@
     <color name="visualizer_hover_blue">#1A00A6FB</color>
 
     <color name="progress_gray_trans">#80D8D8D8</color>
-    <color name="sup_card_back">#1B203D</color>
-    <color name="sup_sub_card_back">#2E3350</color>
-    <color name="sup_card_strok">#2D324F</color>
+    <color name="sup_card_back">#FFFFFF</color>
+    <color name="sup_sub_card_back">#F9F9FB</color>
+    <color name="sup_card_strok">#E0E0E0</color>
     <color name="card_selected">#1F00A6FB</color>
     <color name="ayp_red">#F44336</color>
     <color name="text_dark">#415A77</color>
-    <color name="card_background_light">#F7F8FB</color>
+    <color name="card_background_light">#FFFFFF</color>
     <color name="visualizer_back">#F7F8F9</color>
 
+    <!-- Time Picker Colors -->
     <color name="snap_time_picker_transparent_white">#00ffffff</color>
     <color name="snap_time_picker_white">#FFFFFF</color>
     <color name="snap_time_picker_black">#333333</color>
@@ -69,10 +79,9 @@
     <color name="outline_spot_card">#80374495</color>
     <color name="transpernt">#00FFFFFF</color>
     <color name="selected_color">#51E3F6</color>
-    <color name="unselected_color">#FFFFFF</color>
+    <color name="unselected_color">#757575</color>
 
-
-
+    <!-- Status Colors (unchanged) -->
     <color name="status_green">#4CAF50</color>
     <color name="status_red">#F44336</color>
     <color name="status_yellow">#FF9800</color>
@@ -81,13 +90,13 @@
     <color name="status_gray">#757575</color>
     <color name="status_orange">#FF5722</color>
 
-    <!-- Background Colors -->
+    <!-- Background Colors - Light -->
     <color name="status_background">#F5F5F5</color>
     <color name="status_item_background">#FFFFFF</color>
     <color name="status_item_background_highlight">#58E3F2FD</color>
     <color name="status_item_background_ai">#F3E5F5</color>
 
-    <!-- Text Colors -->
+    <!-- Text Colors - Light -->
     <color name="text_secondary">#757575</color>
 
     <!-- AI Accent -->
@@ -95,6 +104,72 @@
     <color name="chip_background">#BAB2EBF2</color>
     <color name="chip_text">#303F9F</color>
     <color name="chip_stroke">#00BCD4</color>
+    <color name="colorLightGray">#E0E0E0</color>
 
+    <color name="error">#F44336</color>
+
+    <!-- Status Badges -->
+    <color name="status_paid_bg">#4CAF50</color>
+    <color name="status_paid_text">#FFFFFF</color>
+
+    <color name="status_upcoming_bg">#FF9800</color>
+    <color name="status_upcoming_text">#FFFFFF</color>
+
+    <color name="status_cancelled_bg">#757575</color>
+    <color name="status_cancelled_text">#FFFFFF</color>
+
+    <color name="status_default_bg">#E0E0E0</color>
+    <color name="status_default_text">#424242</color>
+
+    <!-- Avatar Colors (unchanged) -->
+    <color name="avatar_blue">#1976D2</color>
+    <color name="avatar_red">#D32F2F</color>
+    <color name="avatar_green">#388E3C</color>
+    <color name="avatar_orange">#F57C00</color>
+    <color name="avatar_purple">#7B1FA2</color>
+    <color name="avatar_cyan">#0097A7</color>
+    <color name="avatar_pink">#C2185B</color>
+    <color name="avatar_brown">#5D4037</color>
+    <color name="avatar_grey">#455A64</color>
+    <color name="avatar_teal">#00796B</color>
+
+    <!-- Lite Theme Colors -->
+    <color name="lite_primary">#2249B3</color>
+    <color name="lite_primary_dark">#1A3A8C</color>
+    <color name="lite_accent">#00A6FB</color>
+
+    <!-- Lite Background Colors -->
+    <color name="lite_background">#F5F7FA</color>
+    <color name="lite_surface">#FFFFFF</color>
+    <color name="lite_status_bar">#FFFFFF</color>
+
+    <!-- Lite Text Colors -->
+    <color name="lite_text_primary">#1E1E1E</color>
+    <color name="lite_text_secondary">#616161</color>
+    <color name="lite_text_hint">#9E9E9E</color>
+    <color name="lite_text_disabled">#BDBDBD</color>
+
+    <!-- Lite Card Colors -->
+    <color name="lite_card_background">#FFFFFF</color>
+    <color name="lite_card_stroke">#E0E0E0</color>
+
+    <!-- Lite Divider -->
+    <color name="lite_divider">#E0E0E0</color>
+
+    <!-- Lite Shadow -->
+    <color name="lite_shadow">#1A000000</color>
+
+    <!-- Lite Bottom Navigation Selector -->
+    <color name="lite_bottom_nav_selected">#2249B3</color>
+    <color name="lite_bottom_nav_unselected">#9E9E9E</color>
+
+    <!-- Standard Bottom Navigation Selector -->
+    <color name="standard_bottom_nav_selected">#00A6FB</color>
+    <color name="standard_bottom_nav_unselected">#7D8597</color>
+    <color name="track">#38E0E0E0</color>
+    <color name="tab_text_color">#757575</color>
+    <color name="tab_selected_color">#6200EE</color>
+    <color name="tab_indicator_color">#6200EE</color>
+    <color name="pink">#FF9999</color>
 
 </resources>

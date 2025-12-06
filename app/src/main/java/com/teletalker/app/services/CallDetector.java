@@ -28,6 +28,7 @@ import android.telecom.InCallService;
 import android.telecom.TelecomManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
@@ -38,9 +39,13 @@ import com.teletalker.app.R;
 import com.teletalker.app.features.home.HomeActivity;
 import com.teletalker.app.features.home.fragments.callhistory.data.data_sources.local.database.CallDatabase;
 import com.teletalker.app.features.home.fragments.callhistory.data.models.CallEntity;
+import com.teletalker.app.network.FirebaseFunctionsManager;
+import com.teletalker.app.network.UserBalance;
 import com.teletalker.app.services.ai.AICallRecorderRefactored;
 import com.teletalker.app.services.ai.CallRecorder;
+import com.teletalker.app.utils.MinutesTracker;
 import com.teletalker.app.utils.PreferencesManager;
+import com.teletalker.app.utils.ScheduledCallHelper;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -64,6 +69,8 @@ public class CallDetector extends InCallService {
     private static final String TAG = "TeleTalkerAIInCallService";
     private static final String CHANNEL_ID = "teletalker_ai_call_service";
     private static final String PHONE_PACKAGE = "com.android.phone";
+    private MinutesTracker minutesTracker;
+    private double callStartMinutes = 0;
 
     // Action constants for notification buttons
     private static final String ACTION_PAUSE = "com.teletalker.app.services.CallDetector.pause";
@@ -118,17 +125,58 @@ public class CallDetector extends InCallService {
     private AICallRecorderRefactored.AIMode currentAIMode = AICallRecorderRefactored.AIMode.SMART_ASSISTANT;
     private boolean isAIEnabled = true;
     private boolean isInjectionEnabled = true;
+    static boolean isServiceRunning;
+
+    public static boolean isServiceRunning() {
+        return isServiceRunning;
+    }
 
     // ===== STATIC CONFIGURATION METHODS =====
 
 
     private void broadcastCallStatus(String status, String phoneNumber, String contactName) {
+        Log.d(TAG, "broadcastCallStatus: " + status + "  phoneNumber:"+ phoneNumber);
         StatusBroadcastManager.broadcastCallStatus(this, status, phoneNumber, contactName);
     }
 
 
+    private void checkAndPrepareScheduledCall(Call call) {
+        if (call.getDetails().getHandle() == null) return;
+
+        String phoneNumber = call.getDetails().getHandle().getSchemeSpecificPart();
+
+        // Check if there's a pending scheduled call for this number
+        String pendingPhone = aiPreferences.getString("pending_scheduled_call_notes", null);
+
+        if (pendingPhone != null && pendingPhone.equals(phoneNumber)) {
+            Log.d(TAG, "🎯 SCHEDULED CALL DETECTED for: " + phoneNumber);
+
+            String conversationNotes = aiPreferences.getString("pending_scheduled_call_notes", "");
+            long callId = aiPreferences.getLong("pending_scheduled_call_id", -1);
+
+            if (!conversationNotes.isEmpty()) {
+                Log.d(TAG, "📝 Loading AI conversation notes: " + conversationNotes);
+
+                // Configure AI with the scheduled conversation notes
+                configureAIForScheduledCall(conversationNotes);
+
+                // Mark this as a scheduled call in the CallInfo
+                // (This will be used when recording starts)
+            }
+        }
+    }
 
 
+    private void configureAIForScheduledCall(String conversationNotes) {
+        Log.d(TAG, "🤖 Configuring AI with scheduled conversation notes");
+
+        // Store the notes temporarily so they can be used when AI connects
+        // The AI will use these notes to guide the conversation
+        aiPreferences.putString("current_call_ai_notes", conversationNotes);
+
+        // You can also send these notes directly to ElevenLabs if needed
+        // This would be done in the AICallRecorderRefactored when it connects
+    }
 
 
     // ===== ENHANCED WRAPPER AND STATE CLASSES =====
@@ -141,13 +189,13 @@ public class CallDetector extends InCallService {
         final boolean isHolding;
         final boolean isAIConnected;
         final boolean isAIResponding;
-        final AICallRecorderRefactored .AIMode aiMode;
+        final AICallRecorderRefactored.AIMode aiMode;
         final boolean isAudioInjectionActive;
         final String audioInjectionMethod;
 
         NotificationState(int titleResId, String message, boolean canShowDelete, boolean isPaused,
                           boolean isHolding, boolean isAIConnected, boolean isAIResponding,
-                          AICallRecorderRefactored .AIMode aiMode, boolean isAudioInjectionActive,
+                          AICallRecorderRefactored.AIMode aiMode, boolean isAudioInjectionActive,
                           String audioInjectionMethod) {
             this.titleResId = titleResId;
             this.message = message;
@@ -260,6 +308,9 @@ public class CallDetector extends InCallService {
         }
     }
 
+
+
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -280,12 +331,93 @@ public class CallDetector extends InCallService {
         foregroundNotificationId = generateNotificationId();
 
         createNotificationChannel();
+
         acquireWakeLock();
 
         // Log comprehensive configuration status
         logAIConfigurationStatus();
         loadServiceControlFlags();
+        //TODO:this
+        try {
+            minutesTracker = new MinutesTracker(this);
+            minutesTracker.setListener(new MinutesTracker.OnMinutesUpdateListener() {
+                @Override
+                public void onMinutesUpdated(double remaining) {
+                    Log.d(TAG, "Minutes remaining: " + remaining);
+                    // Broadcast to update UI
+                    Intent intent = new Intent("com.teletalker.MINUTES_UPDATE");
+                    intent.putExtra("remaining", remaining);
+                    sendBroadcast(intent);
+                }
+
+                @Override
+                public void onMinutesExhausted() {
+                    Log.w(TAG, "Minutes exhausted - stopping call");
+                    ScheduledCallHelper.getAllScheduledCallsAsync(getApplicationContext(), calls -> {
+                        for (ScheduledCallHelper.CallInfo call : calls) {
+                            ScheduledCallHelper.markCallCancelledAsync(getApplicationContext(), call.callId, "Insufficient minutes");
+                        }
+                        Toast.makeText(getApplicationContext(), calls + " scheduled calls cancelled: No minutes",
+                                Toast.LENGTH_LONG).show();
+                    });
+                    // Stop all active calls
+                    for (Call call : callsToRecorders.keySet()) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            call.disconnect();
+                        }
+                    }
+                }
+            });
+        } catch (Exception e) {
+            Log.d(TAG, "onCreate: " + e.toString());
+
+        }
     }
+
+
+    private void startForegroundWithStandbyNotification() {
+        try {
+            Notification notification = createStandbyNotification();
+            startForeground(foregroundNotificationId, notification);
+            Log.d(TAG, "✅ Started as foreground service with standby notification");
+        } catch (Exception e) {
+            Log.e(TAG, "❌ CRITICAL: Failed to start foreground!", e);
+            // Try with minimal notification as last resort
+            try {
+                Notification minimalNotification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                        .setContentTitle("TeleTalker")
+                        .setContentText("Service starting...")
+                        .setSmallIcon(android.R.drawable.ic_menu_call)
+                        .setPriority(NotificationCompat.PRIORITY_LOW)
+                        .build();
+                startForeground(foregroundNotificationId, minimalNotification);
+                Log.d(TAG, "✅ Started with minimal notification");
+            } catch (Exception e2) {
+                Log.e(TAG, "❌ FATAL: Cannot start foreground!", e2);
+            }
+        }
+    }
+
+    private Notification createStandbyNotification() {
+        Intent homeIntent = new Intent(this, HomeActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this, 0, homeIntent,
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ?
+                        PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT
+        );
+
+        return new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("TeleTalker AI Assistant")
+                .setContentText("Ready - Waiting for calls...")
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentIntent(pendingIntent)
+                .setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                .build();
+    }
+
+
 
     private void loadServiceControlFlags() {
         // Load service control configuration
@@ -299,19 +431,18 @@ public class CallDetector extends InCallService {
     }
 
 
-
     private void initializeAIConfiguration() {
         aiPreferences = PreferencesManager.getInstance(this);
 
         elevenLabsApiKey = aiPreferences.getApiKey();
         agentId = aiPreferences.getSelectedAgentId();
         isAIEnabled = aiPreferences.isBotActive();
-        isInjectionEnabled = aiPreferences.getBoolean(PreferencesManager.PREF_INJECTION_ENABLED,true);
-        String aiModeString = aiPreferences.getString(PreferencesManager.PREF_AI_MODE, AICallRecorderRefactored .AIMode.SMART_ASSISTANT.name());
+        isInjectionEnabled = aiPreferences.getBoolean(PreferencesManager.PREF_INJECTION_ENABLED, true);
+        String aiModeString = aiPreferences.getString(PreferencesManager.PREF_AI_MODE, AICallRecorderRefactored.AIMode.SMART_ASSISTANT.name());
         try {
-            currentAIMode = AICallRecorderRefactored .AIMode.valueOf(aiModeString);
+            currentAIMode = AICallRecorderRefactored.AIMode.valueOf(aiModeString);
         } catch (IllegalArgumentException e) {
-            currentAIMode = AICallRecorderRefactored .AIMode.SMART_ASSISTANT;
+            currentAIMode = AICallRecorderRefactored.AIMode.SMART_ASSISTANT;
         }
     }
 
@@ -334,6 +465,17 @@ public class CallDetector extends InCallService {
     public int onStartCommand(Intent intent, int flags, int startId) {
         // Handle notification action intents ONLY
         try {
+
+//            if (notificationIdsToRecorders.isEmpty()) {
+//                try {
+//                    Notification notification = createStandbyNotification();
+//                    startForeground(foregroundNotificationId, notification);
+//                } catch (Exception e) {
+//                    Log.e(TAG, "Error starting foreground in onStartCommand", e);
+//                }
+//            }
+
+
             byte[] receivedToken = intent != null ? intent.getByteArrayExtra(EXTRA_TOKEN) : null;
             if (receivedToken != null && java.util.Arrays.equals(receivedToken, token)) {
                 int notificationId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, -1);
@@ -346,7 +488,7 @@ public class CallDetector extends InCallService {
         } catch (Exception e) {
             Log.w(TAG, "Failed to handle intent: " + intent, e);
         }
-
+        isServiceRunning = true;
         stopSelf(startId);
         return START_NOT_STICKY;
     }
@@ -398,7 +540,7 @@ public class CallDetector extends InCallService {
         String aiModeString = intent.getStringExtra(EXTRA_AI_MODE);
         if (aiModeString != null) {
             try {
-                AICallRecorderRefactored .AIMode newMode = AICallRecorderRefactored .AIMode.valueOf(aiModeString);
+                AICallRecorderRefactored.AIMode newMode = AICallRecorderRefactored.AIMode.valueOf(aiModeString);
                 wrapper.recorder.setAIMode(newMode);
                 wrapper.callInfo.aiMode = newMode;
                 Log.d(TAG, "🎯 AI mode changed to: " + newMode);
@@ -455,6 +597,9 @@ public class CallDetector extends InCallService {
     @Override
     public void onCallAdded(Call call) {
         super.onCallAdded(call);
+
+        Log.d(TAG, "📞 InCallService - Call Added");
+
         if (!isServiceEnabled) {
             Log.d(TAG, "⚠️ Service is disabled, ignoring call");
             return;
@@ -486,6 +631,12 @@ public class CallDetector extends InCallService {
                         call.getDetails().getState() : call.getState());
 
         Log.d(TAG, "📞 Handle state change: " + getCallStateString(callState));
+        //TODO:this
+
+        if (callState == Call.STATE_RINGING || callState == Call.STATE_ACTIVE) {
+            checkAndPrepareScheduledCall(call);
+        }
+
 
         if (call.getParent() != null) {
             Log.v(TAG, "⚠️ Ignoring state change of conference call child");
@@ -532,6 +683,9 @@ public class CallDetector extends InCallService {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     startAIRecording(call);
                 }
+            }else{
+                Log.d(TAG, "handleStateChange: " + "ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)\n" +
+                        "                    == PackageManager.PERMISSION_GRANTED");
             }
         } else if (callState == Call.STATE_HOLDING) {
             statusToBoard = "HOLDING";
@@ -545,8 +699,6 @@ public class CallDetector extends InCallService {
             }, 1000);
             requestStopRecording(call);
         }
-
-
 
 
         // Update holding state
@@ -589,7 +741,7 @@ public class CallDetector extends InCallService {
                     (result == PackageManager.PERMISSION_GRANTED ? "GRANTED" : "DENIED"));
 
             // Also check what permissions we actually have
-            PackageInfo info = pm.getPackageInfo( getPackageName(), PackageManager.GET_PERMISSIONS);
+            PackageInfo info = pm.getPackageInfo(getPackageName(), PackageManager.GET_PERMISSIONS);
             Log.d(TAG, "Requested permissions: " + Arrays.toString(info.requestedPermissions));
         } catch (Exception e) {
             Log.e(TAG, "Error checking permissions: " + e.getMessage());
@@ -673,6 +825,7 @@ public class CallDetector extends InCallService {
             return false;
         }
     }
+
     private void enableSpeakerphone(boolean enable) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -701,12 +854,14 @@ public class CallDetector extends InCallService {
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     private void startAIRecording(Call call) {
 
+        Log.d(TAG, "🔇 Recording disabled by configuration (Service: " + isServiceEnabled +
+                ", Recording: " + isCallRecordingEnabled + ")");
+
         if (!isServiceEnabled || !isCallRecordingEnabled) {
             Log.d(TAG, "🔇 Recording disabled by configuration (Service: " + isServiceEnabled +
                     ", Recording: " + isCallRecordingEnabled + ")");
             return;
         }
-
 
         if (!hasRecordAudioPermission()) {
             Log.w(TAG, "❌ Required permissions have not been granted");
@@ -725,9 +880,9 @@ public class CallDetector extends InCallService {
         }
 
         try {
-            Log.d(TAG, "═══════════════════════════════════════════════");
+            Log.d(TAG, "╔═══════════════════════════════════════════════════════");
             Log.d(TAG, "🎙️ STARTING AI-ENHANCED RECORDING WITH INJECTION");
-            Log.d(TAG, "═══════════════════════════════════════════════");
+            Log.d(TAG, "╚═══════════════════════════════════════════════════════");
 
             CallInfo callInfo = new CallInfo();
             extractCallDetails(call, callInfo);
@@ -735,11 +890,59 @@ public class CallDetector extends InCallService {
             callInfo.aiMode = currentAIMode;
             callInfo.injectionEnabled = isInjectionEnabled;
 
+            //TODO:this
+//            // Log scheduled call detection
+            if (callInfo.phoneNumber != null) {
+                        ScheduledCallHelper.findActiveCallByPhoneNumber(this, callInfo.phoneNumber, new ScheduledCallHelper.CallInfoCallback() {
+                            @Override
+                            public void onCallInfoFound(ScheduledCallHelper.CallInfo scheduledCall) {
+                                if (scheduledCall != null) {
+                                    Log.d(TAG, "🎯 SCHEDULED CALL DETECTED!");
+                                    Log.d(TAG, "   Purpose: " + scheduledCall.purpose);
+                                    Log.d(TAG, "   Notes: " + (scheduledCall.notes != null ?
+                                            scheduledCall.notes.substring(0, Math.min(50, scheduledCall.notes.length())) + "..." : "none"));
+                                }
+                            }
+
+                            @Override
+                            public void onCallInfoNotFound() {
+                            }
+
+                            @Override
+                            public void onError(Exception e) {
+                            }
+                        });
+
+            }
+
             // Create AI-enhanced recorder
             AICallRecorderRefactored recorder = new AICallRecorderRefactored(this);
             AICallRecorderWrapper wrapper = new AICallRecorderWrapper(recorder, callInfo, call);
 
             callsToRecorders.put(call, wrapper);
+
+            //TODO:this
+
+            FirebaseFunctionsManager.getInstance().getBalance(new FirebaseFunctionsManager.OnBalanceCallback() {
+                @Override
+                public void onSuccess(UserBalance balance) {
+                    callStartMinutes = balance.getFreeMinutesBalance() + balance.getPaidMinutesBalance();
+
+                    if (callStartMinutes <= 0) {
+                        Log.w(TAG, "No minutes available");
+                        stopAIRecording(wrapper);
+                        return;
+                    }
+
+                    minutesTracker.startTracking(callStartMinutes);
+                }
+
+                @Override
+                public void onError(String error) {
+                    Log.e(TAG, "Failed to get balance: " + error);
+                }
+            });
+
 
             // Generate notification ID
             int notificationId = notificationIdsToRecorders.isEmpty() ?
@@ -751,8 +954,6 @@ public class CallDetector extends InCallService {
                 Log.d(TAG, "🤖 CONFIGURING AI FEATURES WITH INJECTION");
                 recorder.setElevenLabsConfig(elevenLabsApiKey, agentId);
                 recorder.setAIMode(currentAIMode);
-
-                // Configure audio injection
 
                 Log.d(TAG, "✅ AI configured: Mode=" + currentAIMode + ", Agent=" + agentId +
                         ", Injection=" + (callInfo.injectionEnabled ? "ON" : "OFF"));
@@ -769,12 +970,14 @@ public class CallDetector extends InCallService {
             // Update foreground state
             updateForegroundState();
 
-            // Start AI-enhanced recording
+            // Start AI-enhanced recording with phone number
             String filename = generateRecordingFilename(callInfo);
             wrapper.state = AICallRecorderWrapper.State.RECORDING;
 
-            Log.d(TAG, "🚀 STARTING RECORDING: " + filename);
-            boolean started = recorder.startRecording(filename);
+            Log.d(TAG, "🚀 STARTING RECORDING: " + filename + " for " + callInfo.phoneNumber);
+
+            // ⭐ KEY CHANGE: Pass phone number to enable scheduled call detection
+            boolean started = recorder.startRecording(filename, callInfo.phoneNumber);
 
             if (started) {
                 Log.d(TAG, "✅ AI-ENHANCED RECORDING WITH INJECTION STARTED SUCCESSFULLY! 🎉");
@@ -784,8 +987,8 @@ public class CallDetector extends InCallService {
                 // Log comprehensive AI status after initialization
                 handler.postDelayed(() -> {
                     if (recorder.isRecording()) {
-                        Log.d(TAG, "🔍 COMPREHENSIVE AI STATUS CHECK:");
-//                        recorder.logAIStatus();
+                        Log.d(TAG, "📊 COMPREHENSIVE AI STATUS CHECK:");
+                        recorder.logEnhancedAIStatus();
                     }
                 }, 5000);
 
@@ -823,6 +1026,18 @@ public class CallDetector extends InCallService {
             // Save to database with injection info
             saveCallToDatabase(wrapper.callInfo);
 
+            //TODO:this
+
+//            // Clean up old SharedPreferences approach (can be removed eventually)
+            aiPreferences.remove("current_call_ai_notes");
+            aiPreferences.remove("pending_scheduled_call_notes");
+            aiPreferences.remove("pending_scheduled_call_phone");
+            aiPreferences.remove("pending_scheduled_call_id");
+
+            minutesTracker.stopTracking();
+            minutesTracker.updateFirebase(wrapper.callInfo.phoneNumber, wrapper.callInfo.recordingFile);
+
+
             // Schedule removal from notifications
             handler.postDelayed(() -> {
                 onRecorderExited(wrapper);
@@ -834,6 +1049,19 @@ public class CallDetector extends InCallService {
             onRecorderExited(wrapper);
         }
     }
+
+    public String getCurrentCallAINotes() {
+        return aiPreferences.getString("current_call_ai_notes", "");
+    }
+
+    /**
+     * Check if current call is a scheduled call
+     */
+    public boolean isScheduledCall() {
+        String notes = aiPreferences.getString("current_call_ai_notes", "");
+        return !notes.isEmpty();
+    }
+
 
     private void onRecorderExited(AICallRecorderWrapper wrapper) {
         notificationIdsToRecorders.values().removeIf(w -> w == wrapper);
@@ -964,7 +1192,7 @@ public class CallDetector extends InCallService {
 
         @Override
         public void onAudioQualityChanged(String quality, String reason) {
-            Log.e(TAG, "💥 onAudioQualityChanged quality: " + quality + "  reason:"+reason);
+            Log.e(TAG, "💥 onAudioQualityChanged quality: " + quality + "  reason:" + reason);
 
         }
 
@@ -1387,7 +1615,7 @@ public class CallDetector extends InCallService {
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
                 "TeleTalker:AICallRecordingWithInjection");
-        wakeLock.acquire(10*60*1000L);
+        wakeLock.acquire(10 * 60 * 1000L);
     }
 
     private boolean hasRecordAudioPermission() {
@@ -1408,13 +1636,20 @@ public class CallDetector extends InCallService {
 
     private String getCallStateString(int state) {
         switch (state) {
-            case Call.STATE_NEW: return "NEW";
-            case Call.STATE_RINGING: return "RINGING";
-            case Call.STATE_DIALING: return "DIALING";
-            case Call.STATE_ACTIVE: return "ACTIVE";
-            case Call.STATE_HOLDING: return "HOLDING";
-            case Call.STATE_DISCONNECTED: return "DISCONNECTED";
-            default: return "UNKNOWN(" + state + ")";
+            case Call.STATE_NEW:
+                return "NEW";
+            case Call.STATE_RINGING:
+                return "RINGING";
+            case Call.STATE_DIALING:
+                return "DIALING";
+            case Call.STATE_ACTIVE:
+                return "ACTIVE";
+            case Call.STATE_HOLDING:
+                return "HOLDING";
+            case Call.STATE_DISCONNECTED:
+                return "DISCONNECTED";
+            default:
+                return "UNKNOWN(" + state + ")";
         }
     }
 
@@ -1442,10 +1677,21 @@ public class CallDetector extends InCallService {
     }
 
     // Public methods for external AI configuration
-    public boolean isAIEnabled() { return isAIEnabled; }
-    public AICallRecorderRefactored .AIMode getCurrentAIMode() { return currentAIMode; }
-    public boolean hasAICredentials() { return elevenLabsApiKey != null && agentId != null; }
-    public boolean isInjectionEnabled() { return isInjectionEnabled; }
+    public boolean isAIEnabled() {
+        return isAIEnabled;
+    }
+
+    public AICallRecorderRefactored.AIMode getCurrentAIMode() {
+        return currentAIMode;
+    }
+
+    public boolean hasAICredentials() {
+        return elevenLabsApiKey != null && agentId != null;
+    }
+
+    public boolean isInjectionEnabled() {
+        return isInjectionEnabled;
+    }
 
     public void testAIConfiguration() {
         Log.d(TAG, "🧪 TESTING AI CONFIGURATION WITH INJECTION");
@@ -1463,6 +1709,7 @@ public class CallDetector extends InCallService {
     public void onDestroy() {
         Log.d(TAG, "🛑 TeleTalker AI InCall Service with Injection destroyed");
 
+        isServiceRunning = false;
         // Stop all active AI recordings with injection
         for (AICallRecorderWrapper wrapper : callsToRecorders.values()) {
             if (wrapper.recorder.isRecording()) {
@@ -1479,7 +1726,7 @@ public class CallDetector extends InCallService {
 
     @Override
     public IBinder onBind(Intent intent) {
-        Log.d(TAG, "🔗 TeleTalker AI InCall Service with Injection bound");
+        Log.d(TAG, "🔗 InCallService onBind - Waiting for calls...");
         return super.onBind(intent);
     }
 

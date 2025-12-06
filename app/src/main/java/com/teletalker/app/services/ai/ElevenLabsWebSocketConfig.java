@@ -17,40 +17,93 @@ public class ElevenLabsWebSocketConfig {
      * Send initial configuration to ElevenLabs ConvAI API
      * This must be sent immediately after WebSocket connection opens
      */
-    public static void sendInitialConfiguration(WebSocket webSocket, String agentId) {
+//    public static void sendInitialConfiguration(WebSocket webSocket, String agentId) {
+//        try {
+//            JSONObject config = new JSONObject();
+//            config.put("type", "conversation_initiation_client_data");
+//
+//            // Conversation configuration
+//            JSONObject conversationConfig = new JSONObject();
+//            conversationConfig.put("agent_id", agentId);
+//
+//            // Optional: Audio input configuration
+//            JSONObject audioConfig = new JSONObject();
+//            audioConfig.put("input_sample_rate", 16000);
+//            audioConfig.put("output_sample_rate", 16000);
+//            audioConfig.put("input_encoding", "pcm_16000");
+//            audioConfig.put("output_encoding", "pcm_16000");
+//
+//            conversationConfig.put("audio_interface", audioConfig);
+//            config.put("conversation_config", conversationConfig);
+//
+//            // Send configuration
+//            boolean sent = webSocket.send(config.toString());
+//
+//            if (sent) {
+//                Log.d(TAG, "✅ Initial configuration sent successfully");
+//                Log.d(TAG, "🎯 Agent ID: " + agentId);
+//                Log.d(TAG, "🎵 Audio: 16kHz PCM, Mono");
+//            } else {
+//                Log.e(TAG, "❌ Failed to send initial configuration");
+//            }
+//
+//        } catch (JSONException e) {
+//            Log.e(TAG, "❌ Error creating initial configuration: " + e.getMessage());
+//        }
+//    }
+
+    // Update the sendInitialConfiguration method
+    public static void sendInitialConfiguration(
+            WebSocket webSocket,
+            String agentId,
+            JSONObject conversationInitData) {
+
         try {
             JSONObject config = new JSONObject();
             config.put("type", "conversation_initiation_client_data");
 
-            // Conversation configuration
-            JSONObject conversationConfig = new JSONObject();
-            conversationConfig.put("agent_id", agentId);
+            // Add agent ID if not in URL
+            if (agentId != null) {
+                config.put("agent_id", agentId);
+            }
 
-            // Optional: Audio input configuration
-            JSONObject audioConfig = new JSONObject();
-            audioConfig.put("input_sample_rate", 16000);
-            audioConfig.put("output_sample_rate", 16000);
-            audioConfig.put("input_encoding", "pcm_16000");
-            audioConfig.put("output_encoding", "pcm_16000");
+            // Add conversation initiation data if provided
+            if (conversationInitData != null) {
+                // Add dynamic variables
+                if (conversationInitData.has("dynamic_variables")) {
+                    config.put("dynamic_variables",
+                            conversationInitData.getJSONObject("dynamic_variables"));
+                }
 
-            conversationConfig.put("audio_interface", audioConfig);
-            config.put("conversation_config", conversationConfig);
+                // Add conversation config override
+                if (conversationInitData.has("conversation_config_override")) {
+                    config.put("conversation_config_override",
+                            conversationInitData.getJSONObject("conversation_config_override"));
+                }
+            }
 
-            // Send configuration
             boolean sent = webSocket.send(config.toString());
 
             if (sent) {
-                Log.d(TAG, "✅ Initial configuration sent successfully");
-                Log.d(TAG, "🎯 Agent ID: " + agentId);
-                Log.d(TAG, "🎵 Audio: 16kHz PCM, Mono");
+                Log.d("ElevenLabsConfig", "Initial configuration sent successfully");
+                if (conversationInitData != null) {
+                    Log.d("ElevenLabsConfig", "Included conversation initiation data: " +
+                            conversationInitData.toString());
+                }
             } else {
-                Log.e(TAG, "❌ Failed to send initial configuration");
+                Log.e("ElevenLabsConfig", "Failed to send initial configuration");
             }
 
         } catch (JSONException e) {
-            Log.e(TAG, "❌ Error creating initial configuration: " + e.getMessage());
+            Log.e("ElevenLabsConfig", "Error building configuration: " + e.getMessage());
         }
     }
+
+    // Convenience method for backward compatibility
+    public static void sendInitialConfiguration(WebSocket webSocket, String agentId) {
+        sendInitialConfiguration(webSocket, agentId, null);
+    }
+
 
     /**
      * Send conversation initiation (alternative method)

@@ -20,6 +20,8 @@
     app:cardCornerRadius="12dp"
     app:strokeWidth="0dp"
     android:layout_marginTop="10dp"
+        android:elevation="0dp"
+        app:cardElevation="0dp"
     app:cardBackgroundColor="@color/darkMidnightBlue"
     >
 
@@ -46,7 +48,7 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="4dp"
             tools:text="Gladys"
-            android:textColor="@color/white"
+            android:textColor="@color/gunmetalTextGray"
             android:textSize="15sp"
             app:layout_constraintStart_toEndOf="@+id/callStateImg"
             app:layout_constraintTop_toTopOf="@+id/callStateImg" />
@@ -113,7 +115,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="12dp"
             tools:text="1.30"
-            android:textColor="@color/lightTurquoise"
+            android:textColor="@color/gunmetalTextGray"
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@+id/materialCardView6"
             app:layout_constraintEnd_toStartOf="@+id/materialCardView6"

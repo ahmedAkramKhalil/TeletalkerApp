@@ -4,9 +4,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/app_bg"
     tools:context=".features.authentication.presentation.fragments.get_start.GetStartFragment">
 
+    <ImageView
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginBottom="40dp"
+        android:src="@drawable/app_icon"
+        app:layout_constraintBottom_toTopOf="@+id/signInButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
     <LinearLayout
         android:id="@+id/signInButton"
         android:layout_width="match_parent"
@@ -24,7 +31,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="@string/let_s_get_started"
-            android:textColor="@color/white"
+            android:textColor="@color/gunmetalTextGray"
             android:textSize="20sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
@@ -38,10 +45,13 @@
             android:layout_marginTop="12dp"
             android:text="@string/discover_the_latest_1000_voice_effects"
             android:textColor="@color/black"
+            android:gravity="center"
+            android:layout_marginHorizontal="20dp"
             android:textSize="12sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/signUpButton"
@@ -50,7 +60,10 @@
             android:layout_marginTop="12dp"
             android:background="@drawable/button_bg"
             android:drawableStart="@drawable/ic_email"
+            android:drawableTint="@color/white"
+            android:textColor="@color/white"
             android:inputType="text"
+
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:text="@string/continue_with_email" />
@@ -119,7 +132,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:text="@string/sign_in"
-                android:textColor="@color/lightTurquoise"
+                android:textColor="@color/purple_700"
                 android:textSize="13sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"

@@ -4,9 +4,11 @@ import android.Manifest;
 import android.accessibilityservice.AccessibilityService;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -18,7 +20,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
@@ -26,41 +27,31 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.teletalker.app.R;
 import com.teletalker.app.databinding.ActivityHomeBinding;
-import com.teletalker.app.services.AICallRecorder;
-import com.teletalker.app.services.CallDetector;
-import com.teletalker.app.services.ServiceManager;
 import com.teletalker.app.services.VoIPCallService;
-import com.teletalker.app.utils.AIConfigurationHelper;
-import com.teletalker.app.utils.PermissionUtils;
+import com.teletalker.app.services.ServiceManager;
+import com.teletalker.app.utils.PermissionManager;
 import com.teletalker.app.utils.PreferencesManager;
 import com.teletalker.app.utils.RootPermissionManager;
 import com.teletalker.app.utils.RootSetupManager;
 
 import java.util.List;
 
-/**
- * Main home activity that handles app initialization, permissions, and navigation setup
- */
-public class HomeActivity extends AppCompatActivity implements
-        com.teletalker.app.features.home.PermissionManager.PermissionCallback,
+public class HomeActivity extends BaseThemedActivity implements
+        PermissionManager.PermissionCallback,
         RootSetupManager.RootSetupCallback {
 
     private static final String TAG = "HomeActivity";
-
-    // Request codes
     private static final int REQUEST_PERMISSIONS_CODE = 1001;
-    private static final int REQUEST_ANSWER_PHONE_CALLS = 100;
+
     private PreferencesManager prefsManager;
-    // UI components
     private ActivityHomeBinding binding;
     private NavController navController;
 
-    // Managers
-    private com.teletalker.app.features.home.PermissionManager permissionManager;
+    private PermissionManager permissionManager;
     private RootSetupManager rootSetupManager;
+
     private ServiceManager serviceManager;
 
-    // State tracking
     private boolean isInitialized = false;
 
     @SuppressLint("ObsoleteSdkInt")
@@ -68,48 +59,23 @@ public class HomeActivity extends AppCompatActivity implements
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        prefsManager = PreferencesManager.getInstance(this);
 
+        prefsManager = PreferencesManager.getInstance(this);
         setupUI();
         initializeManagers();
-        startInitializationFlow();
-        //TODO: remove this
         setupAiAgent();
-        requestAutoAnswerPermission() ;
-
+        // Start initialization flow (without default dialer)
+        startInitializationFlow();
     }
-
-    private void requestAutoAnswerPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (this instanceof Activity) {
-                ActivityCompat.requestPermissions((Activity) this,
-                        new String[]{Manifest.permission.ANSWER_PHONE_CALLS},
-                        REQUEST_ANSWER_PHONE_CALLS);
-            }
-        }
-    }
-
 
     private void setupAiAgent() {
-
-        PreferencesManager.getInstance(this).saveApiKey("sk_691d29f40ed72ac79857e3132d83dceb494cc2af495d5fae");
-//        AIConfigurationHelper.configureAI(
-//                this,
-//                //this is Jeff Account
-//                "",
-//                prefsManager.getSelectedAgentId(),
-//                true // AI enabled
-//        );
-
-
+        PreferencesManager.getInstance(this)
+                .saveApiKey("sk_691d29f40ed72ac79857e3132d83dceb494cc2af495d5fae");
     }
-
-    // ============ UI SETUP ============
 
     private void setupUI() {
         binding = ActivityHomeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
         initNavigation();
         initBottomNavView();
     }
@@ -127,98 +93,69 @@ public class HomeActivity extends AppCompatActivity implements
         NavigationUI.setupWithNavController(binding.navView, navController);
     }
 
-    // ============ MANAGER INITIALIZATION ============
-
     private void initializeManagers() {
-        permissionManager = new com.teletalker.app.features.home.PermissionManager(this);
+        permissionManager = new PermissionManager(this);
         rootSetupManager = new RootSetupManager(this);
         serviceManager = new ServiceManager(this);
     }
 
-    // ============ INITIALIZATION FLOW ============
+    // ============ INITIALIZATION FLOW (NO DEFAULT DIALER) ============
 
     private void startInitializationFlow() {
-        Log.d(TAG, "Starting app initialization flow");
+        Log.d(TAG, "🚀 Starting TeleTalker initialization flow");
+        Log.d(TAG, "📋 Flow: Root → Standard Permissions → Accessibility → Services");
 
-        // Step 1: Check device capabilities
-        checkDeviceCapabilities();
+        // Step 1: Check root and request root permissions
+        proceedToRootSetup();
     }
 
-    private void checkDeviceCapabilities() {
-        boolean isRooted = RootPermissionManager.isDeviceRooted();
+    // ============ STEP 1: ROOT PERMISSIONS ============
 
-        if (isRooted) {
-            Log.d(TAG, "✅ Rooted device detected");
-            showRootDeviceDialog();
-        } else {
-            Log.w(TAG, "⚠️ Non-rooted device detected");
-            showNonRootDeviceDialog();
+    private void proceedToRootSetup() {
+        Log.d(TAG, "🔐 Step 1: Checking root access...");
+        try {
+            // Request root and grant system permissions
+            rootSetupManager.startRootSetup(this);
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Root setup failed", e);
+            // Continue without root
+            onRootSetupFailed("Root setup error: " + e.getMessage());
         }
     }
 
-    // ============ DEVICE CAPABILITY DIALOGS ============
+    @Override
+    public void onRootSetupCompleted(boolean success, int grantedCount, int totalCount) {
+        Log.d(TAG, "✅ Root setup completed");
+        Log.d(TAG, "   Success: " + success);
+        Log.d(TAG, "   Granted: " + grantedCount + "/" + totalCount);
 
-    private void showRootDeviceDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("🔓 Rooted Device Detected")
-                .setMessage("Your device is rooted! This app can access full call audio for AI processing.\n\n" +
-                        "The app will request root permissions to:\n" +
-                        "• Record both sides of phone calls\n" +
-                        "• Enable real-time AI conversation assistance\n" +
-                        "• Provide high-quality call recording")
-                .setPositiveButton("Enable Full Features", (dialog, which) -> {
-                    rootSetupManager.startRootSetup(this);
-                })
-                .setNegativeButton("Use Standard Mode", (dialog, which) -> {
-                    proceedWithStandardPermissions();
-                })
-                .setCancelable(false)
-                .show();
+        if (success) {
+            Toast.makeText(this,
+                    "Root permissions granted: " + grantedCount + "/" + totalCount,
+                    Toast.LENGTH_SHORT).show();
+        }
+
+        // Proceed to standard permissions regardless of root status
+        proceedToStandardPermissions();
     }
 
-    private void showNonRootDeviceDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("📱 Standard Device")
-                .setMessage("Your device is not rooted. The app will work with limited functionality:\n\n" +
-                        "• Microphone recording only\n" +
-                        "• AI can hear your voice clearly\n" +
-                        "• Other party's voice may be faint\n" +
-                        "• Use speakerphone for best results")
-                .setPositiveButton("Continue", (dialog, which) -> {
-                    proceedWithStandardPermissions();
-                })
-                .setNeutralButton("Learn About Rooting", (dialog, which) -> {
-                    showRootingInfoDialog();
-                })
-                .show();
+    @Override
+    public void onRootSetupFailed(String reason) {
+        Log.w(TAG, "⚠️ Root setup failed: " + reason);
+        Toast.makeText(this,
+                "Running without root: " + reason,
+                Toast.LENGTH_LONG).show();
+
+        // Continue to standard permissions even without root
+        proceedToStandardPermissions();
     }
 
-    private void showRootingInfoDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("📖 About Device Rooting")
-                .setMessage("Rooting allows apps to access system-level features like call audio recording.\n\n" +
-                        "⚠️ Important:\n" +
-                        "• Rooting voids warranty\n" +
-                        "• Requires technical knowledge\n" +
-                        "• Can brick your device if done incorrectly\n\n" +
-                        "For full call recording, consider:\n" +
-                        "• Using speakerphone mode\n" +
-                        "• External recording devices\n" +
-                        "• Rooted custom ROMs (advanced users)")
-                .setPositiveButton("Continue Standard Mode", (dialog, which) -> {
-                    proceedWithStandardPermissions();
-                })
-                .show();
-    }
+    // ============ STEP 2: STANDARD ANDROID PERMISSIONS ============
 
-    // ============ PERMISSION FLOW ============
-
-    private void proceedWithStandardPermissions() {
-        Log.d(TAG, "Proceeding with standard permission setup");
+    private void proceedToStandardPermissions() {
+        Log.d(TAG, "📱 Step 2: Requesting standard Android permissions...");
         permissionManager.checkAndRequestAllPermissions(this);
     }
-
-    // ============ PERMISSION CALLBACKS ============
 
     @Override
     public void onPermissionsGranted() {
@@ -227,170 +164,156 @@ public class HomeActivity extends AppCompatActivity implements
         proceedToAccessibilitySetup();
     }
 
+    public void openExactAlarmSettings() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            try {
+                Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                Uri uri = Uri.fromParts("package", getPackageName(), null);
+                intent.setData(uri);
+                startActivityForResult(intent, 2002);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to open exact alarm settings: " + e.getMessage());
+                openAppSettings(this);
+            }
+        }
+    }
+
+
+    public void openAppSettings(Activity activity) {
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        Uri uri = Uri.fromParts("package", activity.getPackageName(), null);
+        intent.setData(uri);
+        startActivity(intent);
+    }
+
     @Override
     public void onPermissionsMissing(List<String> missingPermissions) {
-        Log.w(TAG, "⚠️ Missing permissions: " + missingPermissions.size());
-        // Permission manager will automatically request them
+        Log.d(TAG, "⚠️ Requesting " + missingPermissions.size() + " permissions");
+
+        // Log which permissions are missing
+        for (String permission : missingPermissions) {
+            Log.d(TAG, "   Missing: " + permission);
+        }
     }
 
     @Override
     public void onPermissionsDenied(List<String> deniedPermissions) {
-        Log.w(TAG, "❌ Denied permissions: " + deniedPermissions.size());
+        Log.w(TAG, "⚠️ Some permissions denied: " + deniedPermissions.size());
 
-//        if (deniedPermissions.size() == 0) {
-//
-//        } else {
-            showPermissionDeniedDialog(deniedPermissions);
-//        }
+        // Log which permissions were denied
+        for (String permission : deniedPermissions) {
+            Log.w(TAG, "   Denied: " + permission);
+        }
 
-        proceedToAccessibilitySetup();
+        if (permissionManager.hasMinimumRequiredPermissions()) {
+            Log.d(TAG, "Has minimum permissions, continuing...");
+            proceedToAccessibilitySetup();
+        } else {
+            showPermissionGuideDialog(deniedPermissions);
+        }
     }
 
-    private void showPermissionDeniedDialog(List<String> deniedPermissions) {
+    private void showPermissionGuideDialog(List<String> deniedPermissions) {
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
+
+        StringBuilder message = new StringBuilder("TeleTalker needs these permissions:\n\n");
+        for (String permission : deniedPermissions) {
+            String permName = permission.substring(permission.lastIndexOf('.') + 1);
+            message.append("• ").append(permName).append("\n");
+        }
+        message.append("\nPlease grant them in Settings.");
+
         new AlertDialog.Builder(this)
-                .setTitle("⚠️ Permissions Required")
-                .setMessage("Some permissions were denied. The app may not work properly.\n\n" +
-                        "Denied permissions: " + deniedPermissions.size() + "\n" +
-                        "You can grant them later in Settings.")
-                .setPositiveButton("Continue Anyway", (dialog, which) -> {
-//                    proceedToAccessibilitySetup();
-                })
-                .setNeutralButton("Open Settings", (dialog, which) -> {
+                .setTitle("⚠️ Permissions Needed")
+                .setMessage(message.toString())
+                .setPositiveButton("Open Settings", (dialog, which) -> {
                     openAppSettings();
                 })
+                .setNegativeButton("Continue", (dialog, which) -> {
+                    proceedToAccessibilitySetup();
+                })
+                .setCancelable(false)
                 .show();
     }
-
 
     private void openAppSettings() {
         try {
             Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
             Uri uri = Uri.fromParts("package", getPackageName(), null);
             intent.setData(uri);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
-            Log.d(TAG, "Opened app settings");
         } catch (Exception e) {
-            Log.e(TAG, "Failed to open app settings: " + e.getMessage());
-            Toast.makeText(this, "Cannot open settings. Please manually go to Settings > Apps > TeleTalker", Toast.LENGTH_LONG).show();
+            Log.e(TAG, "Failed to open settings", e);
         }
     }
-    // ============ ROOT SETUP CALLBACKS ============
 
-    @Override
-    public void onRootSetupCompleted(boolean success, int grantedCount, int totalCount) {
-        if (success) {
-            Log.d(TAG, "🎉 Root setup completed successfully!");
-            showRootSetupSuccessDialog();
-        } else {
-            Log.w(TAG, "⚠️ Root setup partially completed: " + grantedCount + "/" + totalCount);
-            showRootSetupPartialDialog(grantedCount, totalCount);
-        }
-
-        // Continue with standard permissions after root setup
-        proceedWithStandardPermissions();
-    }
-
-    @Override
-    public void onRootSetupFailed(String reason) {
-        Log.e(TAG, "❌ Root setup failed: " + reason);
-        showRootSetupFailedDialog(reason);
-
-        // Fallback to standard permissions
-        proceedWithStandardPermissions();
-    }
-
-    private void showRootSetupSuccessDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("🎉 Root Setup Complete!")
-                .setMessage("All system permissions granted successfully!\n\n" +
-                        "✅ Call audio recording enabled\n" +
-                        "✅ Real-time AI processing ready\n" +
-                        "✅ Full conversation access")
-                .setPositiveButton("Continue", null)
-                .show();
-    }
-
-    private void showRootSetupPartialDialog(int granted, int total) {
-        new AlertDialog.Builder(this)
-                .setTitle("⚠️ Partial Root Setup")
-                .setMessage("Some root permissions were granted (" + granted + "/" + total + ").\n\n" +
-                        "The app will work with reduced functionality.")
-                .setPositiveButton("Continue", null)
-                .setNeutralButton("Retry Root Setup", (dialog, which) -> {
-                    rootSetupManager.startRootSetup(this);
-                })
-                .show();
-    }
-
-    private void showRootSetupFailedDialog(String reason) {
-        new AlertDialog.Builder(this)
-                .setTitle("❌ Root Setup Failed")
-                .setMessage("Root setup failed: " + reason + "\n\n" +
-                        "The app will continue with standard functionality.")
-                .setPositiveButton("Continue", null)
-                .show();
-    }
-
-    // ============ ACCESSIBILITY SETUP ============
+    // ============ STEP 3: ACCESSIBILITY SERVICE ============
 
     private void proceedToAccessibilitySetup() {
+        Log.d(TAG, "🔊 Step 3: Checking accessibility service...");
         if (!isAccessibilityServiceEnabled(this, VoIPCallService.class)) {
             showAccessibilityServiceDialog();
         } else {
+            Log.d(TAG, "✅ Accessibility service already enabled");
+            completeInitialization();
+        }
+
+        if (!hasExactAlarmPermission(getApplicationContext())) {
+            openExactAlarmSettings();
+        }
+    }
+
+    public boolean hasExactAlarmPermission(Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            boolean canSchedule = alarmManager != null && alarmManager.canScheduleExactAlarms();
+            Log.d(TAG, "SCHEDULE_EXACT_ALARM permission granted: " + canSchedule);
+            return canSchedule;
+        }
+        // Always allowed on older Android versions
+        return true;
+    }
+
+
+    private void showAccessibilityServiceDialog() {
+        if (isFinishing() || isDestroyed()) {
+            completeInitialization();
+            return;
+        }
+
+        try {
+            new AlertDialog.Builder(this)
+                    .setTitle("📞 Enable Call Detection")
+                    .setMessage("Enable accessibility service for:\n\n" +
+                            "• Background call detection\n" +
+                            "• Automatic call handling\n" +
+                            "• AI assistant activation")
+                    .setPositiveButton("Enable", (dialog, which) -> {
+                        try {
+                            Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                            startActivity(intent);
+                            Toast.makeText(this,
+                                    "Find 'TeleTalker' and enable it",
+                                    Toast.LENGTH_LONG).show();
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error opening accessibility settings", e);
+                        }
+                        completeInitialization();
+                    })
+                    .setNegativeButton("Skip", (dialog, which) -> {
+                        completeInitialization();
+                    })
+                    .show();
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing accessibility dialog", e);
             completeInitialization();
         }
     }
 
-    private void showAccessibilityServiceDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("📞 Background Call Detection")
-                .setMessage("Enable accessibility service for call detection?\n\n" +
-                        "This allows the app to  access call audio in background:\n" )
-                .setPositiveButton("Enable", (dialog, which) -> {
-                    Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-                    startActivity(intent);
-                    completeInitialization();
-                })
-                .setNegativeButton("Skip", (dialog, which) -> {
-                    Log.w(TAG, "Accessibility service skipped");
-                    completeInitialization();
-                })
-                .show();
-    }
-
-    // ============ FINALIZATION ============
-
-    private void completeInitialization() {
-        if (isInitialized) {
-            return; // Prevent multiple initialization
-        }
-
-        Log.d(TAG, "🚀 Completing app initialization");
-
-        // Start required services
-        serviceManager.startCallDetectorService();
-
-        // Mark as initialized
-        isInitialized = true;
-
-        Toast.makeText(this, "AI Call Assistant ready!", Toast.LENGTH_SHORT).show();
-    }
-
-    // ============ PERMISSION RESULT HANDLING ============
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == REQUEST_PERMISSIONS_CODE) {
-            permissionManager.handlePermissionResult(permissions, grantResults);
-        }
-    }
-
-    // ============ UTILITY METHODS ============
-
-    private boolean isAccessibilityServiceEnabled(Context context, Class<? extends AccessibilityService> service) {
+    private boolean isAccessibilityServiceEnabled(Context context,
+                                                  Class<? extends AccessibilityService> service) {
         ComponentName expectedComponentName = new ComponentName(context, service);
 
         String enabledServicesSetting = Settings.Secure.getString(
@@ -415,16 +338,110 @@ public class HomeActivity extends AppCompatActivity implements
         return false;
     }
 
-    // ============ LIFECYCLE METHODS ============
+    // ============ STEP 4: START SERVICES ============
+
+    private void completeInitialization() {
+        if (isInitialized) {
+            return; // Prevent multiple initialization
+        }
+
+        Log.d(TAG, "🚀 Completing app initialization");
+
+        // Start required services
+        serviceManager.startCallDetectorService();
+
+        // Mark as initialized
+        isInitialized = true;
+
+        Toast.makeText(this, "AI Call Assistant ready!", Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Debug method to log all permission statuses
+     */
+    private void logPermissionStatus() {
+        Log.d(TAG, "========== PERMISSION STATUS ==========");
+
+        String[] criticalPermissions = {
+                Manifest.permission.READ_PHONE_STATE,
+                Manifest.permission.CALL_PHONE,
+                Manifest.permission.ANSWER_PHONE_CALLS,
+                Manifest.permission.READ_CALL_LOG,
+                Manifest.permission.WRITE_CALL_LOG,
+                Manifest.permission.RECORD_AUDIO};
+
+        for (String permission : criticalPermissions) {
+            boolean granted = ActivityCompat.checkSelfPermission(this, permission)
+                    == PackageManager.PERMISSION_GRANTED;
+            Log.d(TAG, (granted ? "✅ " : "❌ ") + permission);
+        }
+
+        // Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            boolean notifGranted = ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+            Log.d(TAG, (notifGranted ? "✅ " : "❌ ") + "POST_NOTIFICATIONS");
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            boolean notifGranted = ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.FOREGROUND_SERVICE) == PackageManager.PERMISSION_GRANTED;
+            Log.d(TAG, (notifGranted ? "✅ " : "❌ ") + "POST_NOTIFICATIONS");
+        }
+
+        // Android 14+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            Log.d(TAG, "⚠️ Android 14+ detected - FOREGROUND_SERVICE_PHONE_CALL required in manifest");
+        }
+
+        Log.d(TAG, "======================================");
+    }
+
+    // ============ ACTIVITY RESULTS ============
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == REQUEST_PERMISSIONS_CODE) {
+            Log.d(TAG, "Permission result received for " + permissions.length + " permissions");
+            permissionManager.handlePermissionResult(permissions, grantResults);
+        }
+    }
+
+    // ============ LIFECYCLE MANAGEMENT ============
 
     @Override
     protected void onResume() {
         super.onResume();
 
-        // Check if accessibility service was enabled while away
-        if (isInitialized && !isAccessibilityServiceEnabled(this, VoIPCallService.class)) {
-            // Could show a subtle notification that accessibility service is disabled
-            Log.d(TAG, "Accessibility service is disabled");
+        if (isInitialized) {
+            Log.d(TAG, "App resumed");
+
+            // Re-check if service is still running
+//            if (com.teletalker.app.services.CallDetector.isServiceRunning()) {
+//                Log.d(TAG, "✅ Service still running");
+//            } else {
+//                Log.w(TAG, "⚠️ Service not running, attempting restart...");
+////                try {
+////                    serviceManager.startCallDetectorService();
+////                } catch (Exception e) {
+////                    Log.e(TAG, "Failed to restart service", e);
+////                }
+//            }
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        if (rootSetupManager != null) {
+            try {
+                rootSetupManager.dismissAllDialogs();
+            } catch (Exception e) {
+                Log.e(TAG, "Error dismissing dialogs", e);
+            }
         }
     }
 
@@ -432,9 +449,20 @@ public class HomeActivity extends AppCompatActivity implements
     protected void onDestroy() {
         super.onDestroy();
 
-        // Cleanup if needed
-        if (serviceManager != null) {
-            // Could stop services if required
+        Log.d(TAG, "Activity destroying, cleaning up...");
+
+        if (rootSetupManager != null) {
+            try {
+                rootSetupManager.cleanup();
+            } catch (Exception e) {
+                Log.e(TAG, "Error cleaning up", e);
+            }
+            rootSetupManager = null;
         }
+
+        permissionManager = null;
+//        serviceManager = null;
+        prefsManager = null;
+        binding = null;
     }
 }

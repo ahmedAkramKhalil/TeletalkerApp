@@ -13,4 +13,18 @@ public abstract class SettingsFragmentEvents {
     }
 
 
+    // NEW EVENTS
+    public static final class NavigateToSubscriptionActivity extends SettingsFragmentEvents {
+        public static final NavigateToSubscriptionActivity INSTANCE = new NavigateToSubscriptionActivity();
+        private NavigateToSubscriptionActivity() {}
+    }
+
+    public static final class Logout extends SettingsFragmentEvents {
+        public static final Logout INSTANCE = new Logout();
+        private Logout() {}
+    }
+
+
+
+
 }

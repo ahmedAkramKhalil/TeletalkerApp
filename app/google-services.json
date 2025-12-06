@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "231031574193",
+    "firebase_url": "https://teletalker-21348-default-rtdb.firebaseio.com",
+    "project_id": "teletalker-21348",
+    "storage_bucket": "teletalker-21348.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:231031574193:android:14aee51126ae2b3d505c90",
+        "android_client_info": {
+          "package_name": "com.teletalker.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDtxcDiKbvBwhM5CCgcv-K9JV1oAEZZQ_c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

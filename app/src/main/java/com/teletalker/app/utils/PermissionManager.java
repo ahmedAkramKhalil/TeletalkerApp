@@ -1,4 +1,4 @@
-package com.teletalker.app.features.home;
+package com.teletalker.app.utils;
 
 import android.Manifest;
 import android.app.Activity;
@@ -14,15 +14,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Manages all app permissions including runtime and media permissions
- */
 public class PermissionManager {
     private static final String TAG = "PermissionManager";
     private static final int REQUEST_PERMISSIONS_CODE = 1001;
 
     private final Activity activity;
     private PermissionCallback callback;
+
+    // Define critical permissions that app cannot work without
+    private static final List<String> CRITICAL_PERMISSIONS = Arrays.asList(
+            Manifest.permission.CALL_PHONE,
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.READ_PHONE_STATE
+    );
 
     public interface PermissionCallback {
         void onPermissionsGranted();
@@ -34,9 +38,6 @@ public class PermissionManager {
         this.activity = activity;
     }
 
-    /**
-     * Check and request all required permissions
-     */
     public void checkAndRequestAllPermissions(PermissionCallback callback) {
         this.callback = callback;
 
@@ -53,83 +54,53 @@ public class PermissionManager {
         }
     }
 
-    /**
-     * Get all required permissions based on device API level
-     */
     private List<String> getAllRequiredPermissions() {
         List<String> permissions = new ArrayList<>();
 
-        // Add core permissions
-        permissions.addAll(getCorePermissions());
+        // Core permissions - all in one list
+        permissions.add(Manifest.permission.RECORD_AUDIO);
+        permissions.add(Manifest.permission.CALL_PHONE);
+        permissions.add(Manifest.permission.READ_PHONE_STATE);
+        permissions.add(Manifest.permission.READ_CONTACTS);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            permissions.add(Manifest.permission.SCHEDULE_EXACT_ALARM);
+        }
+//        permissions.add(Manifest.permission.READ_CALL_LOG);
+//        permissions.add(Manifest.permission.WRITE_CALL_LOG); // ADD THIS for default dialer
+        permissions.add(Manifest.permission.BIND_INCALL_SERVICE);
 
-        // Add storage permissions (API level dependent)
-        permissions.addAll(getStoragePermissions());
+        // Add ANSWER_PHONE_CALLS for Android 8.0+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            permissions.add(Manifest.permission.ANSWER_PHONE_CALLS);
 
-        // Add notification permissions (API level dependent)
-        permissions.addAll(getNotificationPermissions());
+        }
 
-        return permissions;
-    }
+        // Add READ_CALL_LOG if needed
+//        permissions.add(Manifest.permission.READ_CALL_LOG);
 
-    /**
-     * Core phone and audio permissions
-     */
-    private List<String> getCorePermissions() {
-        return Arrays.asList(
-                Manifest.permission.RECORD_AUDIO,
-                Manifest.permission.READ_CALL_LOG,
-                Manifest.permission.READ_CONTACTS,
-                Manifest.permission.READ_PHONE_STATE,
-                Manifest.permission.ANSWER_PHONE_CALLS,
-                Manifest.permission.POST_NOTIFICATIONS
-
-        );
-    }
-
-    /**
-     * Storage permissions based on API level
-     */
-    private List<String> getStoragePermissions() {
-        List<String> permissions = new ArrayList<>();
-
+        // Storage permissions based on API level
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13+ (API 33+) - Use granular media permissions
+            permissions.add(Manifest.permission.USE_EXACT_ALARM);
+            permissions.add(Manifest.permission.SCHEDULE_EXACT_ALARM);
+
             permissions.add(Manifest.permission.READ_MEDIA_AUDIO);
-            permissions.add(Manifest.permission.READ_MEDIA_IMAGES);
-            permissions.add(Manifest.permission.READ_MEDIA_VIDEO);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // Android 11-12 (API 30-32) - Still use READ_EXTERNAL_STORAGE
-            permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
-        } else {
-            // Android 10 and below (API 29 and below)
-            permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
-            permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        }
-
-        return permissions;
-    }
-
-    /**
-     * Notification permissions for newer Android versions
-     */
-    private List<String> getNotificationPermissions() {
-        List<String> permissions = new ArrayList<>();
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions.add(Manifest.permission.POST_NOTIFICATIONS);
+        } else {
+            permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            }
         }
 
         return permissions;
     }
 
-    /**
-     * Check which permissions are missing
-     */
     private List<String> getMissingPermissions(List<String> requiredPermissions) {
         List<String> missingPermissions = new ArrayList<>();
 
         for (String permission : requiredPermissions) {
-            if (ActivityCompat.checkSelfPermission(activity, permission) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.checkSelfPermission(activity, permission)
+                    != PackageManager.PERMISSION_GRANTED) {
                 missingPermissions.add(permission);
             }
         }
@@ -137,11 +108,8 @@ public class PermissionManager {
         return missingPermissions;
     }
 
-    /**
-     * Request the missing permissions
-     */
     private void requestPermissions(List<String> permissions) {
-        Log.d(TAG, "Requesting " + permissions.size() + " permissions");
+        Log.d(TAG, "Requesting " + permissions.size() + " permissions at once");
 
         ActivityCompat.requestPermissions(
                 activity,
@@ -150,9 +118,6 @@ public class PermissionManager {
         );
     }
 
-    /**
-     * Handle permission request result
-     */
     public void handlePermissionResult(String[] permissions, int[] grantResults) {
         if (callback == null) {
             Log.w(TAG, "No callback set for permission result");
@@ -182,39 +147,19 @@ public class PermissionManager {
     }
 
     /**
-     * Get permission status map
+     * Check if minimum critical permissions are granted
      */
-    public Map<String, Boolean> getPermissionStatus() {
-        Map<String, Boolean> statusMap = new HashMap<>();
-        List<String> allPermissions = getAllRequiredPermissions();
-
-        for (String permission : allPermissions) {
-            boolean isGranted = ActivityCompat.checkSelfPermission(activity, permission) == PackageManager.PERMISSION_GRANTED;
-            statusMap.put(permission, isGranted);
+    public boolean hasMinimumRequiredPermissions() {
+        for (String permission : CRITICAL_PERMISSIONS) {
+            if (ActivityCompat.checkSelfPermission(activity, permission)
+                    != PackageManager.PERMISSION_GRANTED) {
+                return false;
+            }
         }
-
-        return statusMap;
+        return true;
     }
 
-    /**
-     * Check if all permissions are granted
-     */
     public boolean areAllPermissionsGranted() {
         return getMissingPermissions(getAllRequiredPermissions()).isEmpty();
-    }
-
-    /**
-     * Check specific permission categories
-     */
-    public boolean areCorePermissionsGranted() {
-        return getMissingPermissions(getCorePermissions()).isEmpty();
-    }
-
-    public boolean areStoragePermissionsGranted() {
-        return getMissingPermissions(getStoragePermissions()).isEmpty();
-    }
-
-    public boolean areNotificationPermissionsGranted() {
-        return getMissingPermissions(getNotificationPermissions()).isEmpty();
     }
 }

@@ -52,7 +52,7 @@
             android:layout_marginTop="4dp"
             android:gravity="center"
             android:text="@string/congratulations_you_ve_successfully_upgraded_to_teletalker_pro_enjoy_enhanced_features"
-            android:textColor="@color/black"
+            android:textColor="@color/white"
             android:textSize="13sp"
             app:layout_constraintEnd_toEndOf="@+id/textView10"
             app:layout_constraintHorizontal_bias="0.503"

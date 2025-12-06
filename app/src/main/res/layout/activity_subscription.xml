@@ -36,7 +36,7 @@
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
-                    app:tint="#000000" />
+                    app:tint="@color/black" />
 
                 <TextView
                     android:id="@+id/durationTv"
@@ -44,7 +44,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="78dp"
                     android:text="@string/teletalker"
-                    android:textColor="#000000"
+                    android:textColor="@color/black"
                     android:textSize="22sp"
                     android:textStyle="bold"
                     app:layout_constraintBottom_toBottomOf="@+id/arrow_back"
@@ -91,7 +91,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:text="@string/try_teletalker_premium_features"
-        android:textColor="#070707"
+        android:textColor="@color/black"
         android:textSize="15sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="@+id/appBarLayout"
@@ -103,7 +103,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        app:cardBackgroundColor="#80000000"
+        app:cardBackgroundColor="@color/cardview_dark_background"
         app:cardCornerRadius="16dp"
         app:layout_constraintEnd_toEndOf="@+id/appBarLayout"
         app:layout_constraintStart_toStartOf="@+id/appBarLayout"
@@ -156,7 +156,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="$10 / month"
-                            android:textColor="#CCFFFFFF"
+                            android:textColor="@color/text_gray"
                             android:textSize="14sp" />
                     </LinearLayout>
                 </LinearLayout>
@@ -198,7 +198,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="$100 / year"
-                            android:textColor="#CCFFFFFF"
+                            android:textColor="@color/text_gray"
                             android:textSize="14sp" />
                     </LinearLayout>
 
@@ -206,7 +206,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
-                        app:cardBackgroundColor="#ffffff"
+                        app:cardBackgroundColor="@color/white"
                         app:cardCornerRadius="8dp"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toEndOf="@+id/durationTv"
@@ -265,7 +265,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="32dp"
             android:text="@string/some_features_goes_here"
-            android:textColor="#ffffff"
+            android:textColor="@color/white"
             android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="@+id/appBarLayout"
             app:layout_constraintStart_toStartOf="@+id/appBarLayout"
@@ -295,7 +295,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="32dp"
             android:text="@string/some_features_goes_here"
-            android:textColor="#ffffff"
+            android:textColor="@color/white"
             android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="@+id/appBarLayout"
             app:layout_constraintStart_toStartOf="@+id/appBarLayout"
@@ -325,7 +325,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="32dp"
             android:text="@string/some_features_goes_here"
-            android:textColor="#ffffff"
+            android:textColor="@color/white"
             android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="@+id/appBarLayout"
             app:layout_constraintStart_toStartOf="@+id/appBarLayout"
@@ -355,7 +355,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="32dp"
             android:text="@string/some_features_goes_here"
-            android:textColor="#ffffff"
+            android:textColor="@color/white"
             android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="@+id/appBarLayout"
             app:layout_constraintStart_toStartOf="@+id/appBarLayout"
@@ -388,7 +388,7 @@
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
         android:text="@string/redeem_free_trial"
-        android:textColor="#000000"
+        android:textColor="@color/text_dark"
         app:layout_constraintBottom_toTopOf="@+id/textView9"
         app:layout_constraintEnd_toEndOf="@+id/linearLayout8"
         app:layout_constraintStart_toStartOf="@+id/linearLayout8" />

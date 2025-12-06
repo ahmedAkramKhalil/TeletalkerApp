@@ -12,7 +12,7 @@
     android:focusable="true"
     app:cardBackgroundColor="@color/darkMidnightBlue"
     app:cardCornerRadius="12dp"
-    app:cardElevation="4dp"
+    app:cardElevation="0dp"
     app:rippleColor="@color/purple_700"
     app:strokeWidth="0dp">
 
@@ -61,7 +61,7 @@
             android:layout_marginEnd="8dp"
             android:ellipsize="end"
             android:maxLines="1"
-            android:textColor="@color/white"
+            android:textColor="@color/gunmetalTextGray"
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toStartOf="@+id/agentRadioButton"
@@ -90,7 +90,7 @@
                 android:backgroundTint="@color/purple_700"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="2dp"
-                android:textColor="@color/white"
+                android:textColor="@color/gunmetalTextGray"
                 android:textSize="10sp"
                 android:textStyle="bold"
                 tools:text="ENGLISH" />
@@ -104,10 +104,10 @@
                 android:backgroundTint="@color/darkMidnightBlue"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="2dp"
-                android:textColor="@color/white"
+                android:textColor="@color/gunmetalTextGray"
                 android:textSize="10sp"
                 app:drawableStartCompat="@drawable/ic_language"
-                app:drawableTint="@color/white"
+                app:drawableTint="@color/gunmetalTextGray"
                 tools:text="English" />
 
         </LinearLayout>
@@ -122,7 +122,7 @@
             android:layout_marginEnd="8dp"
             android:ellipsize="end"
             android:maxLines="2"
-            android:textColor="@color/white"
+            android:textColor="@color/gunmetalTextGray"
             android:textSize="13sp"
             android:alpha="0.8"
             app:layout_constraintEnd_toStartOf="@+id/agentRadioButton"
