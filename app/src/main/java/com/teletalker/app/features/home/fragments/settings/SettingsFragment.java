@@ -4,6 +4,8 @@
 
 package com.teletalker.app.features.home.fragments.settings;
 
+import static android.app.Activity.RESULT_OK;
+
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -22,22 +24,31 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.functions.FirebaseFunctions;
+import com.teletalker.app.R;
+import com.teletalker.app.billing.BillingManager;
 import com.teletalker.app.databinding.FragmentSettingsBinding;
 import com.teletalker.app.features.agent_type.AgentTypeActivity;
 import com.teletalker.app.features.authentication.presentation.AuthActivity;
+import com.teletalker.app.features.home.ThemeManager;
 import com.teletalker.app.features.select_voice.presentation.SelectVoiceActivity;
 import com.teletalker.app.network.FirebaseFunctionsManager;
 import com.teletalker.app.network.UserBalance;
 import com.teletalker.app.utils.PreferencesManager;
+import com.teletalker.app.utils.SubscriptionManager;
 
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 
-public class SettingsFragment extends Fragment {
+public class SettingsFragment extends Fragment implements com.teletalker.app.utils.SubscriptionManager.SubscriptionListener {
 
     private FragmentSettingsBinding binding;
     private SettingsViewModel viewModel;
     private FirebaseFunctionsManager functionsManager;
     private FirebaseAuth auth;
+    private static final int REQUEST_SUBSCRIPTION = 1001;
+    private com.teletalker.app.utils.SubscriptionManager subscriptionManager;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -54,6 +65,7 @@ public class SettingsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        BillingManager billing = BillingManager.getInstance(requireContext());
 
         observes();
         initListeners();
@@ -61,6 +73,64 @@ public class SettingsFragment extends Fragment {
 
         // Load user profile
         loadUserProfile();
+
+        billing.setBalanceUpdateListener(new BillingManager.BalanceUpdateListener() {
+            @Override
+            public void onBalanceUpdated(double remainingMinutes) {
+                updateBalanceUI(remainingMinutes);
+            }
+
+            @Override
+            public void onBalanceError(String error) {
+                Log.e("TAG", "Balance error: " + error);
+            }
+        });
+
+        subscriptionManager = SubscriptionManager.getInstance(requireContext());
+        subscriptionManager.addListener(this);
+
+        // Show cached immediately
+        updateBalanceUI(billing.getCachedRemainingMinutes());
+
+        // Sync if stale
+        if (billing.isCacheStale()) {
+            billing.syncBalance();
+        }
+
+
+    }
+
+    @Override
+    public void onBalanceChanged(double newBalance) {
+        if (isAdded() && binding != null) {
+            requireActivity().runOnUiThread(() -> updateBalanceUI(newBalance));
+        }
+    }
+
+    @Override
+    public void onPlanChanged(String newPlan) {
+        // Theme change handled by ThemeManager, activity will recreate
+    }
+
+    private void updateBalanceUI(double minutes) {
+        if (binding == null || !isAdded()) {
+            Log.w("TAG", "Fragment not ready, skipping UI update");
+            return;
+        }
+
+        try {
+            binding.balanceTv.setText(String.format("%.1f minutes", minutes));
+
+            if (minutes < 5) {
+                binding.balanceTv.setTextColor(getResources().getColor(R.color.error));
+            } else if (minutes < 30) {
+                binding.balanceTv.setTextColor(getResources().getColor(R.color.avatar_orange));
+            } else {
+                binding.balanceTv.setTextColor(getResources().getColor(R.color.colorPrimary));
+            }
+        } catch (Exception e) {
+            Log.e("TAG", "Error updating UI: " + e.getMessage());
+        }
     }
 
     // ============================================
@@ -85,17 +155,17 @@ public class SettingsFragment extends Fragment {
         }
 
         // Load balance
-        functionsManager.getBalance(new FirebaseFunctionsManager.OnBalanceCallback() {
-            @Override
-            public void onSuccess(UserBalance balance) {
-                updateBalanceDisplay(balance);
-            }
-
-            @Override
-            public void onError(String error) {
-                Log.e("SettingsFragment", "Error loading balance: " + error);
-            }
-        });
+//        functionsManager.getBalance(new FirebaseFunctionsManager.OnBalanceCallback() {
+//            @Override
+//            public void onSuccess(UserBalance balance) {
+//                updateBalanceDisplay(balance);
+//            }
+//
+//            @Override
+//            public void onError(String error) {
+//                Log.e("SettingsFragment", "Error loading balance: " + error);
+//            }
+//        });
     }
 
     private void openInvoicesActivity() {
@@ -103,26 +173,34 @@ public class SettingsFragment extends Fragment {
         startActivity(intent);
     }
 
-
-
     // ============================================
     // UPDATE BALANCE DISPLAY
     // ============================================
 
     private void updateBalanceDisplay(UserBalance balance) {
-        // Update the name to show balance info
-        String displayText = String.format(Locale.US,
-                "%.1f minutes | %s",
-                balance.getMinutesBalance(),
-                balance.getAppVersion().toUpperCase());
+        // ADD THIS NULL CHECK
+        if (binding == null || !isAdded()) {
+            Log.w("TAG", "Fragment not ready, skipping UI update");
+            return;
+        }
 
-        binding.nameTv.setText(displayText);
+        // Now safe to update UI
+        try {
+            double total = balance.getFreeMinutesBalance() + balance.getPaidMinutesBalance();
 
-        // Update Payment & Membership text to show spent
-        String paymentText = String.format(Locale.US,
-                "Payment & Membership ($%.2f spent)",
-                balance.getTotalSpent());
-        binding.textView16.setText(paymentText);
+            binding.nameTv.setText(String.format("%.1f minutes remaining", total));
+
+            // Color coding
+            if (total < 5) {
+                binding.nameTv.setTextColor(getResources().getColor(R.color.error));
+            } else if (total < 30) {
+                binding.nameTv.setTextColor(getResources().getColor(android.R.color.holo_orange_dark));
+            } else {
+                binding.nameTv.setTextColor(getResources().getColor(R.color.colorPrimary));
+            }
+        } catch (Exception e) {
+            Log.e("TAG", "Error updating balance display: " + e.getMessage());
+        }
     }
 
     // ============================================
@@ -155,9 +233,13 @@ public class SettingsFragment extends Fragment {
 
     private void initListeners() {
         // Profile card - navigate to subscription
+
+
         binding.materialCardView3.setOnClickListener(v ->
                 viewModel.navigateToSubscriptionActivity()
         );
+
+        binding.subscriptionCardView.setOnClickListener(v -> openSubscriptionPlan());
 
         // Payment & Membership
         binding.materialCardView4.setOnClickListener(v ->
@@ -181,6 +263,51 @@ public class SettingsFragment extends Fragment {
 
         binding.materialCardView7.setOnClickListener( v -> openInvoicesActivity());
     }
+
+    private void openSubscriptionPlan() {
+        Intent intent = new Intent(getActivity(), SubscriptionPlanActivity.class);
+        startActivityForResult(intent, REQUEST_SUBSCRIPTION);
+    }
+
+
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQUEST_SUBSCRIPTION && resultCode == RESULT_OK) {
+            // Subscription changed - update theme
+            syncThemeWithBackend();
+//            updateAppTheme();
+        }
+    }
+
+
+    private void syncThemeWithBackend() {
+        FirebaseFunctions.getInstance()
+                .getHttpsCallable("getSubscriptionStatus")
+                .call()
+                .addOnSuccessListener(result -> {
+
+                    Map<String, Object> data = (Map<String, Object>) result.getData();
+                    String plan = (String) data.get("plan"); // "lite" or "standard"
+
+                    ThemeManager themeManager = ThemeManager.getInstance(getActivity());
+                    String currentTheme = themeManager.getAppVersion();
+
+                    Log.d("Error", "getSubscriptionStatus " + currentTheme);
+
+                    // Update theme if it doesn't match backend
+//                    if (!plan.equals(currentTheme)) {
+                    themeManager.setAppVersion(plan);
+                    // Activity recreates with correct theme
+//                    }
+                })
+                .addOnFailureListener(e -> {
+                    // Default to lite on error
+                    Log.d("Error", "getSubscriptionStatus " + e.getMessage());
+                    ThemeManager.getInstance(getActivity()).setAppVersion("lite");
+                });
+    }
+
 
     // ============================================
     // LOGOUT CONFIRMATION
@@ -230,12 +357,17 @@ public class SettingsFragment extends Fragment {
     // ============================================
 
     private void handleLogout() {
-        Toast.makeText(getContext(), "Logged out successfully", Toast.LENGTH_SHORT).show();
+        PreferencesManager.getInstance(getContext()).clearLoginData();
 
-        Intent intent = new Intent(getActivity(), AuthActivity.class);
+        // Sign out from Firebase
+        FirebaseAuth.getInstance().signOut();
+        // Redirect to auth screen
+        Intent intent = new Intent(requireActivity(), com.teletalker.app.features.authentication.presentation.AuthActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         requireActivity().finish();
+
+        Toast.makeText(getContext(), "Logged out successfully", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -248,6 +380,10 @@ public class SettingsFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        if (subscriptionManager != null) {
+            subscriptionManager.removeListener(this);
+        }
+
         binding = null;
     }
 }

@@ -23,6 +23,7 @@ import androidx.core.app.NotificationCompat;
 import com.teletalker.app.R;
 import com.teletalker.app.features.home.HomeActivity;
 import com.teletalker.app.features.home.fragments.calender.data.data_sources.local.ScheduledCallDatabase;
+import com.teletalker.app.utils.AuthStateManager;
 import com.teletalker.app.utils.PreferencesManager;
 
 /**
@@ -38,6 +39,9 @@ public class ScheduledCallExecutor extends Service {
     private String contactName;
     private int durationMinutes;
     private String conversationNotes;
+    private String purpose;
+
+
 
     private Handler handler;
     private PreferencesManager preferences;
@@ -47,6 +51,9 @@ public class ScheduledCallExecutor extends Service {
         super.onCreate();
         handler = new Handler(Looper.getMainLooper());
         preferences = PreferencesManager.getInstance(this);
+
+
+
         createNotificationChannel();
         Log.d(TAG, "ScheduledCallExecutor service created");
     }
@@ -64,6 +71,7 @@ public class ScheduledCallExecutor extends Service {
         contactName = intent.getStringExtra("contact_name");
         durationMinutes = intent.getIntExtra("duration_minutes", 10);
         conversationNotes = intent.getStringExtra("conversation_notes");
+        purpose = intent.getStringExtra("conversation_purpose");
 
         Log.d(TAG, "========================================");
         Log.d(TAG, "EXECUTING SCHEDULED CALL");
@@ -72,6 +80,7 @@ public class ScheduledCallExecutor extends Service {
         Log.d(TAG, "Contact: " + contactName);
         Log.d(TAG, "Duration: " + durationMinutes + " min");
         Log.d(TAG, "AI Notes: " + conversationNotes);
+        Log.d(TAG, "AI conversation_purpose: " + purpose);
         Log.d(TAG, "========================================");
 
         // Start as foreground service
@@ -107,10 +116,19 @@ public class ScheduledCallExecutor extends Service {
         Log.d(TAG, "AI prepared with notes: " + conversationNotes);
 
         // Store conversation notes in preferences so CallDetector can access them
+
+        preferences.putString("pending_scheduled_call_purpose", purpose);
+        preferences.putBoolean("pending_scheduled_call_is_outbound", true);
+
         preferences.putString("pending_scheduled_call_notes", conversationNotes);
         preferences.putString("pending_scheduled_call_phone", phoneNumber);
         preferences.putLong("pending_scheduled_call_id", callId);
     }
+
+
+
+
+
 
     private void executeCall() {
         Log.d(TAG, "Executing outbound call to: " + phoneNumber);

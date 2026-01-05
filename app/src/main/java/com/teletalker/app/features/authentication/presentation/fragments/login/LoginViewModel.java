@@ -37,7 +37,7 @@ public class LoginViewModel extends ViewModel {
             @Override
             public void onSuccess(String userId, String email) {
                 //TODO: remove log
-                state.setValue(new LoginState.Success(userId, email,password));
+                state.setValue(new LoginState.Success(userId, email));
                 // Navigate to home after successful login
                 events.setValue(LoginEvents.NavigateToHomeScreen.INSTANCE);
             }

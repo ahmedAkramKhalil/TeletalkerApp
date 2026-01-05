@@ -15,17 +15,14 @@ public abstract class LoginState {
     public static final class Success extends LoginState {
         private final String userId;
         private final String email;
-        private final String password;
 
-        public Success(String userId, String email,String password) {
+        public Success(String userId, String email) {
             this.userId = userId;
-            this.password = password;
             this.email = email;
         }
 
         public String getUserId() { return userId; }
         public String getEmail() { return email; }
-        public String getPassword() { return password; }
     }
 
     public static final class Error extends LoginState {

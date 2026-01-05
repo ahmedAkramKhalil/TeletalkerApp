@@ -25,19 +25,25 @@ import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 
+import com.google.firebase.auth.FirebaseUser;
 import com.teletalker.app.R;
+import com.teletalker.app.billing.BillingManager;
 import com.teletalker.app.databinding.ActivityHomeBinding;
 import com.teletalker.app.services.VoIPCallService;
 import com.teletalker.app.services.ServiceManager;
+import com.teletalker.app.utils.AuthStateManager;
 import com.teletalker.app.utils.PermissionManager;
 import com.teletalker.app.utils.PreferencesManager;
 import com.teletalker.app.utils.RootPermissionManager;
 import com.teletalker.app.utils.RootSetupManager;
+import com.teletalker.app.utils.SubscriptionCacheManager;
+import com.teletalker.app.utils.SubscriptionManager;
 
 import java.util.List;
 
 public class HomeActivity extends BaseThemedActivity implements
         PermissionManager.PermissionCallback,
+        SubscriptionManager.SubscriptionListener,
         RootSetupManager.RootSetupCallback {
 
     private static final String TAG = "HomeActivity";
@@ -47,12 +53,16 @@ public class HomeActivity extends BaseThemedActivity implements
     private ActivityHomeBinding binding;
     private NavController navController;
 
+
     private PermissionManager permissionManager;
     private RootSetupManager rootSetupManager;
+    private AuthStateManager authStateManager;
+    private boolean isFirstLaunch = true;
 
     private ServiceManager serviceManager;
 
     private boolean isInitialized = false;
+    private SubscriptionManager subscriptionManager;
 
     @SuppressLint("ObsoleteSdkInt")
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -61,12 +71,85 @@ public class HomeActivity extends BaseThemedActivity implements
         super.onCreate(savedInstanceState);
 
         prefsManager = PreferencesManager.getInstance(this);
+        authStateManager = new AuthStateManager(this);
+
+        subscriptionManager = SubscriptionManager.getInstance(this);
+        subscriptionManager.addListener(this);
+
+        // Initial sync
+        subscriptionManager.sync();
+
+
+        // Check authentication FIRST
+        if (!authStateManager.isUserLoggedIn()) {
+            // User not logged in - redirect to login
+            redirectToLogin();
+            return;
+        }
+
+
+
         setupUI();
         initializeManagers();
         setupAiAgent();
         // Start initialization flow (without default dialer)
         startInitializationFlow();
     }
+
+
+    private void setupAuthStateListener() {
+        authStateManager.setupAuthListener(new AuthStateManager.AuthStateCallback() {
+            @Override
+            public void onUserLoggedIn(FirebaseUser user) {
+                Log.d(TAG, "✅ User authenticated: " + user.getEmail());
+                // User logged in - stay on current screen
+            }
+
+            @Override
+            public void onUserLoggedOut() {
+                Log.d(TAG, "⚠️ User logged out");
+                // Redirect to login
+                redirectToLogin();
+            }
+        });
+    }
+
+    @Override
+    protected void onNewIntent(@NonNull Intent intent) {
+        super.onNewIntent(intent);
+        if (intent.getBooleanExtra("payment_success", false)) {
+            // Refresh balance
+//            BillingManager.getInstance(this).syncBalance();
+            subscriptionManager.sync();
+
+            Toast.makeText(this, "Balance updated!", Toast.LENGTH_SHORT).show();
+        }
+
+    }
+
+    @Override
+    public void onBalanceChanged(double newBalance) {
+        Log.d(TAG, "Balance changed: " + newBalance);
+        // Fragments will receive this via their own listeners
+    }
+
+    @Override
+    public void onPlanChanged(String newPlan) {
+        Log.d(TAG, "Plan changed: " + newPlan);
+
+        // Theme already updated by SubscriptionManager
+        // Activity will recreate automatically due to theme change
+    }
+
+    // ADD THIS METHOD
+    private void redirectToLogin() {
+        Intent intent = new Intent(this,
+                com.teletalker.app.features.authentication.presentation.AuthActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+    }
+
 
     private void setupAiAgent() {
         PreferencesManager.getInstance(this)
@@ -414,6 +497,7 @@ public class HomeActivity extends BaseThemedActivity implements
     @Override
     protected void onResume() {
         super.onResume();
+        subscriptionManager.sync();
 
         if (isInitialized) {
             Log.d(TAG, "App resumed");
@@ -445,11 +529,17 @@ public class HomeActivity extends BaseThemedActivity implements
         }
     }
 
+
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        subscriptionManager.removeListener(this);
 
         Log.d(TAG, "Activity destroying, cleaning up...");
+        if (authStateManager != null) {
+            authStateManager.removeAuthListener();  // ADD THIS
+        }
 
         if (rootSetupManager != null) {
             try {

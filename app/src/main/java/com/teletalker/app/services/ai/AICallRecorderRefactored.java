@@ -7,13 +7,20 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.RequiresPermission;
 import androidx.core.content.ContextCompat;
 
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.teletalker.app.billing.BillingManager;
 import com.teletalker.app.services.CallAudioInjector;
 import com.teletalker.app.services.StatusBroadcastManager;
 import com.teletalker.app.utils.CallContextManager;
+import com.teletalker.app.utils.NetworkUtils;
+import com.teletalker.app.utils.PreferencesManager;
 import com.teletalker.app.utils.ScheduledCallHelper;
 
 import org.json.JSONException;
@@ -36,7 +43,7 @@ import okio.ByteString;
 
 /**
  * FIXED: AI Call Recorder with proper initialization sequencing and first-call fixes
- *
+ * <p>
  * Key Improvements:
  * - Sequential component initialization to prevent race conditions
  * - Proper state reset between calls to fix first-call failures
@@ -77,30 +84,47 @@ public class AICallRecorderRefactored {
         SMART_ASSISTANT("AI acts as smart assistant");
 
         private final String description;
-        AIMode(String description) { this.description = description; }
-        public String getDescription() { return description; }
+
+        AIMode(String description) {
+            this.description = description;
+        }
+
+        public String getDescription() {
+            return description;
+        }
     }
 
     // Enhanced callback interface
     public static interface AIRecordingCallback extends CallRecorder.RecordingCallback {
         // AI Connection callbacks
         void onAIConnected();
+
         void onAIDisconnected();
+
         void onAIError(String error);
+
         void onAIResponse(String transcript, boolean isPlaying);
+
         void onAIStreamingStarted(String audioSource);
+
         void onAIStreamingStopped();
 
         // Audio Injection callbacks
         void onAudioInjectionStarted(String method);
+
         void onAudioInjectionStopped();
+
         void onAudioInjected(int chunkSize, long totalBytes);
+
         void onAudioInjectionError(String error);
 
         // Enhanced callbacks
         void onConnectionHealthChanged(boolean healthy);
+
         void onAudioQualityChanged(String quality, String reason);
+
         void onSilenceDetected(long durationMs);
+
         void onSpeechDetected(long durationMs);
     }
 
@@ -125,6 +149,14 @@ public class AICallRecorderRefactored {
     private AIResponseBuffer responseBuffer;
     private AudioResponseAccumulator audioAccumulator;
     private CallAudioInjector audioInjector;
+
+
+    private BillingManager billing;
+    private String currentPhoneNumber; // Track phone number for billing
+
+    private String currentCallPhoneNumber;
+    private long callStartTimestamp;
+    private String recordingFilePath;
 
     // WebSocket connection management
     private WebSocket elevenLabsSocket;
@@ -165,6 +197,8 @@ public class AICallRecorderRefactored {
         this.mainHandler = new Handler(Looper.getMainLooper());
         this.callContextManager = new CallContextManager(context);
 
+        this.billing = BillingManager.getInstance(context);
+
         // Initialize executors first
         this.sharedExecutor = Executors.newFixedThreadPool(3, r -> {
             Thread t = new Thread(r, "AIRecorder-Shared");
@@ -185,60 +219,60 @@ public class AICallRecorderRefactored {
     private void checkAndApplyScheduledCallContext(String phoneNumber) {
         Log.d(TAG, "Checking for scheduled call context...");
 
-        // Try to find scheduled call by phone number first
+        // ADD: Check preferences first (immediate, no async)
+        PreferencesManager manager = PreferencesManager.getInstance(context);
+        String pendingPhone = manager.getPendingScheduledPhone();
+        boolean isOutbound = manager.isPendingScheduledOutbound();
 
+        if (pendingPhone != null && pendingPhone.equals(phoneNumber)) {
+            Log.d(TAG, "🎯 SCHEDULED CALL DETECTED (from preferences): " + phoneNumber);
+
+            String notes = manager.getPendingScheduledNotes();
+            long callId = manager.getPendingScheduledCallId();
+
+            if (notes != null && !notes.isEmpty()) {
+                Log.d(TAG, "📝 Loading AI conversation notes: " + notes.substring(0, Math.min(50, notes.length())));
+
+                // Set context IMMEDIATELY - no async delay
+                setCallContext(
+                        "Scheduled outbound call",  // purpose
+                        notes,                       // notes
+                        true                        // isOutbound - ALWAYS true for scheduled calls
+                );
+
+                currentScheduledCallId = callId;
+                Log.d(TAG, "✅ Call context set IMMEDIATELY for scheduled call ID: " + callId);
+                return; // Exit early, we found it
+            }
+        }
+
+        // FALLBACK: If not in preferences, try database (but this is async, so less reliable)
         if (phoneNumber != null) {
-//            callInfo = ScheduledCallHelper.findActiveCallByPhoneNumber(context, phoneNumber);
-
             ScheduledCallHelper.findActiveCallByPhoneNumber(context, phoneNumber, new ScheduledCallHelper.CallInfoCallback() {
                 @Override
                 public void onCallInfoFound(ScheduledCallHelper.CallInfo callInfo) {
-                    if (callInfo == null) {
-                        Log.d(TAG, "No call found by phone number, checking for recent active call");
-                        callInfo = ScheduledCallHelper.getMostRecentActiveCall(context);
-                    }
-
-
                     if (callInfo != null && callInfo.isValid()) {
-                        Log.d(TAG, "Found scheduled call context: " + callInfo);
-
-                        // Apply the context to this recording
-                        setCallContext(
-                                callInfo.purpose,
-                                callInfo.notes,
-                                true // it must be outbounding call
-                        );
-
-                        // Mark as in progress
+                        Log.d(TAG, "Found scheduled call from database: " + callInfo);
+                        setCallContext(callInfo.purpose, callInfo.notes, true);
                         ScheduledCallHelper.markCallInProgress(context, callInfo.callId);
-
-                        Log.d(TAG, "Applied scheduled call context for call ID: " + callInfo.callId);
-
-                        // Store call ID for later reference
-                        AICallRecorderRefactored.currentScheduledCallId = callInfo.callId;
-
+                        currentScheduledCallId = callInfo.callId;
                     }
-
                 }
 
                 @Override
                 public void onCallInfoNotFound() {
                     Log.d(TAG, "No scheduled call context found - treating as regular call");
-
                 }
 
                 @Override
                 public void onError(Exception e) {
-
+                    Log.e(TAG, "Error finding scheduled call: " + e.getMessage());
                 }
             });
         }
     }
 
     private static long currentScheduledCallId = -1;
-
-
-
 
 
     public void setCallContext(String purpose, String notes, boolean isOutbound) {
@@ -252,98 +286,114 @@ public class AICallRecorderRefactored {
     }
 
     // Add this method to build conversation initiation data
-    private JSONObject buildConversationInitiationData() {
+// ============================================
+// REPLACE YOUR buildConversationInitiationData() METHOD WITH THIS
+// ============================================
+
+    private JSONObject buildConversationInitiationData(boolean isOutbound) {
         try {
-            JSONObject initData = new JSONObject();
+            JSONObject requestBody = new JSONObject();
+            requestBody.put("agent_id", agentId);
 
-            // Add dynamic variables
-            JSONObject dynamicVars = new JSONObject();
-            if (conversationPurpose != null) {
-                dynamicVars.put("call_purpose", conversationPurpose);
-                Log.d("buildConversationInitiationData","call_purpose= " + conversationPurpose);
-            }
-            if (conversationNotes != null) {
-                dynamicVars.put("call_notes", conversationNotes);
-                Log.d("buildConversationInitiationData","call_notes= " + conversationNotes);
+            // Get scheduled call context
+            PreferencesManager prefs = PreferencesManager.getInstance(context);
+            String purpose = prefs.getString("pending_scheduled_call_purpose", "");
+            String notes = prefs.getString("pending_scheduled_call_notes", "");
+            String contactName = prefs.getString("pending_scheduled_call_contact", "");
 
-            }
-            dynamicVars.put("call_type", isOutboundCall ? "outbound" : "inbound");
-            dynamicVars.put("call_timestamp", System.currentTimeMillis());
+            // Build prompts based on call direction
+            // Build prompts based on call direction
+            String systemPrompt = buildSystemPrompt(isOutbound, purpose, notes, contactName);
+            String firstMessage = buildFirstMessage(isOutbound, purpose, contactName);
 
-            initData.put("dynamic_variables", dynamicVars);
+            // Create overrides object
+            JSONObject overrides = new JSONObject();
 
-            // Add conversation config overrides if this is an outbound call
-            if (isOutboundCall && conversationNotes != null) {
-                JSONObject configOverride = new JSONObject();
-                JSONObject agentOverride = new JSONObject();
+            // Agent override with system prompt
+            JSONObject agent = new JSONObject();
+            JSONObject promptConfig = new JSONObject();
+            promptConfig.put("prompt", systemPrompt);
+            agent.put("prompt", promptConfig);
+            overrides.put("agent", agent);
 
-                // Override system prompt
-                JSONObject promptOverride = new JSONObject();
-                String enhancedPrompt = buildEnhancedPrompt();
-                promptOverride.put("prompt", enhancedPrompt);
-                agentOverride.put("prompt", promptOverride);
+            // Conversation config override with first message
+            JSONObject conversationConfig = new JSONObject();
+            conversationConfig.put("first_message", firstMessage);
+            overrides.put("conversation_config", conversationConfig);
 
-                // Override first message
-                String firstMessage = buildFirstMessage();
-                agentOverride.put("first_message", firstMessage);
+            requestBody.put("overrides", overrides);
 
-                configOverride.put("agent", agentOverride);
-                initData.put("conversation_config_override", configOverride);
-            }
+            Log.d(TAG, "========================================");
+            Log.d(TAG, "CONVERSATION INITIATION DATA");
+            Log.d(TAG, "Call Type: " + (isOutbound ? "OUTBOUND" : "INBOUND"));
+            Log.d(TAG, "System Prompt: " + systemPrompt);
+            Log.d(TAG, "First Message: " + firstMessage);
+            Log.d(TAG, "========================================");
 
-            return initData;
+            return requestBody;
 
         } catch (JSONException e) {
-            Log.e(TAG, "Failed to build conversation initiation data: " + e.getMessage());
+            Log.e(TAG, "Error building conversation data", e);
             return null;
         }
     }
 
-    private String buildEnhancedPrompt() {
-        StringBuilder prompt = new StringBuilder();
+    private String buildSystemPrompt(boolean isOutbound, String purpose, String notes, String contactName) {
+        if (isOutbound) {
+            // OUTBOUND - personalized with variables
+            StringBuilder prompt = new StringBuilder();
 
-        prompt.append("You are an AI assistant making an OUTBOUND phone call. ");
-        prompt.append("You are the one who initiated this call, not the person answering. ");
+            prompt.append("You are an AI phone assistant for TeleTalker. ");
+            prompt.append("This is an outbound call that you initiated. ");
 
-        if (conversationPurpose != null) {
-            prompt.append("\n\nPURPOSE OF THIS CALL:\n");
-            prompt.append(conversationPurpose);
-        }
+            if (purpose != null && !purpose.isEmpty()) {
+                prompt.append("Call Purpose: ").append(purpose).append(". ");
+            }
 
-        if (conversationNotes != null) {
-            prompt.append("\n\nCALL INSTRUCTIONS:\n");
-            prompt.append(conversationNotes);
-            prompt.append("\n\nFollow these instructions carefully during the call. ");
-            prompt.append("Be natural, friendly, and accomplish the stated purpose.");
-        }
+            if (notes != null && !notes.isEmpty()) {
+                prompt.append("Your Instructions: ").append(notes).append(". ");
+            }
 
-        prompt.append("\n\nIMPORTANT GUIDELINES:\n");
-        prompt.append("- You are calling them, so greet them appropriately\n");
-        prompt.append("- Be clear about why you're calling\n");
-        prompt.append("- Listen carefully to their responses\n");
-        prompt.append("- Stay on topic and accomplish your objective\n");
-        prompt.append("- Be respectful of their time\n");
+            if (contactName != null && !contactName.isEmpty()) {
+                prompt.append("You are speaking with: ").append(contactName).append(". ");
+            }
 
-        return prompt.toString();
-    }
+            prompt.append("Speak naturally and complete the conversation objective. ");
+            prompt.append("Be concise and friendly.");
 
-    private String buildFirstMessage() {
-        StringBuilder firstMsg = new StringBuilder();
+            return prompt.toString();
 
-        firstMsg.append("Hello! ");
-
-        if (conversationPurpose != null) {
-            firstMsg.append("I'm calling regarding ").append(conversationPurpose).append(". ");
         } else {
-            firstMsg.append("I'm calling from TeleTalker. ");
+            // INBOUND - static text only
+            return "You are an AI phone assistant for TeleTalker. " +
+                    "This is an inbound call. The user called you. " +
+                    "Listen carefully and assist them with their needs. " +
+                    "Be helpful, professional, and concise.";
         }
-
-        firstMsg.append("Do you have a moment to speak?");
-
-        return firstMsg.toString();
     }
 
+    private String buildFirstMessage(boolean isOutbound, String purpose, String contactName) {
+        if (isOutbound) {
+            // OUTBOUND - personalized greeting
+            StringBuilder message = new StringBuilder("Hello");
 
+            if (contactName != null && !contactName.isEmpty()) {
+                message.append(" ").append(contactName);
+            }
+
+            if (purpose != null && !purpose.isEmpty()) {
+                message.append(", I'm calling regarding ").append(purpose);
+            }
+
+            message.append(".");
+
+            return message.toString();
+
+        } else {
+            // INBOUND - static greeting
+            return "Hello! How can I help you today?";
+        }
+    }
 
     private void initializeComponentsSequentially() {
         if (isInitializing.get()) {
@@ -459,7 +509,50 @@ public class AICallRecorderRefactored {
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     public boolean startRecording(String filename, String phoneNumber) {
         Log.d(TAG, "Starting Enhanced AI Call Recording: " + filename);
+        recordingStartTime = System.currentTimeMillis();
 
+
+
+
+
+        Log.d(TAG, "========================================");
+        Log.d(TAG, "START RECORDING REQUEST");
+        Log.d(TAG, "Phone: " + phoneNumber);
+        Log.d(TAG, "========================================");
+
+        // ===== STEP 1: CHECK INTERNET =====
+        if (!NetworkUtils.isInternetAvailable(context)) {
+            Log.e(TAG, "❌ NO INTERNET - Cannot start AI call");
+            Toast.makeText(context,
+                    "No internet connection - AI features unavailable",
+                    Toast.LENGTH_SHORT).show();
+            return false; // STOP HERE
+        }
+        Log.d(TAG, "✓ Internet available");
+
+        // ===== STEP 2: CHECK BALANCE =====
+        double balance = billing.getCachedRemainingMinutes();
+        Log.d(TAG, "Current balance: " + balance + " minutes");
+
+        if (!billing.hasSufficientBalance()) {
+            Log.w(TAG, "⚠️ LOW BALANCE WARNING");
+            Log.w(TAG, "   Balance: " + balance + " minutes");
+
+            Toast.makeText(context,
+                    String.format("Low balance: %.1f min remaining", balance),
+                    Toast.LENGTH_SHORT).show();
+
+            // Continue anyway but user is warned
+        } else {
+            Log.d(TAG, "✓ Sufficient balance: " + balance + " minutes");
+        }
+
+        // ===== STEP 3: STORE CALL INFO FOR BILLING =====
+        this.currentCallPhoneNumber = phoneNumber;
+        this.callStartTimestamp = System.currentTimeMillis();
+
+        Log.d(TAG, "Call start time recorded: " + callStartTimestamp);
+        Log.d(TAG, "Phone stored for billing: " + currentCallPhoneNumber);
         checkAndApplyScheduledCallContext(phoneNumber);
 
 
@@ -588,23 +681,173 @@ public class AICallRecorderRefactored {
         Log.d(TAG, "Stopping Enhanced AI Call Recording...");
         broadcastAIStatus("HIDDEN", false, false, "");
 
+        // Calculate call duration
+        long callDurationMs = 0;
+        if (coreRecorder != null && coreRecorder.isRecording()) {
+            callDurationMs = System.currentTimeMillis() - recordingStartTime;
+        }
+
         // Mark scheduled call as completed if applicable
         if (currentScheduledCallId > 0) {
             ScheduledCallHelper.markCallCompleted(context, currentScheduledCallId);
             currentScheduledCallId = -1;
         }
 
+        // Stop core recording
         if (coreRecorder != null) {
             coreRecorder.stopRecording();
             Log.d(TAG, "coreRecorder.stopRecording");
         }
 
+        // Stop AI features
         if (isAIEnabled.get()) {
             stopEnhancedAIFeatures();
         }
 
+        // DEDUCT MINUTES AFTER CALL ENDS
+        if (callDurationMs > 0) {
+            long callDurationSeconds = callDurationMs / 1000;
+
+            Log.d(TAG, "📊 Call ended - Duration: " + callDurationSeconds + "s (" +
+                    (callDurationSeconds / 60.0) + " minutes)");
+
+            // Get recording file path for Firebase
+            String recordingUrl = coreRecorder != null ? coreRecorder.getCurrentRecordingFile() : null;
+
+            // Deduct minutes
+            deductMinutesForCall(callDurationSeconds, currentPhoneNumber, recordingUrl);
+        } else {
+            Log.w(TAG, "⚠️ Call duration is 0, skipping minute deduction");
+        }
+
+        // Calculate duration
+        long callEndTimestamp = System.currentTimeMillis();
+        long durationMillis = callEndTimestamp - callStartTimestamp;
+        long durationSeconds = durationMillis / 1000;
+
+        Log.d(TAG, "📊 BILLING CALCULATION:");
+        Log.d(TAG, "   Call start: " + callStartTimestamp);
+        Log.d(TAG, "   Call end:   " + callEndTimestamp);
+        Log.d(TAG, "   Duration:   " + durationSeconds + " seconds (" +
+                (durationSeconds / 60.0) + " minutes)");
+
+        // Only bill if call was > 5 seconds
+        if (durationSeconds <= 5) {
+            Log.d(TAG, "⏩ Call too short (" + durationSeconds + "s) - no billing");
+            resetCallTracking();
+            return;
+        }
+
+        // Trigger billing
+        Log.d(TAG, "💰 TRIGGERING BILLING DEDUCTION...");
+        deductMinutesForCall(durationSeconds, currentCallPhoneNumber, recordingFilePath);
+
+        // Reset for next call
+        resetCallTracking();
+
+
         Log.d(TAG, "Enhanced AI Call Recording stopped");
     }
+
+
+    private void deductMinutesForCall(long durationSeconds, String phoneNumber, String recordingUrl) {
+
+        Log.d(TAG, "========== SERVICE AUTH DEBUG ==========");
+
+        // Check FirebaseApp
+        FirebaseApp app = FirebaseApp.getInstance();
+        Log.d(TAG, "FirebaseApp name: " + app.getName());
+        Log.d(TAG, "FirebaseApp options project: " + app.getOptions().getProjectId());
+
+        // Check Auth instance
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        FirebaseUser user = auth.getCurrentUser();
+
+        Log.d(TAG, "Auth instance: " + auth);
+        Log.d(TAG, "Current user: " + (user != null ? user.getUid() : "NULL!!!"));
+
+        if (user == null) {
+            Log.e(TAG, "❌ NO USER IN SERVICE CONTEXT!");
+            // This is your problem
+            return;
+        }
+
+        Log.d(TAG, "User UID: " + user.getUid());
+        Log.d(TAG, "==========================================");
+
+        Log.d(TAG, "========================================");
+        Log.d(TAG, "DEDUCT MINUTES FOR CALL");
+        Log.d(TAG, "Duration: " + durationSeconds + " seconds");
+        Log.d(TAG, "Phone: " + phoneNumber);
+        Log.d(TAG, "Recording: " + (recordingUrl != null ? recordingUrl : "none"));
+        Log.d(TAG, "========================================");
+
+        // Show immediate feedback
+        Toast.makeText(context,
+                "Processing billing for " + (durationSeconds / 60.0) + " min call...",
+                Toast.LENGTH_SHORT).show();
+
+        // Call BillingManager
+        billing.deductMinutesForCall(durationSeconds, phoneNumber, recordingUrl,
+                new BillingManager.DeductCallback() {
+                    @Override
+                    public void onDeductSuccess(double newBalance, double cost) {
+                        Log.d(TAG, "========================================");
+                        Log.d(TAG, "✅ BILLING SUCCESS");
+                        Log.d(TAG, "   Cost: " + cost + " minutes");
+                        Log.d(TAG, "   New balance: " + newBalance + " minutes");
+                        Log.d(TAG, "========================================");
+
+                        // Show success message
+                        Toast.makeText(context,
+                                String.format("Call cost: %.1f min | Balance: %.1f min", cost, newBalance),
+                                Toast.LENGTH_LONG).show();
+
+                        // Check if should auto-disable AI
+                        if (newBalance < 0.1) {
+                            Log.w(TAG, "⚠️ BALANCE DEPLETED - Auto-disabling AI");
+
+                            PreferencesManager prefs = PreferencesManager.getInstance(context);
+                            if (prefs.isBotActive()) {
+                                prefs.setIsBotActive(false);
+
+                                Toast.makeText(context,
+                                        "AI disabled - balance depleted. Please top up.",
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onDeductError(String error) {
+                        Log.e(TAG, "========================================");
+                        Log.e(TAG, "❌ BILLING ERROR");
+                        Log.e(TAG, "   Error: " + error);
+                        Log.e(TAG, "========================================");
+
+                        Toast.makeText(context,
+                                "Billing error: " + error,
+                                Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+    }
+
+    private void resetCallTracking() {
+        Log.d(TAG, "Resetting call tracking for next call");
+        currentCallPhoneNumber = null;
+        callStartTimestamp = 0;
+        recordingFilePath = null;
+    }
+
+
+
+// ============================================================================
+// Add field to track recording start time:
+
+    private long recordingStartTime = 0;
+
+
 
     // ============================================================================
     // ENHANCED AI FEATURES
@@ -770,7 +1013,7 @@ public class AICallRecorderRefactored {
 
                 @Override
                 public void onStatisticsUpdate(SequentialAudioInjector.InjectionStatistics stats) {
-                    Log.v(TAG,  " processed, " +
+                    Log.v(TAG, " processed, " +
                             stats.successRate + "% success rate");
                 }
             });
@@ -829,7 +1072,11 @@ public class AICallRecorderRefactored {
                 } else {
                     Log.w(TAG, "Response buffer initialization attempt " + attempt + " failed");
                     if (attempt < 3) {
-                        try { Thread.sleep(1000); } catch (InterruptedException e) { break; }
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            break;
+                        }
                     }
                 }
             }
@@ -1126,7 +1373,7 @@ public class AICallRecorderRefactored {
 
             // Build and send initial configuration WITH conversation initiation data
             try {
-                JSONObject initData = buildConversationInitiationData();
+                JSONObject initData = buildConversationInitiationData(isOutboundCall);
                 ElevenLabsWebSocketConfig.sendInitialConfiguration(webSocket, agentId, initData);
 
                 if (initData != null && isOutboundCall) {

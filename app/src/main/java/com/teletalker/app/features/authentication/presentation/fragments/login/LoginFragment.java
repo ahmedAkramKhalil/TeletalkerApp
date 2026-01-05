@@ -27,6 +27,7 @@ public class LoginFragment extends Fragment {
     private LoginViewModel viewModel;
     FragmentLoginBinding binding;
     NavController navController;
+    private PreferencesManager prefsManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -48,17 +49,6 @@ public class LoginFragment extends Fragment {
         observes();
 
         initButtonClicks();
-        PreferencesManager pm = PreferencesManager.getInstance(getContext()) ;
-        if (pm.isUserLoggedIn())
-        {
-            if (!pm.isLoginCredentialExist()){
-                viewModel.login(pm.getUsername(), pm.getPassword());
-            }else {
-                Intent intent = new Intent(getActivity(), HomeActivity.class);
-                startActivity(intent);
-                viewModel.clearNavigationState();
-            }
-        }
 
     }
 
@@ -66,68 +56,91 @@ public class LoginFragment extends Fragment {
     void initializeComponents(View view){
         navController = Navigation.findNavController(view);
         viewModel = new ViewModelProvider(this).get(LoginViewModel.class);
-    }
-    void observes(){
+        prefsManager = PreferencesManager.getInstance(requireContext());
 
+    }
+    void observes() {
         viewModel.state.observe(getViewLifecycleOwner(), state -> {
             if (state instanceof LoginState.Loading) {
-                // Disable buttons
+                // Show loading state
                 binding.loginButton.setEnabled(false);
-                binding.loginButton.setEnabled(false);
-                // Show progress bar (add ProgressBar to your layout)
+                binding.signUpButton.setEnabled(false);
                 binding.progressBar.setVisibility(View.VISIBLE);
-            }  else  if (state instanceof LoginState.Success) {
 
-                PreferencesManager preferencesManager = PreferencesManager.getInstance(getContext());
-                preferencesManager.setIsLoggedIn(true);
-                preferencesManager.setUsername(((LoginState.Success) state).getEmail());
-                preferencesManager.setUserID(((LoginState.Success) state).getUserId());
-                preferencesManager.setPassword(((LoginState.Success) state).getPassword());
+            } else if (state instanceof LoginState.Success) {
+                // Hide loading
+                binding.progressBar.setVisibility(View.GONE);
+
+                // ✅ CACHE LOGIN CREDENTIALS
+                LoginState.Success success = (LoginState.Success) state;
+//                prefsManager.saveLoginCredentials(
+//                        success.getEmail(),
+//                        success.getUserId(),
+//                        success.getPassword()
+//                );
+
+                Log.d("TAG", "✅ Login successful, credentials cached");
+                Toast.makeText(getContext(), "Login successful!", Toast.LENGTH_SHORT).show();
+
+                // Navigate to home (this is handled by the event observer below)
 
             } else {
                 // Re-enable buttons
                 binding.loginButton.setEnabled(true);
-                binding.loginButton.setEnabled(true);
-                // Hide progress bar
+                binding.signUpButton.setEnabled(true);
                 binding.progressBar.setVisibility(View.GONE);
+
                 if (state instanceof LoginState.Error) {
-                    // Show error message to user
                     String errorMsg = ((LoginState.Error) state).getMessage();
-                    if (errorMsg.contains("password")  ){
-                        binding.password.setError(errorMsg); // or passwordLayout
-                    }else {
-                        binding.username.setError(errorMsg); // or passwordLayout
+
+                    // Show error
+                    if (errorMsg.contains("password")) {
+                        binding.password.setError(errorMsg);
+                    } else {
+                        binding.username.setError(errorMsg);
                     }
-                    // Option 1: Toast
+
                     Toast.makeText(getContext(), errorMsg, Toast.LENGTH_SHORT).show();
-                    // OR Option 2: Set error on TextInputLayout
                     viewModel.clearErrorState();
                 }
             }
         });
 
-
-        viewModel.events.observe(getViewLifecycleOwner(), state -> {
-            if (state instanceof LoginEvents.NavigateToRegisterScreen) {
+        viewModel.events.observe(getViewLifecycleOwner(), event -> {
+            if (event instanceof LoginEvents.NavigateToRegisterScreen) {
                 navController.navigate(R.id.action_loginFragment_to_registerFragment);
                 viewModel.clearNavigationState();
-            }
-            else if (state instanceof LoginEvents.PopBackStack) {
+
+            } else if (event instanceof LoginEvents.PopBackStack) {
                 navController.popBackStack();
                 viewModel.clearNavigationState();
-            }
-            else if (state instanceof LoginEvents.NavigateToHomeScreen) {
 
+            } else if (event instanceof LoginEvents.NavigateToHomeScreen) {
+                // Navigate to home
                 Intent intent = new Intent(getActivity(), HomeActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
+                requireActivity().finish(); // Close AuthActivity
                 viewModel.clearNavigationState();
             }
         });
     }
-    void  initButtonClicks(){
-        binding.signUpButton.setOnClickListener(v -> viewModel.navigateToRegisterScreen());
-        binding.backButton.setOnClickListener(v -> viewModel.popBackStack());
-        binding.loginButton.setOnClickListener(v -> viewModel.login(binding.username.getText().toString(),binding.password.getText().toString()));
+
+
+
+
+    void initButtonClicks() {
+        binding.signUpButton.setOnClickListener(v ->
+                viewModel.navigateToRegisterScreen());
+
+        binding.backButton.setOnClickListener(v ->
+                viewModel.popBackStack());
+
+        binding.loginButton.setOnClickListener(v ->
+                viewModel.login(
+                        binding.username.getText().toString(),
+                        binding.password.getText().toString()
+                ));
     }
 
 }

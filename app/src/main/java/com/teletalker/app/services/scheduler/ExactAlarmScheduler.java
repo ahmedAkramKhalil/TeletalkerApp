@@ -52,6 +52,7 @@ public class ExactAlarmScheduler {
         intent.putExtra("contact_name", call.getContactName());
         intent.putExtra("duration_minutes", call.getDurationMinutes());
         intent.putExtra("conversation_notes", call.getConversationNotes());
+        intent.putExtra("conversation_purpose", call.getPurpose());
 
         // Use unique request code based on call ID to allow multiple alarms
         int requestCode = (int) call.getId();
@@ -76,54 +77,102 @@ public class ExactAlarmScheduler {
     /**
      * Choose the best alarm scheduling method based on Android version
      */
+//    private void scheduleWithBestMethod(long scheduledTime, PendingIntent pendingIntent, ScheduledCall call) {
+//        try {
+//            // FIRST: Cancel any existing alarm with same request code to prevent duplicates
+//            alarmManager.cancel(pendingIntent);
+//
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//                // Android 12+ (API 31+)
+//                if (alarmManager.canScheduleExactAlarms()) {
+//                    // Use setAlarmClock for highest priority (shows in status bar)
+//                    AlarmManager.AlarmClockInfo alarmClockInfo = new AlarmManager.AlarmClockInfo(
+//                            scheduledTime,
+//                            pendingIntent
+//                    );
+//                    alarmManager.setAlarmClock(alarmClockInfo, pendingIntent);
+//                    Log.d(TAG, "Scheduled with setAlarmClock (Android 12+, highest priority)");
+//
+//                    // VERIFY IT WAS SCHEDULED
+//                    verifyAlarmScheduled(call.getId(), scheduledTime);
+//                } else {
+//                    Log.w(TAG, "Exact alarm permission not granted, using setExactAndAllowWhileIdle");
+//                    alarmManager.setExactAndAllowWhileIdle(
+//                            AlarmManager.RTC_WAKEUP,
+//                            scheduledTime,
+//                            pendingIntent
+//                    );
+//                }
+//            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                alarmManager.setExactAndAllowWhileIdle(
+//                        AlarmManager.RTC_WAKEUP,
+//                        scheduledTime,
+//                        pendingIntent
+//                );
+//                Log.d(TAG, "Scheduled with setExactAndAllowWhileIdle (Android 6+)");
+//            } else {
+//                alarmManager.setExact(
+//                        AlarmManager.RTC_WAKEUP,
+//                        scheduledTime,
+//                        pendingIntent
+//                );
+//                Log.d(TAG, "Scheduled with setExact (Android 4.4+)");
+//            }
+//        } catch (SecurityException e) {
+//            Log.e(TAG, "SecurityException scheduling exact alarm: " + e.getMessage());
+//            alarmManager.set(
+//                    AlarmManager.RTC_WAKEUP,
+//                    scheduledTime,
+//                    pendingIntent
+//            );
+//            Log.w(TAG, "Fell back to inexact alarm - may not fire at exact time");
+//        }
+//    }
+
+
     private void scheduleWithBestMethod(long scheduledTime, PendingIntent pendingIntent, ScheduledCall call) {
         try {
+            alarmManager.cancel(pendingIntent);
+
+            // Check if we are on Android 12+ (API 31+)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                // Android 12+ (API 31+)
+
                 if (alarmManager.canScheduleExactAlarms()) {
-                    // Use setAlarmClock for highest priority (shows in status bar)
+                    // Best Method: Always use setAlarmClock if permission is granted
+                    // It has the highest priority and bypasses Doze most effectively
                     AlarmManager.AlarmClockInfo alarmClockInfo = new AlarmManager.AlarmClockInfo(
                             scheduledTime,
                             pendingIntent
                     );
                     alarmManager.setAlarmClock(alarmClockInfo, pendingIntent);
-                    Log.d(TAG, "Scheduled with setAlarmClock (Android 12+, highest priority)");
+                    Log.d(TAG, "Scheduled with setAlarmClock (Exact)");
                 } else {
-                    Log.w(TAG, "Exact alarm permission not granted, using setExactAndAllowWhileIdle");
-                    alarmManager.setExactAndAllowWhileIdle(
-                            AlarmManager.RTC_WAKEUP,
-                            scheduledTime,
-                            pendingIntent
-                    );
+                    // Permission MISSING: You cannot use setExactAndAllowWhileIdle here either!
+                    // Fall back to inexact or prompt user for permission
+                    Log.w(TAG, "No exact alarm permission. Falling back to inexact set()");
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, scheduledTime, pendingIntent);
                 }
+
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                // Android 6.0+ (API 23+) - Use setExactAndAllowWhileIdle to work in Doze mode
-                alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        scheduledTime,
-                        pendingIntent
-                );
-                Log.d(TAG, "Scheduled with setExactAndAllowWhileIdle (Android 6+)");
+                // Android 6 to 11: No special permission required for exact alarms
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, scheduledTime, pendingIntent);
             } else {
-                // Android 4.4+ (API 19+) - Use setExact
-                alarmManager.setExact(
-                        AlarmManager.RTC_WAKEUP,
-                        scheduledTime,
-                        pendingIntent
-                );
-                Log.d(TAG, "Scheduled with setExact (Android 4.4+)");
+                // Older than Android 6
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, scheduledTime, pendingIntent);
             }
         } catch (SecurityException e) {
-            Log.e(TAG, "SecurityException scheduling exact alarm: " + e.getMessage());
-            // Fallback to less precise alarm
-            alarmManager.set(
-                    AlarmManager.RTC_WAKEUP,
-                    scheduledTime,
-                    pendingIntent
-            );
-            Log.w(TAG, "Fell back to inexact alarm - may not fire at exact time");
+            // Final fallback to prevent crash
+            alarmManager.set(AlarmManager.RTC_WAKEUP, scheduledTime, pendingIntent);
+            Log.e(TAG, "SecurityException: Forced fallback to inexact alarm.");
         }
     }
+
+
+    // Add this method to verify alarm was scheduled
+    private void verifyAlarmScheduled(long callId, long scheduledTime) {
+        Log.d(TAG, "✓ Alarm verified for call ID " + callId + " at " + new java.util.Date(scheduledTime));
+    }
+
 
     /**
      * Cancel a scheduled alarm
@@ -144,8 +193,8 @@ public class ExactAlarmScheduler {
                 requestCode,
                 intent,
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                        ? PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE
-                        : PendingIntent.FLAG_NO_CREATE
+                        ? PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE  // ← CHANGED
+                        : PendingIntent.FLAG_CANCEL_CURRENT  // ← CHANGED
         );
 
         if (pendingIntent != null) {

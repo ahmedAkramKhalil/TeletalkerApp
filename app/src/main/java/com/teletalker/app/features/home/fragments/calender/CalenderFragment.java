@@ -1,5 +1,6 @@
 package com.teletalker.app.features.home.fragments.calender;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,10 +22,12 @@ import com.teletalker.app.databinding.FragmentCalenderBinding;
 import com.teletalker.app.features.home.fragments.calender.data.models.ScheduledCall;
 import com.teletalker.app.features.home.fragments.calender.ui.adapter.ScheduledCallsAdapter;
 import com.teletalker.app.features.home.fragments.calender.ui.dialog.ScheduleCallBottomSheet;
+import com.teletalker.app.features.home.fragments.settings.SubscriptionPlanActivity;
+import com.teletalker.app.utils.SubscriptionManager;
 
 import java.util.Calendar;
 
-public class CalenderFragment extends Fragment {
+public class CalenderFragment extends Fragment  implements SubscriptionManager.SubscriptionListener{
 
     private FragmentCalenderBinding binding;
     private CalenderViewModel viewModel;
@@ -35,6 +38,7 @@ public class CalenderFragment extends Fragment {
     private LinearLayout emptyStateLayout;
     private TextView tvScheduledCallsCount;
     private FloatingActionButton fabAddScheduledCall;
+    private SubscriptionManager subscriptionManager;
 
     private long selectedDate = System.currentTimeMillis();
 
@@ -44,6 +48,9 @@ public class CalenderFragment extends Fragment {
 
         binding = FragmentCalenderBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
+        subscriptionManager = SubscriptionManager.getInstance(requireContext());
+        subscriptionManager.addListener(this);
+        checkAccess();
 
         initViews(root);
         setupRecyclerView();
@@ -52,6 +59,61 @@ public class CalenderFragment extends Fragment {
         observeViewModel();
 
         return root;
+    }
+    private void checkAccess() {
+        if (subscriptionManager.isStandard()) {
+            // Standard - show calendar
+            showCalendar();
+        } else {
+            // Lite - show upgrade prompt
+            showUpgradePrompt();
+        }
+    }
+
+    private void showCalendar() {
+        // Show your calendar UI
+        if (binding.calendarContent != null) {
+            binding.calendarContent.setVisibility(View.VISIBLE);
+        }
+        if (binding.upgradeLayout != null) {
+            binding.upgradeLayout.setVisibility(View.GONE);
+        }
+    }
+
+    private void showUpgradePrompt() {
+        // Hide calendar, show upgrade prompt
+        if (binding.calendarContent != null) {
+            binding.calendarContent.setVisibility(View.GONE);
+        }
+        if (binding.upgradeLayout != null) {
+            binding.upgradeLayout.setVisibility(View.VISIBLE);
+        }
+
+        // Set click listener to upgrade
+        if (binding.btnUpgrade != null) {
+            binding.btnUpgrade.setOnClickListener(v -> openSubscriptionPlan());
+        }
+
+        // Or if no upgrade layout, redirect immediately
+        // openSubscriptionPlan();
+    }
+
+    private void openSubscriptionPlan() {
+        Intent intent = new Intent(requireContext(), SubscriptionPlanActivity.class);
+        startActivity(intent);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        checkAccess();
+    }
+
+    @Override
+    public void onPlanChanged(String newPlan) {
+        if (isAdded()) {
+            requireActivity().runOnUiThread(this::checkAccess);
+        }
     }
 
     private void initViews(View root) {
@@ -101,10 +163,6 @@ public class CalenderFragment extends Fragment {
 
             // Filter scheduled calls for selected date
             viewModel.filterCallsByDate(selectedDate);
-
-            Toast.makeText(getContext(),
-                    "Selected: " + dayOfMonth + "/" + (month + 1) + "/" + year,
-                    Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -134,10 +192,12 @@ public class CalenderFragment extends Fragment {
             }
         });
 
-        // Observe operation status
+        // ✅ FIX: Observe operation status and consume it to prevent re-showing
         viewModel.getOperationStatus().observe(getViewLifecycleOwner(), status -> {
             if (status != null && !status.isEmpty()) {
                 Toast.makeText(getContext(), status, Toast.LENGTH_SHORT).show();
+                // Clear the status after showing to prevent re-showing on config change
+                viewModel.clearOperationStatus();
             }
         });
     }
@@ -146,7 +206,7 @@ public class CalenderFragment extends Fragment {
         ScheduleCallBottomSheet bottomSheet = ScheduleCallBottomSheet.newInstance();
         bottomSheet.setOnScheduleCallListener(scheduledCall -> {
             viewModel.insertScheduledCall(scheduledCall);
-            Toast.makeText(getContext(), "Call scheduled successfully!", Toast.LENGTH_SHORT).show();
+            // ✅ REMOVED: Duplicate toast (already shown in BottomSheet)
         });
         bottomSheet.show(getChildFragmentManager(), "ScheduleCallBottomSheet");
     }
@@ -155,7 +215,7 @@ public class CalenderFragment extends Fragment {
         ScheduleCallBottomSheet bottomSheet = ScheduleCallBottomSheet.newInstance(call);
         bottomSheet.setOnScheduleCallListener(scheduledCall -> {
             viewModel.updateScheduledCall(scheduledCall);
-            Toast.makeText(getContext(), "Call updated successfully!", Toast.LENGTH_SHORT).show();
+            // ✅ REMOVED: Duplicate toast (already shown in BottomSheet)
         });
         bottomSheet.show(getChildFragmentManager(), "ScheduleCallBottomSheet");
     }

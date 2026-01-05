@@ -146,7 +146,7 @@ public class CallDetector extends InCallService {
         String phoneNumber = call.getDetails().getHandle().getSchemeSpecificPart();
 
         // Check if there's a pending scheduled call for this number
-        String pendingPhone = aiPreferences.getString("pending_scheduled_call_notes", null);
+        String pendingPhone = aiPreferences.getString("pending_scheduled_call_phone", null);
 
         if (pendingPhone != null && pendingPhone.equals(phoneNumber)) {
             Log.d(TAG, "🎯 SCHEDULED CALL DETECTED for: " + phoneNumber);
@@ -157,15 +157,12 @@ public class CallDetector extends InCallService {
             if (!conversationNotes.isEmpty()) {
                 Log.d(TAG, "📝 Loading AI conversation notes: " + conversationNotes);
 
-                // Configure AI with the scheduled conversation notes
-                configureAIForScheduledCall(conversationNotes);
-
-                // Mark this as a scheduled call in the CallInfo
-                // (This will be used when recording starts)
+                // Store notes AND outbound flag
+                aiPreferences.putString("current_call_ai_notes", conversationNotes);
+                aiPreferences.putBoolean("current_call_is_outbound", true); // ← ADD THIS
             }
         }
     }
-
 
     private void configureAIForScheduledCall(String conversationNotes) {
         Log.d(TAG, "🤖 Configuring AI with scheduled conversation notes");
@@ -1019,6 +1016,7 @@ public class CallDetector extends InCallService {
             updateForegroundState();
 
             wrapper.recorder.stopRecording();
+            wrapper.recorder.cleanup();
             Log.d(TAG, "✅ AI RECORDING WITH INJECTION STOPPED SUCCESSFULLY");
 
             wrapper.state = AICallRecorderWrapper.State.COMPLETED;
@@ -1714,6 +1712,7 @@ public class CallDetector extends InCallService {
         for (AICallRecorderWrapper wrapper : callsToRecorders.values()) {
             if (wrapper.recorder.isRecording()) {
                 wrapper.recorder.stopRecording();
+                wrapper.recorder.cleanup();
             }
         }
 

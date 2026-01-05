@@ -50,6 +50,11 @@ public class CalenderViewModel extends AndroidViewModel {
         return operationStatus;
     }
 
+    // ✅ NEW: Clear operation status after it's been shown
+    public void clearOperationStatus() {
+        operationStatus.setValue(null);
+    }
+
     // CRUD Operations
     public void insertScheduledCall(ScheduledCall call) {
         new Thread(() -> {

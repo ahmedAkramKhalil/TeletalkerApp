@@ -37,6 +37,7 @@ public class ScheduledCallAlarmReceiver extends BroadcastReceiver {
         String contactName = intent.getStringExtra("contact_name");
         int durationMinutes = intent.getIntExtra("duration_minutes", 10);
         String conversationNotes = intent.getStringExtra("conversation_notes");
+        String purpose = intent.getStringExtra("conversation_purpose");
 
         Log.d(TAG, "Scheduled Call Alarm Triggered!");
         Log.d(TAG, "Call ID: " + callId);
@@ -52,12 +53,12 @@ public class ScheduledCallAlarmReceiver extends BroadcastReceiver {
 
         // Verify call is still pending in database
         verifyAndExecuteCall(context, callId, phoneNumber, contactName,
-                durationMinutes, conversationNotes);
+                durationMinutes, conversationNotes,purpose);
     }
 
     private void verifyAndExecuteCall(Context context, long callId, String phoneNumber,
                                       String contactName, int durationMinutes,
-                                      String conversationNotes) {
+                                      String conversationNotes,String purpose) {
         // Check database to ensure call wasn't cancelled
         new Thread(() -> {
             try {
@@ -79,7 +80,7 @@ public class ScheduledCallAlarmReceiver extends BroadcastReceiver {
 
                 // Call is valid, execute it
                 executeCall(context, callId, phoneNumber, contactName,
-                        durationMinutes, conversationNotes);
+                        durationMinutes, conversationNotes,purpose);
 
             } catch (Exception e) {
                 Log.e(TAG, "Error verifying call: " + e.getMessage(), e);
@@ -88,7 +89,7 @@ public class ScheduledCallAlarmReceiver extends BroadcastReceiver {
     }
 
     private void executeCall(Context context, long callId, String phoneNumber,
-                             String contactName, int durationMinutes, String conversationNotes) {
+                             String contactName, int durationMinutes, String conversationNotes,String purpose) {
         try {
             // Create intent for ScheduledCallExecutor service
             Intent serviceIntent = new Intent(context, ScheduledCallExecutor.class);
@@ -97,6 +98,7 @@ public class ScheduledCallAlarmReceiver extends BroadcastReceiver {
             serviceIntent.putExtra("contact_name", contactName);
             serviceIntent.putExtra("duration_minutes", durationMinutes);
             serviceIntent.putExtra("conversation_notes", conversationNotes);
+            serviceIntent.putExtra("conversation_purpose", purpose);
 
             // Start foreground service
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

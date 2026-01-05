@@ -102,7 +102,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:host="checkout"
+                    android:host="payment"
                     android:pathPrefix="/success"
                     android:scheme="teletalker" />
             </intent-filter>
@@ -115,13 +115,38 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:host="checkout"
+                    android:host="payment"
                     android:pathPrefix="/cancel"
                     android:scheme="teletalker" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".notification.NotificationHandler"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <activity
+            android:name=".payment.PaymentResultActivity"
+            android:exported="true"
+            android:launchMode="singleTask">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="teletalker" android:host="payment" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".features.select_voice.presentation.SelectVoiceActivity"
+            android:exported="false" />
+        <activity
+            android:name=".features.home.fragments.settings.SubscriptionPlanActivity"
             android:exported="false" />
         <activity
             android:name=".features.subscription.presentation.SubscriptionActivity"
@@ -132,7 +157,7 @@
 
         <activity
             android:name=".features.authentication.presentation.AuthActivity"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

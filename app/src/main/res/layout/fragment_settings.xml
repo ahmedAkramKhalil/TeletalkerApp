@@ -72,6 +72,15 @@
                 android:textSize="13sp"
                 app:layout_constraintStart_toEndOf="@+id/personImg"
                 app:layout_constraintTop_toTopOf="@+id/personImg" />
+            <TextView
+                android:id="@+id/balanceTv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginTop="4dp"
+                android:textSize="10sp"
+                app:layout_constraintStart_toEndOf="@+id/nameTv"
+                app:layout_constraintTop_toTopOf="@+id/personImg" />
 
             <TextView
                 android:id="@+id/textView14"
@@ -112,7 +121,7 @@
 
         app:layout_constraintEnd_toEndOf="@+id/materialCardView3"
         app:layout_constraintStart_toStartOf="@+id/materialCardView3"
-        app:layout_constraintTop_toBottomOf="@+id/materialCardView3"
+        app:layout_constraintTop_toBottomOf="@+id/subscriptionCardView"
         app:strokeWidth="0dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -146,7 +155,56 @@
 
 
     </com.google.android.material.card.MaterialCardView>
-    <com.google.android.material.card.MaterialCardView
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/subscriptionCardView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="@color/darkMidnightBlue"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+
+                app:layout_constraintEnd_toEndOf="@+id/materialCardView3"
+                app:layout_constraintStart_toStartOf="@+id/materialCardView3"
+                app:layout_constraintTop_toBottomOf="@+id/materialCardView3"
+                app:strokeWidth="0dp">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="22dp">
+
+                    <TextView
+                        android:id="@+id/subscription_tv"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/subscriptions"
+                        android:textColor="@color/gunmetalTextGray"
+                        android:textSize="13sp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_back_arrow"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:tint="@color/gunmetalTextGray" />
+
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
         android:id="@+id/materialCardView7"
         android:layout_width="0dp"
         android:layout_height="wrap_content"

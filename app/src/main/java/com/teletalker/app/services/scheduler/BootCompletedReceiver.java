@@ -39,13 +39,10 @@ public class BootCompletedReceiver extends BroadcastReceiver {
     private void rescheduleAllPendingCalls(Context context) {
         new Thread(() -> {
             try {
-                // Get database instance
                 ScheduledCallDatabase database = ScheduledCallDatabase.getInstance(context);
-
-                // Get all pending calls
                 long currentTime = System.currentTimeMillis();
                 List<ScheduledCall> pendingCalls = database.scheduledCallDao()
-                        .getPendingCallsDue(Long.MAX_VALUE); // Get all pending calls
+                        .getPendingCallsDue(Long.MAX_VALUE);
 
                 if (pendingCalls == null || pendingCalls.isEmpty()) {
                     Log.d(TAG, "No pending calls to reschedule");
@@ -54,10 +51,7 @@ public class BootCompletedReceiver extends BroadcastReceiver {
 
                 Log.d(TAG, "Found " + pendingCalls.size() + " total calls in database");
 
-                // Initialize scheduler manager with ExactAlarmScheduler
                 CallSchedulerManager schedulerManager = new CallSchedulerManager(context);
-
-                // Initialize periodic backup check
                 schedulerManager.initializePeriodicCheck();
                 Log.d(TAG, "Periodic backup check initialized");
 
@@ -65,11 +59,14 @@ public class BootCompletedReceiver extends BroadcastReceiver {
                 int skipped = 0;
 
                 for (ScheduledCall call : pendingCalls) {
-                    // Only reschedule calls that are in the future
+                    // Only reschedule future pending calls
                     if (call.getScheduledDateTime() > currentTime &&
                             "pending".equals(call.getStatus())) {
 
                         try {
+                            // ADD: Small delay between rescheduling to avoid conflicts
+                            Thread.sleep(100);
+
                             schedulerManager.scheduleCall(call);
                             rescheduled++;
 
@@ -83,11 +80,7 @@ public class BootCompletedReceiver extends BroadcastReceiver {
                         }
                     } else {
                         skipped++;
-                        if (call.getScheduledDateTime() <= currentTime) {
-                            Log.d(TAG, "✗ Skipped call ID " + call.getId() + " (in the past)");
-                        } else {
-                            Log.d(TAG, "✗ Skipped call ID " + call.getId() + " (status: " + call.getStatus() + ")");
-                        }
+                        // ... existing logging ...
                     }
                 }
 
@@ -99,8 +92,6 @@ public class BootCompletedReceiver extends BroadcastReceiver {
 
             } catch (Exception e) {
                 Log.e(TAG, "ERROR rescheduling calls after boot", e);
-                Log.e(TAG, "Error message: " + e.getMessage());
-                Log.e(TAG, "========================================");
             }
         }).start();
     }

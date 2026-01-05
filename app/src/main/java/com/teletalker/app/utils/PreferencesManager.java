@@ -43,9 +43,17 @@ public class PreferencesManager {
     private static final String IS_LOGGED_IN = "IS_LOGGED_IN";
     private static final String USERNAME = "USERNAME";
 
+
+    private static final String KEY_LAST_LOGIN_EMAIL = "last_login_email";
+    private static final String KEY_LAST_LOGIN_UID = "last_login_uid";
+    private static final String KEY_LAST_LOGIN_TIME = "last_login_time";
+
+
     private SharedPreferences prefs;
     private SharedPreferences.Editor editor;
     private static PreferencesManager instance;
+
+
 
     private PreferencesManager(Context context) {
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -58,6 +66,141 @@ public class PreferencesManager {
         }
         return instance;
     }
+
+
+    private static final String KEY_IS_USER_LOGGED_IN = "is_user_logged_in";
+    private static final String KEY_USER_EMAIL = "user_email";
+    private static final String KEY_USER_ID = "user_id";
+    private static final String KEY_USER_PASSWORD = "user_password"; // Encrypted in production!
+    private static final String KEY_LOGIN_TIMESTAMP = "login_timestamp";
+
+    /**
+     * Check if user is logged in
+     */
+    public boolean isUserLoggedIn() {
+        return getBoolean(KEY_IS_USER_LOGGED_IN, false);
+    }
+
+    /**
+     * Set login state
+     */
+    public void setIsLoggedIn(boolean isLoggedIn) {
+        putBoolean(KEY_IS_USER_LOGGED_IN, isLoggedIn);
+        if (isLoggedIn) {
+            putLong(KEY_LOGIN_TIMESTAMP, System.currentTimeMillis());
+        }
+    }
+
+    /**
+     * Save user credentials (for auto-login)
+     * WARNING: In production, password should be encrypted or use tokens!
+     */
+    public void saveLoginCredentials(String email, String userId, String password) {
+        putString(KEY_USER_EMAIL, email);
+        putString(KEY_USER_ID, userId);
+        putString(KEY_USER_PASSWORD, password); // TODO: Encrypt this!
+        setIsLoggedIn(true);
+    }
+
+    /**
+     * Get cached username/email
+     */
+    public String getUsername() {
+        return getString(KEY_USER_EMAIL, null);
+    }
+
+
+    public void saveLastLoginInfo(String email, String uid) {
+        putString(KEY_LAST_LOGIN_EMAIL, email);
+        putString(KEY_LAST_LOGIN_UID, uid);
+        putLong(KEY_LAST_LOGIN_TIME, System.currentTimeMillis());
+    }
+
+    /**
+     * Get cached email
+     */
+    public String getLastLoginEmail() {
+        return getString(KEY_LAST_LOGIN_EMAIL, null);
+    }
+
+    /**
+     * Get cached UID
+     */
+    public String getLastLoginUid() {
+        return getString(KEY_LAST_LOGIN_UID, null);
+    }
+
+    /**
+     * Clear login cache
+     */
+    public void clearLoginCache() {
+        remove(KEY_LAST_LOGIN_EMAIL);
+        remove(KEY_LAST_LOGIN_UID);
+        remove(KEY_LAST_LOGIN_TIME);
+        // Clear subscription cache too
+        remove("cached_app_version");
+        remove("cached_free_minutes");
+        remove("cached_paid_minutes");
+        remove("last_subscription_sync");
+    }
+
+    /**
+     * Check if we have cached login info
+     */
+    public boolean hasLoginCache() {
+        return getLastLoginEmail() != null;
+    }
+
+
+
+    /**
+     * Get cached user ID
+     */
+    public String getUserID() {
+        return getString(KEY_USER_ID, null);
+    }
+
+    /**
+     * Get cached password (should be encrypted in production)
+     */
+    public String getPassword() {
+        return getString(KEY_USER_PASSWORD, null);
+    }
+
+    /**
+     * Check if login credentials exist
+     */
+    public boolean isLoginCredentialExist() {
+        return getUsername() != null && getPassword() != null;
+    }
+
+    /**
+     * Get login timestamp
+     */
+    public long getLoginTimestamp() {
+        return getLong(KEY_LOGIN_TIMESTAMP, 0);
+    }
+
+    /**
+     * Clear all login data (logout)
+     */
+    public void clearLoginData() {
+        remove(KEY_IS_USER_LOGGED_IN);
+        remove(KEY_USER_EMAIL);
+        remove(KEY_USER_ID);
+        remove(KEY_USER_PASSWORD);
+        remove(KEY_LOGIN_TIMESTAMP);
+
+        // Also clear cached subscription data
+        remove("cached_app_version");
+        remove("cached_free_minutes");
+        remove("cached_paid_minutes");
+        remove("last_subscription_sync");
+    }
+
+    // Helper methods if not already present
+
+
 
     public boolean isAutoAnswerEnabled(){
         return prefs.getBoolean(PREF_AUTO_ANSWER_ENABLED, true);
@@ -289,9 +432,6 @@ public class PreferencesManager {
     }
 
     // Check if user is logged in
-    public boolean isLoginCredentialExist() {
-        return getApiKey() != null && getUserToken() != null;
-    }
 
     // Check if agent is selected and still valid
     public boolean hasValidSelectedAgent() {
@@ -341,22 +481,7 @@ public class PreferencesManager {
         editor.apply();
     }
 
-    public void setIsLoggedIn(boolean b) {
-        editor.putBoolean(IS_LOGGED_IN,b);
-        editor.apply();
 
-    }
-
-    public boolean  isUserLoggedIn() {
-        return prefs.getBoolean(IS_LOGGED_IN,false);
-    }
-
-    public  String getUsername() {
-        return prefs.getString(USERNAME,"");
-    }
-    public  String getPassword() {
-        return prefs.getString(PASSWORD,"");
-    }
 
     public void setUsername(String email) {
         putString(USERNAME,email);
@@ -371,6 +496,41 @@ public class PreferencesManager {
     }
 
 
+    public String getPendingScheduledPhone() {
+        return getString("pending_scheduled_call_phone", null);
+    }
+
+    public String getPendingScheduledNotes() {
+        return getString("pending_scheduled_call_notes", null);
+    }
+
+    public long getPendingScheduledCallId() {
+        return getLong("pending_scheduled_call_id", -1);
+    }
+
+    public boolean isPendingScheduledOutbound() {
+        return getBoolean("pending_scheduled_call_is_outbound", false);
+    }
+
+    // Add to PreferencesManager class
+
+    public void putDouble(String key, double value) {
+        prefs.edit().putLong(key, Double.doubleToRawLongBits(value)).apply();
+    }
+
+    public double getDouble(String key, double defaultValue) {
+        if (!prefs.contains(key)) {
+            return defaultValue;
+        }
+        return Double.longBitsToDouble(prefs.getLong(key, Double.doubleToRawLongBits(defaultValue)));
+    }
+
+
+    public void putBoolean(String currentCallIsOutbound, boolean b) {
+        editor.putBoolean(currentCallIsOutbound,b);
+        editor.apply();
+
+    }
 
     // Export agent settings for backup/restore
 //    public String exportAgentSettings() {

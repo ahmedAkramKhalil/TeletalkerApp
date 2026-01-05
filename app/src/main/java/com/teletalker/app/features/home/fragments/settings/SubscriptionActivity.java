@@ -3,9 +3,11 @@ package com.teletalker.app.features.home.fragments.settings;// =================
 // ============================================
 
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -16,9 +18,11 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.functions.FirebaseFunctions;
 import com.teletalker.app.R;
 import com.teletalker.app.databinding.ActivitySubscription2Binding;
 import com.teletalker.app.databinding.ActivitySubscriptionBinding;
+import com.teletalker.app.network.DeductMinutesResponse;
 import com.teletalker.app.network.FirebaseFunctionsManager;
 import com.teletalker.app.network.InvoiceResponse;
 import com.teletalker.app.network.Package;
@@ -26,6 +30,7 @@ import com.teletalker.app.network.UserBalance;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class SubscriptionActivity extends AppCompatActivity {
 
@@ -147,6 +152,9 @@ public class SubscriptionActivity extends AppCompatActivity {
 
     private void updateBalanceDisplay(UserBalance balance) {
         // Update the "What's Included" section to show current balance
+        binding.tvFreeMinutes.setText(String.format(Locale.US,"%.1f", balance.getFreeMinutesBalance()) );
+        binding.tvTotalMinutes.setText(String.format(Locale.US,"%.1f", balance.getMinutesBalance()) );
+        binding.tvPaidMinutes.setText(String.format(Locale.US,"%.1f", balance.getPaidMinutesBalance()) );
         binding.tvWhatsIncluded.setText(
                 String.format(Locale.US,
                         "Current Balance: %.1f minutes | Plan: %s",
@@ -264,7 +272,9 @@ public class SubscriptionActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(InvoiceResponse invoice) {
                         showLoading(false);
+//                        testPaymentWebhook();
                         openPaymentUrl(invoice.getInvoiceUrl());
+
 
                     }
 
@@ -278,6 +288,33 @@ public class SubscriptionActivity extends AppCompatActivity {
                     }
                 }
         );
+    }
+
+    private void testPaymentWebhook() {
+        FirebaseFunctions.getInstance()
+                .getHttpsCallable("testPaymentComplete")
+                .call(null)
+                .addOnSuccessListener(result -> {
+                    Map<String, Object> data = (Map<String, Object>) result.getData();
+
+                    double oldBalance = ((Number) data.get("oldBalance")).doubleValue();
+                    double newBalance = ((Number) data.get("newBalance")).doubleValue();
+                    double minutesAdded = ((Number) data.get("minutesAdded")).doubleValue();
+
+                    Log.d("TEST", "Success!");
+                    Log.d("TEST", "Old balance: " + oldBalance);
+                    Log.d("TEST", "New balance: " + newBalance);
+                    Log.d("TEST", "Minutes added: " + minutesAdded);
+
+//                    Toast.makeText(this, "Balance updated: " + newBalance, Toast.LENGTH_LONG).show();
+
+                    // Refresh your balance UI here
+                    loadBalance();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("TEST", "Failed: " + e.getMessage(), e);
+//                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
     }
 
     private void openPaymentUrl(String url) {

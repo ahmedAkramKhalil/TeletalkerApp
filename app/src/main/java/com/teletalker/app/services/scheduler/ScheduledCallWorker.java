@@ -74,6 +74,7 @@ public class ScheduledCallWorker extends Worker {
             intent.putExtra("contact_name", call.getContactName());
             intent.putExtra("duration_minutes", call.getDurationMinutes());
             intent.putExtra("conversation_notes", call.getConversationNotes());
+            intent.putExtra("conversation_purpose", call.getPurpose());
 
             // Start the service
             getApplicationContext().startService(intent);

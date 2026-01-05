@@ -98,4 +98,6 @@
     <string name="promotion">TeleTalker automates calls on rooted Android devices, helping small businesses and professionals save costs, capture leads, and focus on more valuable tasks.</string>
     <string name="topup">Top-Up</string>
     <string name="Check_topup">Check Packeges and Stay Connected</string>
+    <string name="upgrade_now">Upgrade Subscription</string>
+    <string name="subscriptions">App Versions &amp; Subscriptions </string>
 </resources>
