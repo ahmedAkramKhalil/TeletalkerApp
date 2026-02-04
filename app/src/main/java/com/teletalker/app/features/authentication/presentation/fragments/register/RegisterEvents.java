@@ -7,9 +7,13 @@ public abstract class RegisterEvents {
         private NavigateToLoginScreen() {}
     }
 
+    public static final class NavigateToVerificationScreen extends RegisterEvents {
+        public static final NavigateToVerificationScreen INSTANCE = new NavigateToVerificationScreen();
+        private NavigateToVerificationScreen() {}
+    }
+
     public static final class PopBackStack extends RegisterEvents {
         public static final PopBackStack INSTANCE = new PopBackStack();
         private PopBackStack() {}
     }
-
 }

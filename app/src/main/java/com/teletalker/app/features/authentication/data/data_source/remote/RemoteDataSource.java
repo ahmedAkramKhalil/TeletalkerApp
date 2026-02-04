@@ -1,8 +1,12 @@
 package com.teletalker.app.features.authentication.data.data_source.remote;
 
+import com.teletalker.app.features.authentication.domain.repository.AuthRepository;
+
 public interface RemoteDataSource {
 
     void login(String email, String password, AuthCallback callback);
+
+        void sendEmailVerification(AuthRepository.AuthCallback callback);
 
     void register(String email, String password, AuthCallback callback);
 

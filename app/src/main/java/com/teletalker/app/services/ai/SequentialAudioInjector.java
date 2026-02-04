@@ -39,9 +39,10 @@ public class SequentialAudioInjector {
     private static final int BYTES_PER_SAMPLE = BITS_PER_SAMPLE / 8; // 2 bytes
 
     // Timing buffers (milliseconds)
-    private static final long PCM_DEVICE_RELEASE_BUFFER_MS = 200;  // Extra time for device release
-    private static final long MIN_DELAY_BETWEEN_CHUNKS_MS = 50;    // Minimum gap between chunks
-    private static final long MAX_DELAY_BETWEEN_CHUNKS_MS = 2000;  // Maximum reasonable delay
+// ✅ AGGRESSIVE Timing buffers (milliseconds)
+    private static final long PCM_DEVICE_RELEASE_BUFFER_MS = 50;   // Reduced from 200ms
+    private static final long MIN_DELAY_BETWEEN_CHUNKS_MS = 20;    // Reduced from 50ms
+    private static final long MAX_DELAY_BETWEEN_CHUNKS_MS = 500;   // Reduced from 2000ms
 
     // Processing configuration
     private static final int MAX_QUEUE_SIZE = 50;

@@ -64,6 +64,12 @@ public class AuthRepositoryImpl implements AuthRepository {
     }
 
     @Override
+    public void sendEmailVerification(AuthCallback callback) {
+                remoteDataSource.sendEmailVerification(callback);
+
+    }
+
+    @Override
     public boolean isUserLoggedIn() {
         return remoteDataSource.isUserLoggedIn();
     }

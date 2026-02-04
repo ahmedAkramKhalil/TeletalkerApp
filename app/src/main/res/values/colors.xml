@@ -12,7 +12,7 @@
     <color name="gunmetalTextGray">#242038</color>
 
     <color name="charcoalBlue">#FFFFFF</color>
-    <color name="darkMidnightBlue">#3477E9F8</color>
+    <color name="darkMidnightBlue">#AEE9F1</color>
     <color name="blue_gray">#E0E0E0</color>
 
     <!-- Pure Colors (unchanged) -->
@@ -35,11 +35,21 @@
     <color name="text_gray_hint">#9E9E9E</color>
     <color name="gray">#F5F5F5</color>
     <color name="gray_bar">#45B6BCCB</color>
-    <color name="light_blue">#0A00A6FB</color>
-    <color name="light_blue_trimmer">#3300A6FB</color>
+
+    <!-- ✅ CONVERTED: Was #0A00A6FB (3.9% alpha) -->
+    <color name="light_blue">#F5FBFE</color>
+
+    <!-- ✅ CONVERTED: Was #3300A6FB (20% alpha) -->
+    <color name="light_blue_trimmer">#CCEDFE</color>
+
     <color name="gray_for_card_text">#6C6C6C</color>
-    <color name="button_red">#14FF2525</color>
-    <color name="button_blue">#14374495</color>
+
+    <!-- ✅ CONVERTED: Was #14FF2525 (7.8% alpha) -->
+    <color name="button_red">#FFEDED</color>
+
+    <!-- ✅ CONVERTED: Was #14374495 (7.8% alpha) -->
+    <color name="button_blue">#EFF0F6</color>
+
     <color name="orange">#FF9800</color>
 
     <!-- Cards - Light -->
@@ -55,13 +65,20 @@
 
     <color name="progress_gray">#FFD8D8D8</color>
     <color name="default_blue_light">#FF33b5e5</color>
-    <color name="visualizer_hover_blue">#1A00A6FB</color>
 
-    <color name="progress_gray_trans">#80D8D8D8</color>
+    <!-- ✅ CONVERTED: Was #1A00A6FB (10.2% alpha) -->
+    <color name="visualizer_hover_blue">#E5F5FE</color>
+
+    <!-- ✅ CONVERTED: Was #80D8D8D8 (50.2% alpha) -->
+    <color name="progress_gray_trans">#EBEBEB</color>
+
     <color name="sup_card_back">#FFFFFF</color>
     <color name="sup_sub_card_back">#F9F9FB</color>
     <color name="sup_card_strok">#E0E0E0</color>
-    <color name="card_selected">#1F00A6FB</color>
+
+    <!-- ✅ CONVERTED: Was #1F00A6FB (12.2% alpha) -->
+    <color name="card_selected">#E0F4FE</color>
+
     <color name="ayp_red">#F44336</color>
     <color name="text_dark">#415A77</color>
     <color name="card_background_light">#FFFFFF</color>
@@ -71,13 +88,21 @@
     <color name="snap_time_picker_transparent_white">#00ffffff</color>
     <color name="snap_time_picker_white">#FFFFFF</color>
     <color name="snap_time_picker_black">#333333</color>
-    <color name="snap_time_picker_black_5">#0c000000</color>
+
+    <!-- ✅ CONVERTED: Was #0c000000 (4.7% alpha) -->
+    <color name="snap_time_picker_black_5">#F3F3F3</color>
+
     <color name="snap_time_picker_default_primary">#008577</color>
     <color name="snap_time_picker_default_accent">#D81B60</color>
     <color name="snap_time_picker_light_gray">#c2c2c2</color>
     <color name="snap_time_picker_extra_light_gray">#ebebeb</color>
-    <color name="outline_spot_card">#80374495</color>
+
+    <!-- ✅ CONVERTED: Was #80374495 (50.2% alpha) -->
+    <color name="outline_spot_card">#9AA1C9</color>
+
+    <!-- ⚠️ NOTE: transpernt kept as transparent for backwards compatibility -->
     <color name="transpernt">#00FFFFFF</color>
+
     <color name="selected_color">#51E3F6</color>
     <color name="unselected_color">#757575</color>
 
@@ -93,7 +118,10 @@
     <!-- Background Colors - Light -->
     <color name="status_background">#F5F5F5</color>
     <color name="status_item_background">#FFFFFF</color>
-    <color name="status_item_background_highlight">#58E3F2FD</color>
+
+    <!-- ✅ CONVERTED: Was #58E3F2FD (34.5% alpha) -->
+    <color name="status_item_background_highlight">#F5FAFE</color>
+
     <color name="status_item_background_ai">#F3E5F5</color>
 
     <!-- Text Colors - Light -->
@@ -101,7 +129,10 @@
 
     <!-- AI Accent -->
     <color name="ai_accent">#9C27B0</color>
-    <color name="chip_background">#BAB2EBF2</color>
+
+    <!-- ✅ CONVERTED: Was #BAB2EBF2 (72.9% alpha) -->
+    <color name="chip_background">#C6F0F5</color>
+
     <color name="chip_text">#303F9F</color>
     <color name="chip_stroke">#00BCD4</color>
     <color name="colorLightGray">#E0E0E0</color>
@@ -156,8 +187,8 @@
     <!-- Lite Divider -->
     <color name="lite_divider">#E0E0E0</color>
 
-    <!-- Lite Shadow -->
-    <color name="lite_shadow">#1A000000</color>
+    <!-- ✅ CONVERTED: Was #1A000000 (10.2% alpha) -->
+    <color name="lite_shadow">#E5E5E5</color>
 
     <!-- Lite Bottom Navigation Selector -->
     <color name="lite_bottom_nav_selected">#2249B3</color>
@@ -166,7 +197,10 @@
     <!-- Standard Bottom Navigation Selector -->
     <color name="standard_bottom_nav_selected">#00A6FB</color>
     <color name="standard_bottom_nav_unselected">#7D8597</color>
-    <color name="track">#38E0E0E0</color>
+
+    <!-- ✅ CONVERTED: Was #38E0E0E0 (22% alpha) -->
+    <color name="track">#F8F8F8</color>
+
     <color name="tab_text_color">#757575</color>
     <color name="tab_selected_color">#6200EE</color>
     <color name="tab_indicator_color">#6200EE</color>

@@ -25,6 +25,16 @@ public abstract class RegisterState {
         public String getEmail() { return email; }
     }
 
+    public static final class VerificationSent extends RegisterState {
+        private final String email;
+
+        public VerificationSent(String email) {
+            this.email = email;
+        }
+
+        public String getEmail() { return email; }
+    }
+
     public static final class Error extends RegisterState {
         private final String message;
 

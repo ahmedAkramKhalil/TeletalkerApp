@@ -2049,7 +2049,9 @@ public class AICallRecorder {
 
     private boolean checkRootAccess() {
         try {
-            Process process = Runtime.getRuntime().exec("su -c echo test");
+            Log.d("checkRootAccess", "CheckRootAccess -" + this.getClass().getName());
+
+                    Process process = Runtime.getRuntime().exec("su -c echo test");
             process.waitFor();
             return process.exitValue() == 0;
         } catch (Exception e) {

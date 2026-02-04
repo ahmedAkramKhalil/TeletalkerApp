@@ -26,6 +26,7 @@ public class FirebaseHelper {
 
     public interface AuthCallback {
         void onSuccess(FirebaseUser user);
+
         void onError(String error);
     }
 
@@ -83,6 +84,15 @@ public class FirebaseHelper {
                 .addOnSuccessListener(authResult -> {
                     FirebaseUser user = authResult.getUser();
                     if (user != null) {
+                        if (user.isEmailVerified()) {
+                            Log.d(TAG, "✅ Login successful - Email verified");
+                            callback.onSuccess(user);
+                        } else {
+                            Log.d(TAG, "❌ Login blocked - Email NOT verified");
+                            // Sign out immediately
+                            FirebaseAuth.getInstance().signOut();
+                            callback.onError("Please verify your email. Check your inbox or spam folder.");
+                        }
                         callback.onSuccess(user);
                     } else {
                         callback.onError("Login failed");

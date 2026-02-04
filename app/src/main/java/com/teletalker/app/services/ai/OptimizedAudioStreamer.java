@@ -213,9 +213,9 @@ public class OptimizedAudioStreamer {
 
             // Try different audio sources in priority order
             int[] audioSources = {
+                    MediaRecorder.AudioSource.VOICE_CALL,          // Call audio (may conflict)
                     MediaRecorder.AudioSource.VOICE_COMMUNICATION, // Best for calls
                     MediaRecorder.AudioSource.MIC,                 // General microphone
-                    MediaRecorder.AudioSource.VOICE_CALL,          // Call audio (may conflict)
                     MediaRecorder.AudioSource.DEFAULT              // Last resort
             };
 

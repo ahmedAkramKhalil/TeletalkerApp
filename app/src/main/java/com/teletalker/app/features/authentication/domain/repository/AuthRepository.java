@@ -10,6 +10,8 @@ public interface AuthRepository {
 
     void resetPassword(String email, ResetPasswordCallback callback);
 
+       void sendEmailVerification(AuthCallback callback);
+
     boolean isUserLoggedIn();
 
     String getCurrentUserId();

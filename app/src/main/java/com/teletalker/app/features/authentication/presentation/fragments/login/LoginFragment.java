@@ -80,7 +80,7 @@ public class LoginFragment extends Fragment {
 //                );
 
                 Log.d("TAG", "✅ Login successful, credentials cached");
-                Toast.makeText(getContext(), "Login successful!", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(getContext(), "Login successful!", Toast.LENGTH_SHORT).show();
 
                 // Navigate to home (this is handled by the event observer below)
 

@@ -575,7 +575,7 @@ public class HomeFragment extends Fragment implements CallHistoryAdapter.OnCallP
     }
 
     private void checkAndAutoDisableAI(double balance) {
-        if (balance < 0.1 && prefsManager.isBotActive()) {
+        if ((int)balance < 1 && prefsManager.isBotActive()) {
             Log.d("TAG", "checkAndAutoDisableAI: " + balance);
             disableAI();
             showAutoDisabledDialog();

@@ -59,7 +59,7 @@ public class AICallRecorderRefactored {
 
     // Connection Management - RELAXED timeouts for call scenarios
     private static final int MAX_CONNECTION_ATTEMPTS = 10;
-    private static final long INITIAL_RECONNECT_DELAY = 500L; // 2 seconds
+    private static final long INITIAL_RECONNECT_DELAY = 200L; // 2 seconds
     private static final long MAX_RECONNECT_DELAY = 10000L; // 30 seconds
     private static final long CONNECTION_TIMEOUT = 60000L; // 30 seconds
     private static final long PING_INTERVAL = 30000L; // 20 seconds
@@ -74,6 +74,7 @@ public class AICallRecorderRefactored {
     private SequentialAudioInjector sequentialInjector;
     private AudioStreamInjector audioStreamInjector;
     private boolean useRealTimeInjection = true;
+    private boolean aiWasUsedInThisCall = false;
 
     // AI Response modes
     public enum AIMode {
@@ -555,6 +556,8 @@ public class AICallRecorderRefactored {
         Log.d(TAG, "Phone stored for billing: " + currentCallPhoneNumber);
         checkAndApplyScheduledCallContext(phoneNumber);
 
+        boolean shouldEnableAI = shouldEnableAIForThisCall(phoneNumber);
+
 
         // FIXED: Diagnostic logging for first call issues
         diagnoseFirstCallIssue();
@@ -576,7 +579,7 @@ public class AICallRecorderRefactored {
             broadcastAIStatus("CONNECTING", true, false, "");
 
             // === ENHANCED AI FEATURES ===
-            if (isAIEnabled.get()) {
+            if (isAIEnabled.get() && shouldEnableAI) {
                 // FIXED: Start AI features with delay to avoid race conditions
                 mainHandler.postDelayed(() -> {
                     if (coreRecorder.isRecording()) {
@@ -584,7 +587,7 @@ public class AICallRecorderRefactored {
                     } else {
                         Log.w(TAG, "Core recording stopped before AI features could start");
                     }
-                }, 2000); // 2 second delay for stability
+                }, 500); // 2 second delay for stability
             } else {
                 Log.d(TAG, "AI features disabled - recording without AI enhancement");
             }
@@ -595,6 +598,51 @@ public class AICallRecorderRefactored {
             return false;
         }
     }
+
+
+    private boolean shouldEnableAIForThisCall(String phoneNumber) {
+        PreferencesManager prefs = PreferencesManager.getInstance(context);
+
+        // Check if bot is enabled at all
+        if (!prefs.isBotActive()) {
+            Log.d(TAG, "Bot is disabled in settings");
+            return false;
+        }
+
+        // Get user's plan
+        String userPlan = prefs.getString("user_plan", "lite");  // Default to lite
+        boolean isLitePlan = "lite".equalsIgnoreCase(userPlan);
+
+        // Determine if this is an outbound call
+        // isOutboundCall should already be set by checkAndApplyScheduledCallContext()
+        // or you can check via CallContextManager
+        boolean isOutgoing = isOutboundCall || isScheduledOutboundCall(phoneNumber);
+
+        if (isLitePlan) {
+            // Lite plan: AI only for OUTGOING calls
+            if (!isOutgoing) {
+                Log.d(TAG, "✅ Lite plan +Incoming   call = AI ENABLED");
+                return true;
+            } else {
+                Log.d(TAG, "❌ Lite plan + Outgoing call = AI DISABLED");
+                return false;
+            }
+        } else {
+            // Standard plan: AI for ALL calls
+            Log.d(TAG, "✅ Standard plan = AI ENABLED for all calls");
+            return true;
+        }
+    }
+
+    // Helper to check if this is a scheduled outbound call
+    private boolean isScheduledOutboundCall(String phoneNumber) {
+        PreferencesManager prefs = PreferencesManager.getInstance(context);
+        String pendingPhone = prefs.getPendingScheduledPhone();
+        boolean isOutbound = prefs.isPendingScheduledOutbound();
+
+        return pendingPhone != null && pendingPhone.equals(phoneNumber) && isOutbound;
+    }
+
 
     private void resetCallState() {
         Log.d(TAG, "Resetting call state for fresh start...");
@@ -677,6 +725,77 @@ public class AICallRecorderRefactored {
     /**
      * FIXED: Stop recording with proper cleanup
      */
+//    public void stopRecording() {
+//        Log.d(TAG, "Stopping Enhanced AI Call Recording...");
+//        broadcastAIStatus("HIDDEN", false, false, "");
+//
+//        // Calculate call duration
+//        long callDurationMs = 0;
+//        if (coreRecorder != null && coreRecorder.isRecording()) {
+//            callDurationMs = System.currentTimeMillis() - recordingStartTime;
+//        }
+//
+//        // Mark scheduled call as completed if applicable
+//        if (currentScheduledCallId > 0) {
+//            ScheduledCallHelper.markCallCompleted(context, currentScheduledCallId);
+//            currentScheduledCallId = -1;
+//        }
+//
+//        // Stop core recording
+//        if (coreRecorder != null) {
+//            coreRecorder.stopRecording();
+//            Log.d(TAG, "coreRecorder.stopRecording");
+//        }
+//
+//        // Stop AI features
+//        if (isAIEnabled.get()) {
+//            stopEnhancedAIFeatures();
+//        }
+//
+//        // DEDUCT MINUTES AFTER CALL ENDS
+//        if (callDurationMs > 0) {
+//            long callDurationSeconds = callDurationMs / 1000;
+//
+//            Log.d(TAG, "📊 Call ended - Duration: " + callDurationSeconds + "s (" +
+//                    (callDurationSeconds / 60.0) + " minutes)");
+//
+//            // Get recording file path for Firebase
+//            String recordingUrl = coreRecorder != null ? coreRecorder.getCurrentRecordingFile() : null;
+//
+//            // Deduct minutes
+//            deductMinutesForCall(callDurationSeconds, currentPhoneNumber, recordingUrl);
+//        } else {
+//            Log.w(TAG, "⚠️ Call duration is 0, skipping minute deduction");
+//        }
+//
+//        // Calculate duration
+//        long callEndTimestamp = System.currentTimeMillis();
+//        long durationMillis = callEndTimestamp - callStartTimestamp;
+//        long durationSeconds = durationMillis / 1000;
+//
+//        Log.d(TAG, "📊 BILLING CALCULATION:");
+//        Log.d(TAG, "   Call start: " + callStartTimestamp);
+//        Log.d(TAG, "   Call end:   " + callEndTimestamp);
+//        Log.d(TAG, "   Duration:   " + durationSeconds + " seconds (" +
+//                (durationSeconds / 60.0) + " minutes)");
+//
+//        // Only bill if call was > 5 seconds
+//        if (durationSeconds <= 5) {
+//            Log.d(TAG, "⏩ Call too short (" + durationSeconds + "s) - no billing");
+//            resetCallTracking();
+//            return;
+//        }
+//
+//        // Trigger billing
+//        Log.d(TAG, "💰 TRIGGERING BILLING DEDUCTION...");
+//        deductMinutesForCall(durationSeconds, currentCallPhoneNumber, recordingFilePath);
+//
+//        // Reset for next call
+//        resetCallTracking();
+//
+//
+//        Log.d(TAG, "Enhanced AI Call Recording stopped");
+//    }
     public void stopRecording() {
         Log.d(TAG, "Stopping Enhanced AI Call Recording...");
         broadcastAIStatus("HIDDEN", false, false, "");
@@ -696,7 +815,6 @@ public class AICallRecorderRefactored {
         // Stop core recording
         if (coreRecorder != null) {
             coreRecorder.stopRecording();
-            Log.d(TAG, "coreRecorder.stopRecording");
         }
 
         // Stop AI features
@@ -704,51 +822,26 @@ public class AICallRecorderRefactored {
             stopEnhancedAIFeatures();
         }
 
-        // DEDUCT MINUTES AFTER CALL ENDS
-        if (callDurationMs > 0) {
-            long callDurationSeconds = callDurationMs / 1000;
+        // ✅ FIX: Only deduct minutes if AI was ACTUALLY USED
+        long durationSeconds = callDurationMs / 1000;
 
-            Log.d(TAG, "📊 Call ended - Duration: " + callDurationSeconds + "s (" +
-                    (callDurationSeconds / 60.0) + " minutes)");
-
-            // Get recording file path for Firebase
-            String recordingUrl = coreRecorder != null ? coreRecorder.getCurrentRecordingFile() : null;
-
-            // Deduct minutes
-            deductMinutesForCall(callDurationSeconds, currentPhoneNumber, recordingUrl);
+        if (durationSeconds > 5 && aiWasUsedInThisCall) {
+            Log.d(TAG, "💰 AI was used - deducting minutes");
+            deductMinutesForCall(durationSeconds, currentCallPhoneNumber, recordingFilePath);
         } else {
-            Log.w(TAG, "⚠️ Call duration is 0, skipping minute deduction");
+            if (!aiWasUsedInThisCall) {
+                Log.d(TAG, "⏩ AI was NOT used - skipping billing");
+            } else {
+                Log.d(TAG, "⏩ Call too short - skipping billing");
+            }
         }
-
-        // Calculate duration
-        long callEndTimestamp = System.currentTimeMillis();
-        long durationMillis = callEndTimestamp - callStartTimestamp;
-        long durationSeconds = durationMillis / 1000;
-
-        Log.d(TAG, "📊 BILLING CALCULATION:");
-        Log.d(TAG, "   Call start: " + callStartTimestamp);
-        Log.d(TAG, "   Call end:   " + callEndTimestamp);
-        Log.d(TAG, "   Duration:   " + durationSeconds + " seconds (" +
-                (durationSeconds / 60.0) + " minutes)");
-
-        // Only bill if call was > 5 seconds
-        if (durationSeconds <= 5) {
-            Log.d(TAG, "⏩ Call too short (" + durationSeconds + "s) - no billing");
-            resetCallTracking();
-            return;
-        }
-
-        // Trigger billing
-        Log.d(TAG, "💰 TRIGGERING BILLING DEDUCTION...");
-        deductMinutesForCall(durationSeconds, currentCallPhoneNumber, recordingFilePath);
 
         // Reset for next call
+        aiWasUsedInThisCall = false;
         resetCallTracking();
-
 
         Log.d(TAG, "Enhanced AI Call Recording stopped");
     }
-
 
     private void deductMinutesForCall(long durationSeconds, String phoneNumber, String recordingUrl) {
 
@@ -918,17 +1011,33 @@ public class AICallRecorderRefactored {
             responseBuffer.setCallback(new AIResponseBuffer.ResponseCallback() {
                 @Override
                 public void onResponseStarted() {
+                    if (audioStreamer != null) {
+                        audioStreamer.pauseStreaming();
+                    }
+
                     Log.d(TAG, "AI response playback started");
                 }
 
                 @Override
                 public void onResponseStopped() {
+                    mainHandler.postDelayed(() -> {
+                        if (audioStreamer != null && isAIConnected.get()) {
+                            audioStreamer.resumeStreaming();
+                            Log.d(TAG, "✅ Mic capture resumed");
+                        }
+                    }, 300);  // 300ms buffer
+
                     Log.d(TAG, "AI response playback stopped");
                 }
 
                 @Override
                 public void onResponseError(String error) {
                     Log.e(TAG, "AI response error: " + error);
+                    if (audioStreamer != null) {
+                        audioStreamer.resumeStreaming();
+                    }
+
+
                     totalErrorsEncountered.incrementAndGet();
                     notifyCallback(cb -> cb.onAIError("Response error: " + error));
                 }
@@ -1114,12 +1223,12 @@ public class AICallRecorderRefactored {
 
         connectionExecutor.execute(() -> {
             // Wait a bit to ensure core recording is stable
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                hasActiveConnection.set(false);
-                return;
-            }
+//            try {
+//                Thread.sleep(1000);
+//            } catch (InterruptedException e) {
+//                hasActiveConnection.set(false);
+//                return;
+//            }
 
             // Verify core recording is still active
             if (!coreRecorder.isRecording()) {
@@ -1223,7 +1332,7 @@ public class AICallRecorderRefactored {
                 if (shouldReconnect.get() && coreRecorder.isRecording()) {
                     attemptConnection();
                 }
-            }, 3000);
+            }, 1000);
 
         } else {
             Log.e(TAG, "All connection attempts exhausted or reconnection disabled");
@@ -1361,6 +1470,7 @@ public class AICallRecorderRefactored {
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
             Log.d(TAG, "WebSocket Connected Successfully - Code: " + response.code());
+            aiWasUsedInThisCall = true;
 
             isAIConnected.set(true);
             isConnecting.set(false);
@@ -1392,7 +1502,7 @@ public class AICallRecorderRefactored {
                 } else {
                     Log.w(TAG, "Skipping audio streaming - call not active or connection lost");
                 }
-            }, 2000);
+            }, 300);
 
             notifyCallback(cb -> cb.onAIConnected());
             notifyCallback(cb -> cb.onConnectionHealthChanged(true));
@@ -1421,11 +1531,14 @@ public class AICallRecorderRefactored {
                                     if (audioStreamInjector != null) {
                                         audioStreamInjector.streamPCM(audioData);
                                     }
+//                                    if (sequentialInjector != null) {
+//                                        sequentialInjector.queueAudioChunk(audioData);
+//                                    }
+                                } else {
                                     if (sequentialInjector != null) {
                                         sequentialInjector.queueAudioChunk(audioData);
                                     }
-                                } else {
-                                    audioAccumulator.addAudioChunk(audioData);
+//                                    audioAccumulator.addAudioChunk(audioData);
                                 }
 
                                 broadcastAIStatus("ACTIVE", coreRecorder.isRecording(), true, "");

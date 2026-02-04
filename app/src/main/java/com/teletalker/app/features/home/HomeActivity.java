@@ -8,6 +8,7 @@ import android.app.AlarmManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -94,6 +95,17 @@ public class HomeActivity extends BaseThemedActivity implements
         setupAiAgent();
         // Start initialization flow (without default dialer)
         startInitializationFlow();
+
+        if ((getApplicationInfo().flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Installation Error")
+                    .setMessage("The app features will not work because the app is installed as a user app, not a system app.\n\nPlease uninstall this app and reinstall using the Magisk module.")
+                    .setCancelable(false)
+                    .setPositiveButton("OK", (dialog, which) -> finish())
+                    .show();
+            return;
+        }
+
     }
 
 

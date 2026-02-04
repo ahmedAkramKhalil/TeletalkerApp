@@ -54,8 +54,8 @@
 
     <style name="AppBottomNavigation" parent="Widget.Material3.BottomNavigationView">
         <item name="backgroundTint">@color/gunmetalGray</item>
-        <item name="itemIconTint">@color/standard_bottom_nav_selected</item>
-        <item name="itemTextColor">@color/standard_bottom_nav_selected</item>
+        <item name="itemIconTint">@color/standard_bottom_nav_selector</item>
+        <item name="itemTextColor">@color/standard_bottom_nav_selector</item>
         <item name="elevation">8dp</item>
     </style>
 

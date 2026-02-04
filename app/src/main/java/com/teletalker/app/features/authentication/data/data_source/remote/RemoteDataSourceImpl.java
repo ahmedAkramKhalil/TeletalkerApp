@@ -1,7 +1,11 @@
 package com.teletalker.app.features.authentication.data.data_source.remote;
 
+import android.util.Log;
+
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.teletalker.app.features.authentication.data.firebase_helper.FirebaseHelper;
+import com.teletalker.app.features.authentication.domain.repository.AuthRepository;
 
 public class RemoteDataSourceImpl implements RemoteDataSource {
 
@@ -25,6 +29,27 @@ public class RemoteDataSourceImpl implements RemoteDataSource {
                 callback.onError(error);
             }
         });
+    }
+
+    @Override
+    public void sendEmailVerification(AuthRepository.AuthCallback callback) {
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+                if (user == null) {
+                        callback.onError("No user logged in");
+                        return;
+                    }
+
+                user.sendEmailVerification()
+                        .addOnSuccessListener(aVoid -> {
+                                Log.d("TAG", "✅ Verification email sent to: " + user.getEmail());
+                                callback.onSuccess(user.getUid(), user.getEmail());
+                            })
+                        .addOnFailureListener(e -> {
+                                Log.e("TAG", "❌ Failed to send verification email: " + e.getMessage());
+                                callback.onError("Failed to send verification email: " + e.getMessage());
+                            });
+
     }
 
     @Override

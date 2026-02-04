@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     id 'com.google.gms.google-services'
+    id 'com.google.firebase.crashlytics'
+
 }
 
 android {
@@ -39,6 +41,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    defaultConfig {
+        multiDexEnabled true
+    }
+
 //    externalNativeBuild {
 //        cmake {
 //            path file('src/main/cpp/CMakeLists.txt')
@@ -102,11 +108,13 @@ dependencies {
     implementation 'com.google.firebase:firebase-firestore'
      implementation 'com.google.firebase:firebase-functions'
     implementation 'com.google.firebase:firebase-messaging'
-
     def work_version = "2.9.0"
-
+    implementation 'androidx.multidex:multidex:2.0.1'
     // (Java only)
     implementation "androidx.work:work-runtime:$work_version"
+    implementation 'com.google.firebase:firebase-crashlytics'
+    implementation 'com.google.firebase:firebase-analytics'
+
 
     //Check Root
     //implementation 'com.scottyab:rootbeer-lib:0.1.1'

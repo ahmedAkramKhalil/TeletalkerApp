@@ -15,6 +15,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layoutDirection="ltr"
+            android:paddingBottom="16dp"
            >
 
         <TextView
@@ -422,6 +423,7 @@
         app:cardBackgroundColor="@color/darkMidnightBlue"
         app:cardCornerRadius="12dp"
         app:cardElevation="0dp"
+        android:layout_marginBottom="20dp"
 
         app:layout_constraintEnd_toEndOf="@+id/materialCardView8"
         app:layout_constraintStart_toStartOf="@+id/materialCardView8"
