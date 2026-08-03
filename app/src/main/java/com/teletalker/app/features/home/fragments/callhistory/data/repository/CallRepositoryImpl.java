@@ -35,8 +35,8 @@ public class CallRepositoryImpl implements CallRepository {
     }
 
     @Override
-    public List<CallEntity> getLastTwoCallRecords() {
-        return callLocalDataSource.getLastTwoCallRecords();
+    public List<CallEntity> getRecentCallRecords() {
+        return callLocalDataSource.getRecentCallRecords();
     }
 
 }

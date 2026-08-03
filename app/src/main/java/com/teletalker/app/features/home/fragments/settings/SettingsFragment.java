@@ -24,6 +24,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.functions.FirebaseFunctions;
 import com.teletalker.app.R;
 import com.teletalker.app.billing.BillingManager;
@@ -262,6 +263,66 @@ public class SettingsFragment extends Fragment implements com.teletalker.app.uti
         );
 
         binding.materialCardView7.setOnClickListener( v -> openInvoicesActivity());
+
+        binding.complianceCardView.setOnClickListener(v -> showComplianceDialog());
+
+        binding.backgroundCardView.setOnClickListener(v -> showBackgroundDialog());
+
+        binding.dialerCardView.setOnClickListener(v -> showDialerRoleDialog());
+    }
+
+    // ============================================
+    // DEFAULT PHONE APP (ROLE_DIALER)
+    // ============================================
+
+    private void showDialerRoleDialog() {
+        boolean isDefault = com.teletalker.app.utils.DialerRoleHelper.isDefaultDialer(requireContext());
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle(R.string.dialer_dialog_title)
+                .setMessage(isDefault
+                        ? "TeleTalker is already the default phone app."
+                        : getString(R.string.dialer_dialog_message))
+                .setPositiveButton(isDefault ? "OK" : "Set default", (d, w) -> {
+                    if (!isDefault) {
+                        // Pass the Fragment so the result routes to onActivityResult below.
+                        com.teletalker.app.utils.DialerRoleHelper.requestDefaultDialer(SettingsFragment.this);
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    // ============================================
+    // BACKGROUND / OEM AUTOSTART & BATTERY
+    // ============================================
+
+    private void showBackgroundDialog() {
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle(R.string.background_dialog_title)
+                .setMessage(R.string.background_dialog_message)
+                .setPositiveButton("Battery setting", (d, w) ->
+                        com.teletalker.app.utils.OemLifecycleHelper
+                                .requestIgnoreBatteryOptimizations(requireContext()))
+                .setNeutralButton("Autostart", (d, w) ->
+                        com.teletalker.app.utils.OemLifecycleHelper
+                                .openAutoStartSettings(requireContext()))
+                .setNegativeButton("Close", null)
+                .show();
+    }
+
+    // ============================================
+    // COMPLIANCE / AI DISCLOSURE ONE-PAGER
+    // ============================================
+
+    private void showComplianceDialog() {
+        BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
+        View sheet = getLayoutInflater().inflate(R.layout.dialog_compliance, null);
+        dialog.setContentView(sheet);
+        View closeBtn = sheet.findViewById(R.id.complianceCloseBtn);
+        if (closeBtn != null) {
+            closeBtn.setOnClickListener(v -> dialog.dismiss());
+        }
+        dialog.show();
     }
 
     private void openSubscriptionPlan() {
@@ -277,6 +338,14 @@ public class SettingsFragment extends Fragment implements com.teletalker.app.uti
             // Subscription changed - update theme
             syncThemeWithBackend();
 //            updateAppTheme();
+        }
+
+        if (requestCode == com.teletalker.app.utils.DialerRoleHelper.REQ_DIALER_ROLE) {
+            boolean nowDefault = com.teletalker.app.utils.DialerRoleHelper.isDefaultDialer(requireContext());
+            Toast.makeText(requireContext(),
+                    nowDefault ? "TeleTalker is now the default phone app"
+                               : "Default phone app was not changed",
+                    Toast.LENGTH_SHORT).show();
         }
     }
 

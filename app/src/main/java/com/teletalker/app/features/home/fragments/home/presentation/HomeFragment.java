@@ -13,6 +13,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import com.teletalker.app.features.home.fragments.callhistory.data.data_sources.local.dao.CallDao;
+import com.teletalker.app.features.home.fragments.callhistory.data.data_sources.local.database.CallDatabase;
 import android.content.SharedPreferences;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -477,6 +479,16 @@ public class HomeFragment extends Fragment implements CallHistoryAdapter.OnCallP
             isAgentChanged = true;
         });
         binding.aiActivationButton.setImageResource(prefsManager.isBotActive() ? R.drawable.active_button : R.drawable.inactive_button);
+        updateBotStatusLabel();
+        loadCallSummary();
+
+        binding.btnCallNow.setOnClickListener(v -> showCallNowDialog());
+        binding.btnScheduleCall.setOnClickListener(v -> {
+            if (navController != null) {
+                navController.navigate(R.id.navigation_calender);
+            }
+        });
+        binding.btnViewHistory.setOnClickListener(v -> homeViewModel.navigateToCallHistoryScreen());
 
 
         binding.aiActivationButton.setOnClickListener(v -> {
@@ -565,13 +577,92 @@ public class HomeFragment extends Fragment implements CallHistoryAdapter.OnCallP
         prefsManager.setIsBotActive(true);
         binding.aiActivationButton.setImageResource(R.drawable.active_button);
         binding.aiActivationButton.setEnabled(true);
+        updateBotStatusLabel();
         Toast.makeText(getContext(), "AI Assistant Enabled ✓", LENGTH_SHORT).show();
     }
 
     private void disableAI() {
         prefsManager.setIsBotActive(false);
         binding.aiActivationButton.setImageResource(R.drawable.inactive_button);
+        updateBotStatusLabel();
         Toast.makeText(getContext(), "AI Assistant Disabled", LENGTH_SHORT).show();
+    }
+
+    // ============================================
+    // CALL NOW — per-call AI choice
+    // ============================================
+
+    private void showCallNowDialog() {
+        android.view.View view = getLayoutInflater().inflate(R.layout.dialog_call_now, null);
+        final com.google.android.material.textfield.TextInputEditText input =
+                view.findViewById(R.id.etCallNumber);
+
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle(R.string.call_now_title)
+                .setView(view)
+                .setPositiveButton(R.string.call_with_ai, (d, w) ->
+                        placeOutgoingCall(input.getText() == null ? "" : input.getText().toString().trim(), true))
+                .setNeutralButton(R.string.call_normal, (d, w) ->
+                        placeOutgoingCall(input.getText() == null ? "" : input.getText().toString().trim(), false))
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void placeOutgoingCall(String number, boolean withAi) {
+        if (number.isEmpty()) {
+            Toast.makeText(getContext(), R.string.call_now_hint, LENGTH_SHORT).show();
+            return;
+        }
+        if (withAi && prefsManager.getSelectedAgentId() == null) {
+            Toast.makeText(getContext(), R.string.please_select_agent, LENGTH_LONG).show();
+            return;
+        }
+        // Arm (or suppress) AI for just this one call; CallDetector consumes it.
+        prefsManager.setPendingOutgoingAiCall(withAi);
+
+        android.net.Uri uri = android.net.Uri.parse("tel:" + number);
+        try {
+            startActivity(new Intent(Intent.ACTION_CALL, uri));
+        } catch (SecurityException se) {
+            // CALL_PHONE not granted → fall back to the dialer with the number prefilled.
+            // Keep the override armed (short TTL) so the AI choice still applies if the
+            // user places the call within a couple of minutes.
+            startActivity(new Intent(Intent.ACTION_DIAL, uri));
+        } catch (Exception e) {
+            // No call was placed at all → drop the armed override so it can't leak.
+            prefsManager.clearPendingOutgoingAiCall();
+            Toast.makeText(getContext(), "No dialer available", LENGTH_SHORT).show();
+        }
+    }
+
+    private void updateBotStatusLabel() {
+        if (binding == null || !isAdded()) return;
+        boolean active = prefsManager.isBotActive();
+        binding.botStatusText.setText(active ? R.string.bot_status_active : R.string.bot_status_paused);
+        binding.botStatusText.setTextColor(getResources().getColor(
+                active ? R.color.colorPrimary : R.color.gunmetalTextGray));
+    }
+
+    private void loadCallSummary() {
+        // shutdown() after submitting lets the single task run, then terminates the
+        // worker thread — so we don't leak a fresh never-stopped executor each call.
+        java.util.concurrent.ExecutorService exec = java.util.concurrent.Executors.newSingleThreadExecutor();
+        exec.execute(() -> {
+            try {
+                CallDao dao = CallDatabase.getInstance(requireContext().getApplicationContext()).callDao();
+                int missed = dao.getMissedCount();
+                int ai = dao.getAiAnsweredCount();
+                if (!isAdded()) return;
+                requireActivity().runOnUiThread(() -> {
+                    if (binding == null) return;
+                    binding.missedCountText.setText(String.valueOf(missed));
+                    binding.aiAnsweredCountText.setText(String.valueOf(ai));
+                });
+            } catch (Exception e) {
+                Log.e("HomeFragment", "Call summary load failed: " + e.getMessage());
+            }
+        });
+        exec.shutdown();
     }
 
     private void checkAndAutoDisableAI(double balance) {

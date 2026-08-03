@@ -41,6 +41,17 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    // Exclude any nested worktree/tooling copies from compilation. A stray
+    // `.claude/worktrees/**` copy of the source tree lives under src/main/java
+    // and would otherwise cause duplicate-class build failures.
+    sourceSets {
+        main {
+            java {
+                exclude '**/.claude/**'
+            }
+        }
+    }
     defaultConfig {
         multiDexEnabled true
     }

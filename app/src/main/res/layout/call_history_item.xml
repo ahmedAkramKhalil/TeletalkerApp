@@ -19,6 +19,7 @@
 
         <ImageView
             android:id="@+id/personImg"
+            android:contentDescription="@string/cd_profile"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginStart="8dp"
@@ -41,9 +42,11 @@
 
         <TextView
             android:id="@+id/languageTv"
-            android:layout_width="34dp"
-            android:layout_height="11dp"
-            android:textColor="@color/black"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="@color/text_primary"
             android:textSize="12sp"
             app:layout_constraintStart_toStartOf="@+id/nameTv"
             app:layout_constraintTop_toBottomOf="@+id/nameTv"
@@ -65,7 +68,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:padding="10dp"
-                android:src="@drawable/ic_big_play" />
+                android:src="@drawable/ic_big_play"
+                android:contentDescription="@string/cd_play" />
 
 
         </com.google.android.material.card.MaterialCardView>
@@ -87,7 +91,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:padding="10dp"
-                android:src="@drawable/ic_sound" />
+                android:src="@drawable/ic_sound"
+                android:contentDescription="@string/cd_sound" />
 
 
         </com.google.android.material.card.MaterialCardView>

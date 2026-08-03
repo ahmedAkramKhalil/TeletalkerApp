@@ -56,7 +56,7 @@ public class HomeViewModel extends AndroidViewModel {
 
     private void loadCallHistory() {
         Executors.newSingleThreadExecutor().execute(() -> {
-            List<CallEntity> callHistory = callRepository.getLastTwoCallRecords();
+            List<CallEntity> callHistory = callRepository.getRecentCallRecords();
             callHistoryLiveData.postValue(callHistory);
         });
     }

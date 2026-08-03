@@ -149,40 +149,26 @@
                 app:singleSelection="true">
 
                 <com.google.android.material.chip.Chip
-                    android:id="@+id/chip5Min"
+                    android:id="@+id/chip1Min"
                     style="@style/Widget.MaterialComponents.Chip.Choice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="5 min" />
+                    android:text="1 min" />
 
                 <com.google.android.material.chip.Chip
-                    android:id="@+id/chip10Min"
+                    android:id="@+id/chip2Min"
                     style="@style/Widget.MaterialComponents.Chip.Choice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:checked="true"
-                    android:text="10 min" />
+                    android:text="2 min" />
 
                 <com.google.android.material.chip.Chip
-                    android:id="@+id/chip15Min"
+                    android:id="@+id/chip3Min"
                     style="@style/Widget.MaterialComponents.Chip.Choice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="15 min" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip30Min"
-                    style="@style/Widget.MaterialComponents.Chip.Choice"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="30 min" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip60Min"
-                    style="@style/Widget.MaterialComponents.Chip.Choice"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="60 min" />
+                    android:text="3 min" />
             </com.google.android.material.chip.ChipGroup>
 
 

@@ -11,6 +11,7 @@
         android:layout_height="100dp"
         android:layout_marginBottom="40dp"
         android:src="@drawable/app_icon"
+        android:importantForAccessibility="no"
         app:layout_constraintBottom_toTopOf="@+id/signInButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

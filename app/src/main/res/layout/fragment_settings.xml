@@ -4,7 +4,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layoutDirection="ltr"
     tools:context=".features.home.fragments.callhistory.presentation.CallHistoryFragment">
 
     <androidx.core.widget.NestedScrollView
@@ -14,7 +13,6 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layoutDirection="ltr"
             android:paddingBottom="16dp"
            >
 
@@ -54,6 +52,7 @@
 
             <ImageView
                 android:id="@+id/personImg"
+                android:contentDescription="@string/cd_profile"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_marginStart="8dp"
@@ -79,7 +78,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
                 android:layout_marginTop="4dp"
-                android:textSize="10sp"
+                android:textSize="12sp"
                 app:layout_constraintStart_toEndOf="@+id/nameTv"
                 app:layout_constraintTop_toTopOf="@+id/personImg" />
 
@@ -88,7 +87,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Dexy.labs@gmail.com"
-                android:textColor="@color/black"
+                android:textColor="@color/text_primary"
                 android:textSize="12sp"
                 app:layout_constraintStart_toStartOf="@+id/nameTv"
                 app:layout_constraintTop_toBottomOf="@+id/nameTv" />
@@ -98,6 +97,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/ic_back_arrow"
+                android:contentDescription="@string/cd_more"
                 app:layout_constraintBottom_toBottomOf="@+id/personImg"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="@+id/personImg"
@@ -146,6 +146,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/ic_back_arrow"
+                android:contentDescription="@string/cd_more"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
@@ -194,6 +195,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_back_arrow"
+                        android:contentDescription="@string/cd_more"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
@@ -242,6 +244,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/ic_back_arrow"
+                android:contentDescription="@string/cd_more"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
@@ -299,6 +302,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="end"
                     android:src="@drawable/ic_back_arrow"
+                    android:contentDescription="@string/cd_more"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
@@ -323,7 +327,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/change_default_agent_voice"
-                    android:textColor="@color/white"
+                    android:textColor="@color/text_primary"
                     android:textSize="13sp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -336,6 +340,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="end"
                     android:src="@drawable/ic_back_arrow"
+                    android:contentDescription="@string/cd_more"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
@@ -403,6 +408,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="end"
                     android:src="@drawable/ic_back_arrow"
+                    android:contentDescription="@string/cd_more"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
@@ -411,6 +417,138 @@
 
             </LinearLayout>
 
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/complianceCardView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:focusable="true"
+        android:layout_marginTop="16dp"
+        app:cardBackgroundColor="@color/darkMidnightBlue"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        app:layout_constraintEnd_toEndOf="@+id/materialCardView8"
+        app:layout_constraintStart_toStartOf="@+id/materialCardView8"
+        app:layout_constraintTop_toBottomOf="@+id/materialCardView8"
+        app:strokeWidth="0dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="22dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/compliance_menu_title"
+                android:textColor="@color/gunmetalTextGray"
+                android:textSize="13sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_back_arrow"
+                android:contentDescription="@string/cd_more"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="@color/gunmetalTextGray" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/backgroundCardView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:focusable="true"
+        android:layout_marginTop="16dp"
+        app:cardBackgroundColor="@color/darkMidnightBlue"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        app:layout_constraintEnd_toEndOf="@+id/materialCardView8"
+        app:layout_constraintStart_toStartOf="@+id/materialCardView8"
+        app:layout_constraintTop_toBottomOf="@+id/complianceCardView"
+        app:strokeWidth="0dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="22dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_background_title"
+                android:textColor="@color/gunmetalTextGray"
+                android:textSize="13sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_back_arrow"
+                android:contentDescription="@string/cd_more"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="@color/gunmetalTextGray" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/dialerCardView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:focusable="true"
+        android:layout_marginTop="16dp"
+        app:cardBackgroundColor="@color/darkMidnightBlue"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        app:layout_constraintEnd_toEndOf="@+id/materialCardView8"
+        app:layout_constraintStart_toStartOf="@+id/materialCardView8"
+        app:layout_constraintTop_toBottomOf="@+id/backgroundCardView"
+        app:strokeWidth="0dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="22dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_dialer_title"
+                android:textColor="@color/gunmetalTextGray"
+                android:textSize="13sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_back_arrow"
+                android:contentDescription="@string/cd_more"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="@color/gunmetalTextGray" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -427,7 +565,7 @@
 
         app:layout_constraintEnd_toEndOf="@+id/materialCardView8"
         app:layout_constraintStart_toStartOf="@+id/materialCardView8"
-        app:layout_constraintTop_toBottomOf="@+id/materialCardView8"
+        app:layout_constraintTop_toBottomOf="@+id/dialerCardView"
         app:strokeWidth="0dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -451,6 +589,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/ic_back_arrow"
+                android:contentDescription="@string/cd_more"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"

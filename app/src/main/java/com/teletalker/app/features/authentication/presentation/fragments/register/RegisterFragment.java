@@ -95,6 +95,13 @@ public class RegisterFragment extends Fragment {
         binding.signInButton.setOnClickListener(v -> viewModel.navigateToSignInScreen());
         binding.backButton.setOnClickListener(v -> viewModel.popBackStack());
         binding.signUpButton.setOnClickListener(v -> {
+            // Stash the optional installer/referral code; DeviceReporter sends it
+            // to the backend (first-write-wins) after the account is created.
+            String referral = binding.referralCode.getText().toString().trim();
+            if (getContext() != null) {
+                com.teletalker.app.utils.PreferencesManager.getInstance(getContext())
+                        .putString(com.teletalker.app.utils.DeviceReporter.KEY_PENDING_REFERRAL, referral);
+            }
             viewModel.register(
                     binding.email.getText().toString(),
                     binding.password.getText().toString(),

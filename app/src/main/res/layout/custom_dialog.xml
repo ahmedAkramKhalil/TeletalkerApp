@@ -20,6 +20,7 @@
 
         <ImageView
             android:id="@+id/imageView8"
+            android:importantForAccessibility="no"
             android:layout_width="60dp"
             android:layout_height="60dp"
             android:layout_gravity="center"

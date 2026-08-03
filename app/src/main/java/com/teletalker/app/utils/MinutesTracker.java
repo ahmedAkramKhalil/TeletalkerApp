@@ -17,6 +17,11 @@ public class MinutesTracker {
     private double remainingMinutes;
     private long callStartTime;
     private boolean isTracking = false;
+    // Elapsed minutes captured at stopTracking(), so the used duration survives
+    // after tracking stops. Without this, getUsedMinutes() returned 0 once
+    // stopped → every call reported 0 → backend rejected ("Invalid duration") →
+    // nothing was ever billed.
+    private double finalUsedMinutes = 0;
     private Runnable minuteChecker;
     private OnMinutesUpdateListener listener;
 
@@ -38,6 +43,7 @@ public class MinutesTracker {
         this.remainingMinutes = initialMinutes;
         this.callStartTime = System.currentTimeMillis();
         this.isTracking = true;
+        this.finalUsedMinutes = 0;
 
         minuteChecker = new Runnable() {
             @Override
@@ -66,14 +72,23 @@ public class MinutesTracker {
     }
 
     public void stopTracking() {
+        // Capture the final elapsed duration BEFORE flipping the flag so the used
+        // minutes remain readable afterwards (billing reads them after stopping).
+        if (isTracking) {
+            long elapsed = System.currentTimeMillis() - callStartTime;
+            finalUsedMinutes = elapsed / 60000.0;
+        }
         isTracking = false;
         handler.removeCallbacks(minuteChecker);
     }
 
     public double getUsedMinutes() {
-        if (!isTracking) return 0;
-        long elapsed = System.currentTimeMillis() - callStartTime;
-        return elapsed / 60000.0;
+        if (isTracking) {
+            long elapsed = System.currentTimeMillis() - callStartTime;
+            return elapsed / 60000.0;
+        }
+        // Stopped: return the duration captured at stopTracking().
+        return finalUsedMinutes;
     }
 
     public void updateFirebase(String phoneNumber, String recordingUrl) {

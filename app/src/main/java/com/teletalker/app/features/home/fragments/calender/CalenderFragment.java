@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CalendarView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -20,12 +19,17 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.teletalker.app.R;
 import com.teletalker.app.databinding.FragmentCalenderBinding;
 import com.teletalker.app.features.home.fragments.calender.data.models.ScheduledCall;
+import com.teletalker.app.features.home.fragments.calender.ui.CalendarMonthView;
 import com.teletalker.app.features.home.fragments.calender.ui.adapter.ScheduledCallsAdapter;
 import com.teletalker.app.features.home.fragments.calender.ui.dialog.ScheduleCallBottomSheet;
 import com.teletalker.app.features.home.fragments.settings.SubscriptionPlanActivity;
 import com.teletalker.app.utils.SubscriptionManager;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class CalenderFragment extends Fragment  implements SubscriptionManager.SubscriptionListener{
 
@@ -33,7 +37,7 @@ public class CalenderFragment extends Fragment  implements SubscriptionManager.S
     private CalenderViewModel viewModel;
     private ScheduledCallsAdapter adapter;
 
-    private CalendarView calendarView;
+    private CalendarMonthView calendarView;
     private RecyclerView rvScheduledCalls;
     private LinearLayout emptyStateLayout;
     private TextView tvScheduledCallsCount;
@@ -148,22 +152,49 @@ public class CalenderFragment extends Fragment  implements SubscriptionManager.S
     }
 
     private void setupCalendar() {
-        // Set minimum date to today
-        calendarView.setMinDate(System.currentTimeMillis());
-
-        // Set max date to 1 year from now
-        Calendar maxDate = Calendar.getInstance();
-        maxDate.add(Calendar.YEAR, 1);
-        calendarView.setMaxDate(maxDate.getTimeInMillis());
-
-        calendarView.setOnDateChangeListener((view, year, month, dayOfMonth) -> {
-            Calendar calendar = Calendar.getInstance();
-            calendar.set(year, month, dayOfMonth);
-            selectedDate = calendar.getTimeInMillis();
-
-            // Filter scheduled calls for selected date
+        // Tapping a day filters the list to that day's calls (the event dots make
+        // days scannable). Scheduling a new call is on the FAB.
+        calendarView.setOnDateSelectedListener(dayStart -> {
+            selectedDate = dayStart;
             viewModel.filterCallsByDate(selectedDate);
         });
+    }
+
+    /** Map each scheduled call onto its day as a colored event dot for the calendar. */
+    private Map<String, List<Integer>> buildEventDots(List<ScheduledCall> calls) {
+        Map<String, List<Integer>> map = new HashMap<>();
+        if (calls == null) return map;
+        for (ScheduledCall call : calls) {
+            String key = CalendarMonthView.dayKey(call.getScheduledDateTime());
+            List<Integer> list = map.get(key);
+            if (list == null) { list = new ArrayList<>(); map.put(key, list); }
+            list.add(statusDotColor(call.getStatus()));
+        }
+        return map;
+    }
+
+    private int statusDotColor(String status) {
+        if (status == null) return 0xFF93A0B4;
+        switch (status.toLowerCase()) {
+            case "completed": return 0xFF2FD07E; // green
+            case "pending":
+            case "in_progress":
+            case "scheduled": return 0xFFF5B44C; // amber
+            case "failed":
+            case "no_answer": return 0xFFFF5C68; // red
+            case "cancelled": return 0xFF5D6B80; // grey
+            default: return 0xFF93A0B4;
+        }
+    }
+
+    private static final String SCHEDULE_SHEET_TAG = "ScheduleCallBottomSheet";
+
+    private void showScheduleDialogForDate(long dateMillis) {
+        // Guard against rapid double-taps stacking two sheets (IllegalStateException).
+        if (getChildFragmentManager().findFragmentByTag(SCHEDULE_SHEET_TAG) != null) return;
+        ScheduleCallBottomSheet bottomSheet = ScheduleCallBottomSheet.newInstanceForDate(dateMillis);
+        bottomSheet.setOnScheduleCallListener(scheduledCall -> viewModel.insertScheduledCall(scheduledCall));
+        bottomSheet.show(getChildFragmentManager(), SCHEDULE_SHEET_TAG);
     }
 
     private void setupFAB() {
@@ -173,6 +204,8 @@ public class CalenderFragment extends Fragment  implements SubscriptionManager.S
     private void observeViewModel() {
         // Observe all scheduled calls
         viewModel.getAllScheduledCalls().observe(getViewLifecycleOwner(), scheduledCalls -> {
+            // Paint event dots on the calendar for every day that has a call.
+            calendarView.setEvents(buildEventDots(scheduledCalls));
             if (scheduledCalls != null && !scheduledCalls.isEmpty()) {
                 adapter.submitList(scheduledCalls);
                 rvScheduledCalls.setVisibility(View.VISIBLE);

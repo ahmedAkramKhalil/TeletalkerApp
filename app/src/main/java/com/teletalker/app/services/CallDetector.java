@@ -14,6 +14,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ServiceInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -34,6 +35,7 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.ServiceCompat;
 
 import com.teletalker.app.R;
 import com.teletalker.app.features.home.HomeActivity;
@@ -68,6 +70,11 @@ import java.util.concurrent.TimeUnit;
 public class CallDetector extends InCallService {
     private static final String TAG = "TeleTalkerAIInCallService";
     private static final String CHANNEL_ID = "teletalker_ai_call_service";
+    // Foreground-service type required on Android 10+ (enforced on Android 14/API 34).
+    // This InCallService records call audio, so it runs as a microphone FGS.
+    // Foreground-service type is chosen at runtime (see startForegroundCompat) so we
+    // claim MICROPHONE only when RECORD_AUDIO is actually held (required on API 34+).
+    private static final int FGS_TYPE_SPECIAL_USE = ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE;
     private static final String PHONE_PACKAGE = "com.android.phone";
     private MinutesTracker minutesTracker;
     private double callStartMinutes = 0;
@@ -375,7 +382,7 @@ public class CallDetector extends InCallService {
     private void startForegroundWithStandbyNotification() {
         try {
             Notification notification = createStandbyNotification();
-            startForeground(foregroundNotificationId, notification);
+            startForegroundCompat(foregroundNotificationId, notification);
             Log.d(TAG, "✅ Started as foreground service with standby notification");
         } catch (Exception e) {
             Log.e(TAG, "❌ CRITICAL: Failed to start foreground!", e);
@@ -387,7 +394,7 @@ public class CallDetector extends InCallService {
                         .setSmallIcon(android.R.drawable.ic_menu_call)
                         .setPriority(NotificationCompat.PRIORITY_LOW)
                         .build();
-                startForeground(foregroundNotificationId, minimalNotification);
+                startForegroundCompat(foregroundNotificationId, minimalNotification);
                 Log.d(TAG, "✅ Started with minimal notification");
             } catch (Exception e2) {
                 Log.e(TAG, "❌ FATAL: Cannot start foreground!", e2);
@@ -883,7 +890,19 @@ public class CallDetector extends InCallService {
 
             CallInfo callInfo = new CallInfo();
             extractCallDetails(call, callInfo);
-            callInfo.aiEnabled = isAIEnabled;
+            // startAIRecording runs only once a call is ACTIVE (answered/connected), so
+            // stamp the answer time here. Without this callAnswerTime stays 0, the saved
+            // duration is always "", and getMissedCount() would count every call as missed.
+            callInfo.callAnswerTime = System.currentTimeMillis();
+            // Per-call AI choice (from "Call Now") overrides the global bot toggle for
+            // this one OUTGOING call only; falls back to the global state otherwise.
+            // Gating on direction ensures an incoming call can never consume/steal the
+            // override the user set for a call they placed.
+            Boolean aiOverride = null;
+            if (!isIncomingCall(call)) {
+                aiOverride = aiPreferences.consumePendingOutgoingAiCall();
+            }
+            callInfo.aiEnabled = (aiOverride != null) ? aiOverride : isAIEnabled;
             callInfo.aiMode = currentAIMode;
             callInfo.injectionEnabled = isInjectionEnabled;
 
@@ -1138,6 +1157,29 @@ public class CallDetector extends InCallService {
         }
 
         @Override
+        public void onEndCallRequested() {
+            // The ElevenLabs agent invoked end_call — the AI is done. Hang up the
+            // phone call automatically (previously it stayed open until the remote
+            // party disconnected). Small delay lets the AI's closing line finish.
+            final Call call = wrapper != null ? wrapper.call : null;
+            if (call == null) {
+                Log.w(TAG, "🔚 onEndCallRequested but no Call to disconnect");
+                return;
+            }
+            Log.d(TAG, "🔚 AI finished — auto-ending call in 3s");
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        Log.d(TAG, "🔚 Disconnecting call — AI conversation complete");
+                        call.disconnect();
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to auto-end call: " + e.getMessage());
+                }
+            }, 3000);
+        }
+
+        @Override
         public void onAIStreamingStarted(String audioSource) {
 
         }
@@ -1207,6 +1249,40 @@ public class CallDetector extends InCallService {
         }
     }
 
+    /**
+     * Promotes this service to the foreground without ever crashing on Android 14+.
+     * The goal is "always foreground, grab the mic whenever we're allowed to":
+     *   - API 34+: claim MICROPHONE only when RECORD_AUDIO is actually granted
+     *     (a mic-typed FGS throws SecurityException otherwise); else fall back to
+     *     SPECIAL_USE so the service still runs and call handling isn't lost.
+     *   - API 29–33: mic type is safe (permission enforcement starts at 34).
+     *   - Any failure degrades to an untyped foreground start rather than crashing.
+     */
+    private void startForegroundCompat(int notificationId, Notification notification) {
+        int type;
+        if (Build.VERSION.SDK_INT >= 34) {
+            boolean micGranted = checkSelfPermission(Manifest.permission.RECORD_AUDIO)
+                    == PackageManager.PERMISSION_GRANTED;
+            type = micGranted
+                    ? ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                    : FGS_TYPE_SPECIAL_USE;
+        } else if (Build.VERSION.SDK_INT >= 29) {
+            type = ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
+        } else {
+            type = 0;
+        }
+        try {
+            ServiceCompat.startForeground(this, notificationId, notification, type);
+        } catch (Exception e) {
+            Log.e(TAG, "startForeground(type=" + type + ") failed; retrying untyped: " + e.getMessage());
+            try {
+                ServiceCompat.startForeground(this, notificationId, notification, 0);
+            } catch (Exception e2) {
+                Log.e(TAG, "startForeground untyped also failed", e2);
+            }
+        }
+    }
+
     // ===== ENHANCED NOTIFICATION SYSTEM =====
 
     @SuppressLint("ForegroundServiceType")
@@ -1253,7 +1329,7 @@ public class CallDetector extends InCallService {
             Notification notification = createNotificationForWrapper(wrapper, notificationId);
 
             if (notificationId == foregroundNotificationId) {
-                startForeground(notificationId, notification);
+                startForegroundCompat(notificationId, notification);
             } else {
                 notificationManager.notify(notificationId, notification);
             }

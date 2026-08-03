@@ -17,8 +17,11 @@ import android.telecom.TelecomManager;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
+import android.content.pm.ServiceInfo;
+
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.ServiceCompat;
 
 import com.teletalker.app.R;
 import com.teletalker.app.features.home.HomeActivity;
@@ -83,8 +86,11 @@ public class ScheduledCallExecutor extends Service {
         Log.d(TAG, "AI conversation_purpose: " + purpose);
         Log.d(TAG, "========================================");
 
-        // Start as foreground service
-        startForeground(NOTIFICATION_ID, createNotification());
+        // Start foreground. This service only PLACES the call (recording is handled by
+        // CallDetector once the call goes active) and it is launched from a background
+        // alarm, where a MICROPHONE-typed FGS is disallowed on API 34+. Use a non-mic
+        // type and never let a typed-FGS restriction crash the scheduled call.
+        startForegroundCompat();
 
         // Prepare AI before making call
         prepareAIForCall();
@@ -93,6 +99,32 @@ public class ScheduledCallExecutor extends Service {
         handler.postDelayed(this::executeCall, 2000); // 2 second delay to ensure AI is ready
 
         return START_NOT_STICKY;
+    }
+
+    /**
+     * Foreground promotion that survives Android 14's typed-FGS rules. A background
+     * alarm cannot start a microphone-typed FGS, so we use SPECIAL_USE (API 34+) /
+     * PHONE_CALL (29–33), and fall back to an untyped start rather than crash.
+     */
+    private void startForegroundCompat() {
+        int type;
+        if (Build.VERSION.SDK_INT >= 34) {
+            type = ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE;
+        } else if (Build.VERSION.SDK_INT >= 29) {
+            type = ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL;
+        } else {
+            type = 0;
+        }
+        try {
+            ServiceCompat.startForeground(this, NOTIFICATION_ID, createNotification(), type);
+        } catch (Exception e) {
+            Log.e(TAG, "startForeground(type=" + type + ") failed; retrying untyped: " + e.getMessage());
+            try {
+                ServiceCompat.startForeground(this, NOTIFICATION_ID, createNotification(), 0);
+            } catch (Exception e2) {
+                Log.e(TAG, "startForeground untyped also failed", e2);
+            }
+        }
     }
 
     private void prepareAIForCall() {
@@ -132,6 +164,18 @@ public class ScheduledCallExecutor extends Service {
 
     private void executeCall() {
         Log.d(TAG, "Executing outbound call to: " + phoneNumber);
+
+        // Suspend/ban guard (defence-in-depth; the backend also blocks at
+        // createBooking). Status is cached by DeviceReporter on login. Fail-open:
+        // an unknown/active status never blocks a legitimate call.
+        String acctStatus = PreferencesManager.getInstance(getApplicationContext())
+                .getString(com.teletalker.app.utils.DeviceReporter.KEY_ACCOUNT_STATUS, "active");
+        if ("suspended".equals(acctStatus) || "banned".equals(acctStatus)) {
+            Log.e(TAG, "Account " + acctStatus + " — aborting scheduled call to " + phoneNumber);
+            markCallAsFailed("Account " + acctStatus);
+            stopSelf();
+            return;
+        }
 
         // Check permissions
         if (!hasCallPermissions()) {

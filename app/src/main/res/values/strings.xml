@@ -42,7 +42,7 @@
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
     <string name="title_call_history">Call History</string>
-    <string name="title_calender">Calender</string>
+    <string name="title_calender">Schedule</string>
     <string name="title_settings">Settings</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
@@ -100,4 +100,66 @@
     <string name="Check_topup">Check Packeges and Stay Connected</string>
     <string name="upgrade_now">Upgrade Subscription</string>
     <string name="subscriptions">App Versions &amp; Subscriptions </string>
+    <!-- Compliance / AI disclosure one-pager -->
+    <string name="compliance_menu_title">Compliance &amp; Call Scripts</string>
+    <string name="settings_background_title">Background &amp; Autostart</string>
+    <string name="settings_dialer_title">Set as default phone app</string>
+    <string name="call_now_title">Call now</string>
+    <string name="call_now_hint">Enter phone number</string>
+    <string name="call_with_ai">Call with AI</string>
+    <string name="call_normal">Normal call</string>
+    <string name="dialer_dialog_title">Default phone app</string>
+    <string name="dialer_dialog_message">Making TeleTalker the default phone app grants call permissions reliably across devices. You can revert anytime in Settings &gt; Default apps.</string>
+    <string name="background_dialog_title">Keep TeleTalker running</string>
+    <string name="background_dialog_message">For reliable scheduled AI calls, allow background activity and enable autostart for TeleTalker.</string>
+    <string name="compliance_dialog_title">AI Disclosure &amp; Call Scripts</string>
+    <string name="compliance_subtitle">A quick one-pager to keep your AI calls compliant.</string>
+    <string name="compliance_scripts_header">Sample Call Opening Script (with AI Disclosure)</string>
+    <string name="compliance_inbound_header">Inbound — someone calls your number</string>
+    <string name="compliance_inbound_script">“Hello, thank you for calling. This is an AI assistant from [Your Business Name]. I\'m powered by advanced voice AI to help you quickly. This call may be recorded for quality and training purposes. How can I help you today?”</string>
+    <string name="compliance_outbound_header">Outbound — the AI makes the call</string>
+    <string name="compliance_outbound_script">“Hi, this is [Name], an AI assistant from [Your Business Name]. I\'m calling to help with your [appointment / inquiry / order]. This conversation is being recorded. Is now a good time to speak for about [X] minutes?”</string>
+    <string name="compliance_principles_header">Key Principles</string>
+    <string name="compliance_principles">•  Say “AI assistant” or “automated voice assistant” clearly in the first 5–8 seconds.\n\n•  Mention recording early if you plan to store transcripts or use them for improvement.\n\n•  Keep tone warm and professional (ElevenLabs voices handle this well).\n\n•  Add an easy opt-out: “If you’d prefer not to continue, just hang up.”</string>
+    <string name="compliance_close">Got it</string>
+
+    <!-- Home dashboard -->
+    <string name="bot_status_active">Bot Active</string>
+    <string name="bot_status_paused">Bot Paused</string>
+    <string name="quick_call_now">Call Now</string>
+    <string name="quick_schedule_call">Schedule Call</string>
+    <string name="quick_view_history">View History</string>
+    <string name="summary_missed">Missed calls</string>
+    <string name="summary_ai_answered">AI answered</string>
+
+    <!-- Call log filters -->
+    <string name="filter_all">All</string>
+    <string name="filter_inbound">Inbound</string>
+    <string name="filter_outbound">Outbound</string>
+    <string name="filter_missed">Missed</string>
+    <string name="filter_ai">AI</string>
+
+    <!-- Call history empty state -->
+    <string name="history_empty_title">No calls yet</string>
+    <string name="history_empty_hint">Calls you make or receive will appear here.</string>
+
+    <!-- Accessibility content descriptions -->
+    <string name="cd_back">Back</string>
+    <string name="cd_close">Close</string>
+    <string name="cd_next">Next</string>
+    <string name="cd_settings">Settings</string>
+    <string name="cd_edit">Edit</string>
+    <string name="cd_delete">Delete</string>
+    <string name="cd_add">Add</string>
+    <string name="cd_play">Play recording</string>
+    <string name="cd_sound">Play voice sample</string>
+    <string name="cd_search">Search</string>
+    <string name="cd_toggle_ai">Toggle AI assistant</string>
+    <string name="cd_profile">Profile picture</string>
+    <string name="cd_agent_avatar">Agent avatar</string>
+    <string name="cd_notifications">Notifications</string>
+    <string name="cd_more">More options</string>
+    <string name="cd_logo">TeleTalker logo</string>
+    <string name="cd_sort">Sort</string>
+    <string name="cd_see_all">See all</string>
 </resources>

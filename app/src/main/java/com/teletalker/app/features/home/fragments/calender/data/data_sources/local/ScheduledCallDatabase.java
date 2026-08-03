@@ -61,6 +61,11 @@ public abstract class ScheduledCallDatabase extends RoomDatabase {
                         DATABASE_NAME
                 )
                 .addMigrations(MIGRATION_1_2)
+                // If the device already holds a NEWER schema than this build
+                // (e.g. an older APK reinstalled over a newer one), Room cannot
+                // downgrade and would crash. Recreate the table instead of
+                // taking down the whole app.
+                .fallbackToDestructiveMigrationOnDowngrade()
                 .addCallback(DATABASE_CALLBACK)
                 .build();
     }

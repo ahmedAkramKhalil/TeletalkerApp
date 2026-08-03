@@ -26,8 +26,10 @@ public class CallAudioInjector {
 
     private static final String TAG = "CallAudioInjector";
 
-    // Script paths
-    private static final String SCRIPTS_DIR = "/data/adb/modules/com.teletalker.app/scripts";
+    // Script paths — unified with AudioStreamInjector/CallDetector and the FIFO
+    // location. The module copies all scripts/*.sh into this dir at boot
+    // (customize.sh + service.sh), so they are always present here.
+    private static final String SCRIPTS_DIR = "/data/local/tmp/call_injector";
     private static final String INJECT_SCRIPT = SCRIPTS_DIR + "/inject_stream.sh";
 
     // Streaming pipe path (must match script)

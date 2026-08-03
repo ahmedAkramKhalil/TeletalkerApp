@@ -35,7 +35,7 @@ public class CallLocalDataSourceImpl implements CallLocalDataSource {
     }
 
     @Override
-    public List<CallEntity> getLastTwoCallRecords() {
-        return  callDao.getLastTwoCallRecords();
+    public List<CallEntity> getRecentCallRecords() {
+        return  callDao.getRecentCallRecords();
     }
 }

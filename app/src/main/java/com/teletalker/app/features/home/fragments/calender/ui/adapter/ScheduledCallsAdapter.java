@@ -73,9 +73,11 @@ public class ScheduledCallsAdapter extends ListAdapter<ScheduledCall, ScheduledC
         private TextView tvConversationNotes;
         private MaterialButton btnEdit;
         private MaterialButton btnDelete;
+        private View statusStripe;
 
         public ScheduledCallViewHolder(@NonNull View itemView) {
             super(itemView);
+            statusStripe = itemView.findViewById(R.id.statusStripe);
             tvScheduledTime = itemView.findViewById(R.id.tvScheduledTime);
             tvStatus = itemView.findViewById(R.id.tvStatus);
             tvContactName = itemView.findViewById(R.id.tvContactName);
@@ -150,25 +152,40 @@ public class ScheduledCallsAdapter extends ListAdapter<ScheduledCall, ScheduledC
         }
 
         private void setStatusColor(String status) {
+            // Intent-based palette (matches the cal_* color tokens): completed=green,
+            // pending/in-progress=amber, failed/no-answer=red, cancelled=grey.
             int color;
-            switch (status.toLowerCase()) {
-                case "pending":
-                    color = 0xFF2196F3; // Blue
-                    break;
+            switch (status == null ? "" : status.toLowerCase()) {
                 case "completed":
-                    color = 0xFF4CAF50; // Green
+                    color = 0xFF2FD07E; // cal_ok
+                    break;
+                case "pending":
+                case "in_progress":
+                case "scheduled":
+                    color = 0xFFF5B44C; // cal_warn
                     break;
                 case "failed":
-                    color = 0xFFF44336; // Red
+                case "no_answer":
+                    color = 0xFFFF5C68; // cal_bad
                     break;
                 case "cancelled":
-                    color = 0xFF9E9E9E; // Gray
+                    color = 0xFF5D6B80; // cal_text_lo (muted)
                     break;
                 default:
-                    color = 0xFF607D8B; // Blue Gray
+                    color = 0xFF93A0B4; // cal_text_mid
                     break;
             }
-            tvStatus.setBackgroundColor(color);
+            // Severity stripe = solid status color.
+            if (statusStripe != null) statusStripe.setBackgroundColor(color);
+            // Chip = soft (translucent) status ground + solid status text — keeps
+            // the rounded corners (unlike the old setBackgroundColor which flattened them).
+            int softBg = (color & 0x00FFFFFF) | 0x22000000; // ~13% alpha
+            if (tvStatus.getBackground() != null) {
+                tvStatus.getBackground().mutate().setTint(softBg);
+            } else {
+                tvStatus.setBackgroundColor(softBg);
+            }
+            tvStatus.setTextColor(color);
         }
     }
 }

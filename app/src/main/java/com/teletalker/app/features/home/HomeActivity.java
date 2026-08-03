@@ -88,7 +88,9 @@ public class HomeActivity extends BaseThemedActivity implements
             return;
         }
 
-
+        // Report this device (fingerprint + info + pending referral) and cache
+        // the returned account status for the pre-call suspend/ban guard.
+        com.teletalker.app.utils.DeviceReporter.report(this);
 
         setupUI();
         initializeManagers();

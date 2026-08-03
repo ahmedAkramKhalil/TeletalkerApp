@@ -83,6 +83,11 @@ public class FirebaseFunctionsManager {
         void onError(String error);
     }
 
+    public interface OnRegisterDeviceCallback {
+        void onSuccess(String status);   // "active" | "suspended" | "banned"
+        void onError(String error);
+    }
+
     // ============================================
     // HELPER: Ensure Fresh Auth Token
     // ============================================
@@ -420,6 +425,47 @@ public class FirebaseFunctionsManager {
                             })
                             .addOnFailureListener(e -> {
                                 Log.e(TAG, "Error initializing user", e);
+                                callback.onError(e.getMessage());
+                            });
+                },
+                callback::onError
+        );
+    }
+
+    // ============================================
+    // 9. REGISTER DEVICE (device fingerprint + info + referral → returns status)
+    // ============================================
+
+    public void registerDevice(String deviceId, String model, String osVersion,
+                               String appVersion, String referralCode,
+                               OnRegisterDeviceCallback callback) {
+        ensureFreshToken(
+                () -> {
+                    Map<String, Object> data = new HashMap<>();
+                    if (deviceId != null)   data.put("deviceId", deviceId);
+                    if (model != null)      data.put("model", model);
+                    if (osVersion != null)  data.put("osVersion", osVersion);
+                    if (appVersion != null) data.put("appVersion", appVersion);
+                    if (referralCode != null && !referralCode.trim().isEmpty()) {
+                        data.put("referralCode", referralCode.trim());
+                    }
+
+                    functions.getHttpsCallable("registerDevice")
+                            .call(data)
+                            .addOnSuccessListener(result -> {
+                                String status = "active";
+                                try {
+                                    Map<String, Object> resp = (Map<String, Object>) result.getData();
+                                    if (resp != null && resp.get("status") != null) {
+                                        status = String.valueOf(resp.get("status"));
+                                    }
+                                } catch (Exception e) {
+                                    Log.w(TAG, "registerDevice: parse failed, defaulting active", e);
+                                }
+                                callback.onSuccess(status);
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "registerDevice failed", e);
                                 callback.onError(e.getMessage());
                             });
                 },

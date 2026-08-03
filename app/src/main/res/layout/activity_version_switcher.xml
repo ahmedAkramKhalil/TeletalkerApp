@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5">
+    android:background="@color/lite_background">
 
     <!-- Loading Progress -->
     <com.google.android.material.progressindicator.CircularProgressIndicator
@@ -46,6 +46,7 @@
                     <!-- Version Badge Icon -->
                     <ImageView
                         android:id="@+id/ivVersionBadge"
+                        android:importantForAccessibility="no"
                         android:layout_width="80dp"
                         android:layout_height="80dp"
                         android:src="@drawable/ic_lite_badge"
@@ -59,7 +60,7 @@
                         android:text="Lite Plan"
                         android:textSize="28sp"
                         android:textStyle="bold"
-                        android:textColor="#212121"
+                        android:textColor="@color/text_primary"
                         android:layout_marginBottom="8dp" />
 
                     <!-- Version Description -->
@@ -69,7 +70,7 @@
                         android:layout_height="wrap_content"
                         android:text="Free • Limited Features"
                         android:textSize="16sp"
-                        android:textColor="#757575" />
+                        android:textColor="@color/text_secondary" />
 
                 </LinearLayout>
 
@@ -85,7 +86,7 @@
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp"
                 app:strokeWidth="2dp"
-                app:strokeColor="#6200EE">
+                app:strokeColor="@color/colorPrimary">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -99,7 +100,7 @@
                         android:text="📋 Subscription Details"
                         android:textSize="18sp"
                         android:textStyle="bold"
-                        android:textColor="#212121"
+                        android:textColor="@color/text_primary"
                         android:layout_marginBottom="16dp" />
 
                     <!-- Status -->
@@ -115,7 +116,7 @@
                             android:layout_weight="1"
                             android:text="Status"
                             android:textSize="14sp"
-                            android:textColor="#757575" />
+                            android:textColor="@color/text_secondary" />
 
                         <TextView
                             android:id="@+id/tvSubscriptionStatus"
@@ -124,7 +125,7 @@
                             android:text="ACTIVE"
                             android:textSize="14sp"
                             android:textStyle="bold"
-                            android:textColor="#4CAF50" />
+                            android:textColor="@color/status_green" />
                     </LinearLayout>
 
                     <!-- Price -->
@@ -140,7 +141,7 @@
                             android:layout_weight="1"
                             android:text="Price"
                             android:textSize="14sp"
-                            android:textColor="#757575" />
+                            android:textColor="@color/text_secondary" />
 
                         <TextView
                             android:id="@+id/tvMonthlyPrice"
@@ -149,7 +150,7 @@
                             android:text="$10.00/month"
                             android:textSize="16sp"
                             android:textStyle="bold"
-                            android:textColor="#6200EE" />
+                            android:textColor="@color/colorPrimary" />
                     </LinearLayout>
 
                     <!-- Next Billing -->
@@ -164,7 +165,7 @@
                             android:layout_weight="1"
                             android:text="Next Billing"
                             android:textSize="14sp"
-                            android:textColor="#757575" />
+                            android:textColor="@color/text_secondary" />
 
                         <TextView
                             android:id="@+id/tvNextBilling"
@@ -172,7 +173,7 @@
                             android:layout_height="wrap_content"
                             android:text="Nov 02, 2025"
                             android:textSize="14sp"
-                            android:textColor="#212121" />
+                            android:textColor="@color/text_primary" />
                     </LinearLayout>
 
                 </LinearLayout>
@@ -201,7 +202,7 @@
                         android:text="⭐ Standard Plan Features"
                         android:textSize="18sp"
                         android:textStyle="bold"
-                        android:textColor="#212121"
+                        android:textColor="@color/text_primary"
                         android:layout_marginBottom="16dp" />
 
                     <!-- Feature 1 -->
@@ -216,7 +217,7 @@
                             android:layout_height="wrap_content"
                             android:text="✓"
                             android:textSize="18sp"
-                            android:textColor="#4CAF50"
+                            android:textColor="@color/status_green"
                             android:textStyle="bold"
                             android:layout_marginEnd="8dp" />
 
@@ -226,7 +227,7 @@
                             android:layout_weight="1"
                             android:text="Unlimited call recording"
                             android:textSize="15sp"
-                            android:textColor="#212121" />
+                            android:textColor="@color/text_primary" />
                     </LinearLayout>
 
                     <!-- Feature 2 -->
@@ -241,7 +242,7 @@
                             android:layout_height="wrap_content"
                             android:text="✓"
                             android:textSize="18sp"
-                            android:textColor="#4CAF50"
+                            android:textColor="@color/status_green"
                             android:textStyle="bold"
                             android:layout_marginEnd="8dp" />
 
@@ -251,7 +252,7 @@
                             android:layout_weight="1"
                             android:text="Advanced AI features"
                             android:textSize="15sp"
-                            android:textColor="#212121" />
+                            android:textColor="@color/text_primary" />
                     </LinearLayout>
 
                     <!-- Feature 3 -->
@@ -266,7 +267,7 @@
                             android:layout_height="wrap_content"
                             android:text="✓"
                             android:textSize="18sp"
-                            android:textColor="#4CAF50"
+                            android:textColor="@color/status_green"
                             android:textStyle="bold"
                             android:layout_marginEnd="8dp" />
 
@@ -276,7 +277,7 @@
                             android:layout_weight="1"
                             android:text="Cloud backup &amp; sync"
                             android:textSize="15sp"
-                            android:textColor="#212121" />
+                            android:textColor="@color/text_primary" />
                     </LinearLayout>
 
                     <!-- Feature 4 -->
@@ -291,7 +292,7 @@
                             android:layout_height="wrap_content"
                             android:text="✓"
                             android:textSize="18sp"
-                            android:textColor="#4CAF50"
+                            android:textColor="@color/status_green"
                             android:textStyle="bold"
                             android:layout_marginEnd="8dp" />
 
@@ -301,7 +302,7 @@
                             android:layout_weight="1"
                             android:text="Priority support"
                             android:textSize="15sp"
-                            android:textColor="#212121" />
+                            android:textColor="@color/text_primary" />
                     </LinearLayout>
 
                     <!-- Feature 5 -->
@@ -315,7 +316,7 @@
                             android:layout_height="wrap_content"
                             android:text="✓"
                             android:textSize="18sp"
-                            android:textColor="#4CAF50"
+                            android:textColor="@color/status_green"
                             android:textStyle="bold"
                             android:layout_marginEnd="8dp" />
 
@@ -325,7 +326,7 @@
                             android:layout_weight="1"
                             android:text="No ads"
                             android:textSize="15sp"
-                            android:textColor="#212121" />
+                            android:textColor="@color/text_primary" />
                     </LinearLayout>
 
                 </LinearLayout>
@@ -371,7 +372,7 @@
                 android:layout_height="56dp"
                 android:text="Cancel Subscription"
                 android:textSize="15sp"
-                android:textColor="#F44336"
+                android:textColor="@color/status_red"
                 app:cornerRadius="12dp"
                 android:visibility="gone"
                 style="@style/Widget.Material3.Button.TextButton" />
@@ -382,7 +383,7 @@
                 android:layout_height="wrap_content"
                 android:text="💡 Cancel anytime • No hidden fees"
                 android:textSize="13sp"
-                android:textColor="#9E9E9E"
+                android:textColor="@color/text_gray_hint"
                 android:layout_gravity="center"
                 android:layout_marginTop="16dp" />
 

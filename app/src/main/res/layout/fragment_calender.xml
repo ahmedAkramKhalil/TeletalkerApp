@@ -18,6 +18,7 @@
             android:layout_width="100dp"
             android:layout_height="100dp"
             android:src="@drawable/ic_lock"
+            android:importantForAccessibility="no"
             android:tint="@color/status_yellow" />
 
         <TextView
@@ -50,8 +51,9 @@
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:id="@+id/calendarContent"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/cal_surface_900"
         android:visibility="gone">
 
         <LinearLayout
@@ -61,24 +63,19 @@
 
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
-                android:layout_height="260dp"
+                android:layout_height="wrap_content"
                 android:layout_margin="12dp"
-                android:backgroundTint="@color/darkMidnightBlue"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
+                app:cardBackgroundColor="@color/cal_surface_800"
+                app:strokeColor="@color/cal_line"
+                app:strokeWidth="1dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp">
 
-                <CalendarView
+                <com.teletalker.app.features.home.fragments.calender.ui.CalendarMonthView
                     android:id="@+id/calendarView"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-
-                    />
-                <!--            <com.github.sundeepk.compactcalendarview.CompactCalendarView-->
-                <!--                android:id="@+id/calendarView"-->
-                <!--                android:layout_width="match_parent"-->
-                <!--                android:layout_height="match_parent"-->
-                <!--                app:compactCalendarTextSize="12sp"-->
-                <!--                app:compactCalendarTargetHeight="200dp" />-->
+                    android:layout_height="wrap_content"
+                    android:padding="14dp" />
 
             </com.google.android.material.card.MaterialCardView>
 
@@ -99,7 +96,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Scheduled Calls"
-                    android:textColor="@color/gunmetalTextGray"
+                    android:textColor="@color/cal_text_hi"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
@@ -107,14 +104,15 @@
                     android:id="@+id/tvScheduledCallsCount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/rounded_badge"
+                    android:background="@drawable/bg_count_pill"
                     android:paddingStart="12dp"
-                    android:paddingTop="4dp"
+                    android:paddingTop="3dp"
                     android:paddingEnd="12dp"
-                    android:paddingBottom="4dp"
+                    android:paddingBottom="3dp"
                     android:text="0"
-                    android:textColor="@color/gunmetalTextGray"
-                    android:textSize="14sp" />
+                    android:textStyle="bold"
+                    android:textColor="@color/cal_brand"
+                    android:textSize="13sp" />
             </LinearLayout>
 
             <!-- Scheduled Calls List -->
@@ -144,7 +142,8 @@
                     android:layout_width="120dp"
                     android:layout_height="120dp"
                     android:alpha="0.3"
-                    android:src="@drawable/ic_launcher_foreground" />
+                    android:src="@drawable/ic_launcher_foreground"
+                    android:importantForAccessibility="no" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -171,11 +170,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
-            android:layout_margin="16dp"
-            android:backgroundTint="@color/purple_500"
+            android:layout_margin="18dp"
+            android:backgroundTint="@color/cal_brand"
             android:contentDescription="Schedule New Call"
             android:src="@android:drawable/ic_input_add"
-            app:tint="@android:color/white" />
+            app:tint="#04121D" />
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

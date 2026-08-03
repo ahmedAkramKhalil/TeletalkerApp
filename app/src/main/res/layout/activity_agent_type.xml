@@ -120,6 +120,7 @@
             android:layout_height="64dp"
             android:alpha="0.5"
             android:src="@drawable/ic_agent_default"
+            android:importantForAccessibility="no"
             app:tint="@color/white" />
 
         <TextView

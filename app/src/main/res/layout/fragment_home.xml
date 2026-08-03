@@ -138,7 +138,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="min"
-                                android:textSize="8sp"
+                                android:textSize="12sp"
                                 android:textColor="@color/text_secondary" />
 
                         </LinearLayout>
@@ -162,6 +162,7 @@
 
                     <ImageView
                         android:id="@+id/backButton"
+                        android:contentDescription="@string/cd_notifications"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:padding="12dp"
@@ -201,13 +202,14 @@
 
                 <ImageView
                     android:id="@+id/imageView7"
+                    android:importantForAccessibility="no"
                     android:layout_width="60dp"
                     android:layout_height="60dp"
                     android:layout_marginStart="12dp"
                     android:layout_marginTop="10dp"
                     android:src="@drawable/app_icon"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="@+id/imageView6" />
+                    app:layout_constraintTop_toTopOf="parent" />
 
                 <TextView
                     android:id="@+id/textView4"
@@ -215,7 +217,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="10dp"
                     android:text="@string/don_t_lose_the_offer"
-                    android:textColor="#040000"
+                    android:textColor="@color/on_fixed_light"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     app:layout_constraintBottom_toBottomOf="@+id/imageView7"
@@ -232,8 +234,8 @@
                     android:layout_marginBottom="10dp"
                     android:lineSpacingExtra="2dp"
                     android:text="@string/get_your_ai_powered_nvoice_companion"
-                    android:textColor="#040000"
-                    android:textSize="11sp"
+                    android:textColor="@color/on_fixed_light"
+                    android:textSize="12sp"
                     app:layout_constraintEnd_toStartOf="@+id/subscribeButton"
                     app:layout_constraintStart_toStartOf="@+id/imageView7"
                     app:layout_constraintTop_toBottomOf="@+id/imageView7" />
@@ -241,7 +243,9 @@
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/subscribeButton"
                     android:layout_width="wrap_content"
-                    android:layout_height="0dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:paddingVertical="10dp"
                     android:layout_marginEnd="12dp"
                     android:clickable="true"
                     android:padding="0dp"
@@ -279,6 +283,7 @@
 
             <ImageButton
                 android:id="@+id/aiActivationButton"
+                android:contentDescription="@string/cd_toggle_ai"
                 android:layout_width="180dp"
                 android:layout_height="180dp"
                 android:foregroundGravity="center"
@@ -292,6 +297,19 @@
                 />
 
 
+            <TextView
+                android:id="@+id/botStatusText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="@string/bot_status_paused"
+                android:textColor="@color/gunmetalTextGray"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/aiActivationButton" />
+
             <LinearLayout
                 android:id="@+id/linearLayout2"
                 android:layout_width="0dp"
@@ -300,7 +318,7 @@
                 android:orientation="horizontal"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/aiActivationButton">
+                app:layout_constraintTop_toBottomOf="@+id/botStatusText">
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
@@ -341,7 +359,8 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
                                 android:padding="10dp"
-                                android:src="@drawable/ic_bot" />
+                                android:src="@drawable/ic_bot"
+                                android:importantForAccessibility="no" />
 
 
                         </com.google.android.material.card.MaterialCardView>
@@ -362,7 +381,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/support_agent"
-                            android:textColor="@color/black"
+                            android:textColor="@color/text_secondary"
                             android:textSize="12sp"
                             app:layout_constraintStart_toStartOf="@+id/agentName"
                             app:layout_constraintTop_toBottomOf="@+id/agentName" />
@@ -444,7 +463,8 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:padding="10dp"
-                                android:src="@drawable/ic_person" />
+                                android:src="@drawable/ic_person"
+                                android:importantForAccessibility="no" />
 
 
                         </com.google.android.material.card.MaterialCardView>
@@ -455,7 +475,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="12dp"
                             android:text="@string/default_voice"
-                            android:textColor="@color/white"
+                            android:textColor="@color/text_primary"
                             android:textSize="15sp"
                             app:layout_constraintStart_toStartOf="@+id/materialCardView6"
                             app:layout_constraintTop_toBottomOf="@+id/materialCardView6" />
@@ -465,7 +485,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/alex"
-                            android:textColor="@color/black"
+                            android:textColor="@color/text_secondary"
                             android:textSize="12sp"
                             app:layout_constraintStart_toStartOf="@+id/textView13"
                             app:layout_constraintTop_toBottomOf="@+id/textView13" />
@@ -507,6 +527,172 @@
 
 
             <LinearLayout
+                android:id="@+id/quickActionsRow"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal"
+                app:layout_constraintEnd_toEndOf="@+id/linearLayout2"
+                app:layout_constraintStart_toStartOf="@+id/linearLayout2"
+                app:layout_constraintTop_toBottomOf="@+id/linearLayout2">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btnCallNow"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="@color/darkMidnightBlue"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:paddingVertical="16dp"
+                        android:text="@string/quick_call_now"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btnScheduleCall"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="3dp"
+                    android:layout_marginEnd="3dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="@color/darkMidnightBlue"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:paddingVertical="16dp"
+                        android:text="@string/quick_schedule_call"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btnViewHistory"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="@color/darkMidnightBlue"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:paddingVertical="16dp"
+                        android:text="@string/quick_view_history"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/summaryRow"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal"
+                app:layout_constraintEnd_toEndOf="@+id/linearLayout2"
+                app:layout_constraintStart_toStartOf="@+id/linearLayout2"
+                app:layout_constraintTop_toBottomOf="@+id/quickActionsRow">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    app:cardBackgroundColor="@color/darkMidnightBlue"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:id="@+id/missedCountText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="0"
+                            android:textColor="@color/text_primary"
+                            android:textSize="22sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="@string/summary_missed"
+                            android:textColor="@color/gunmetalTextGray"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    app:cardBackgroundColor="@color/darkMidnightBlue"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:id="@+id/aiAnsweredCountText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="0"
+                            android:textColor="@color/text_primary"
+                            android:textSize="22sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="@string/summary_ai_answered"
+                            android:textColor="@color/gunmetalTextGray"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/seeAllHistoryTv"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -515,14 +701,14 @@
                 android:paddingVertical="10dp"
                 app:layout_constraintEnd_toEndOf="@+id/linearLayout2"
                 app:layout_constraintStart_toStartOf="@+id/linearLayout2"
-                app:layout_constraintTop_toBottomOf="@+id/linearLayout2">
+                app:layout_constraintTop_toBottomOf="@+id/summaryRow">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="2"
                     android:text="@string/title_call_history"
-                    android:textColor="@color/white"
+                    android:textColor="@color/text_primary"
                     android:textSize="15sp" />
 
                 <TextView
@@ -531,14 +717,15 @@
                     android:layout_weight="1"
                     android:gravity="end"
                     android:text="@string/see_all"
-                    android:textColor="@color/white"
+                    android:textColor="@color/text_primary"
                     android:textSize="15sp" />
 
                 <ImageView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:src="@drawable/ic_arrow_back_black"
-                    app:tint="@color/white" />
+                    android:contentDescription="@string/cd_see_all"
+                    app:tint="@color/text_primary" />
 
 
             </LinearLayout>
@@ -547,6 +734,7 @@
                 android:layout_width="150dp"
                 android:layout_height="150dp"
                 android:id="@+id/nodata_icon"
+                android:importantForAccessibility="no"
                 android:visibility="gone"
                 android:layout_marginTop="10dp"
                 android:src="@drawable/ic_nodata"

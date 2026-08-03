@@ -74,4 +74,15 @@
         <item name="cornerRadius">8dp</item>
     </style>
 
+    <!-- Theme overlay for the stock CalendarView on the dark calendar card:
+         accent drives the selected-day highlight; text colors follow the tokens. -->
+    <style name="CalendarViewDark" parent="">
+        <item name="colorAccent">@color/cal_brand</item>
+        <item name="android:colorControlActivated">@color/cal_brand</item>
+        <item name="android:textColorPrimary">@color/cal_text_hi</item>
+        <item name="android:textColorSecondary">@color/cal_text_mid</item>
+        <item name="android:textColorPrimaryInverse">@color/cal_text_hi</item>
+        <item name="android:textColorSecondaryInverse">@color/cal_text_mid</item>
+    </style>
+
 </resources>

@@ -23,8 +23,15 @@ public interface CallDao {
     @Delete
     void deleteCall(CallEntity call);
 
-    @Query("SELECT * FROM calls ORDER BY id DESC LIMIT 2")
-    List<CallEntity> getLastTwoCallRecords();
+    @Query("SELECT * FROM calls ORDER BY id DESC LIMIT 3")
+    List<CallEntity> getRecentCallRecords();
+
+    // Home dashboard summary counters
+    @Query("SELECT COUNT(*) FROM calls WHERE callType LIKE 'AI Call%'")
+    int getAiAnsweredCount();
+
+    @Query("SELECT COUNT(*) FROM calls WHERE duration IS NULL OR duration = ''")
+    int getMissedCount();
 
 
 }

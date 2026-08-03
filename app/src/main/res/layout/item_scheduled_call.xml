@@ -5,172 +5,188 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
-    app:cardElevation="2dp"
-    app:cardCornerRadius="16dp"
+    android:layout_marginBottom="10dp"
+    app:cardElevation="0dp"
+    app:cardCornerRadius="18dp"
+    app:strokeColor="@color/cal_line"
+    app:strokeWidth="1dp"
     android:clickable="true"
     android:focusable="true"
-    app:cardBackgroundColor="@color/gunmetalGray"
-    android:foreground="?android:attr/selectableItemBackground"
-
-    >
+    app:cardBackgroundColor="@color/cal_surface_800"
+    android:foreground="?android:attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:orientation="horizontal">
 
-        <!-- Header Row: Time and Status -->
+        <!-- Severity stripe (colored per status in the adapter) -->
+        <View
+            android:id="@+id/statusStripe"
+            android:layout_width="3dp"
+            android:layout_height="match_parent"
+            android:background="@color/cal_warn" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:orientation="vertical"
+            android:padding="14dp">
 
-            <!-- Time Icon and Text -->
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_recent_history"
-                app:tint="@color/purple_500"
-
-                />
-
-            <TextView
-                android:id="@+id/tvScheduledTime"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/gunmetalTextGray"
-                tools:text="Today, 3:30 PM" />
-
-            <!-- Status Badge -->
-            <TextView
-                android:id="@+id/tvStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp"
-                android:textSize="12sp"
-                android:textColor="@android:color/white"
-                android:background="@drawable/rounded_badge"
-                tools:text="Pending" />
-        </LinearLayout>
-
-        <!-- Contact Info Row -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="12dp"
-            android:gravity="center_vertical">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_call"
-                android:tint="@android:color/darker_gray" />
-
+            <!-- Header Row: Time and Status -->
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:orientation="vertical">
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@android:drawable/ic_menu_recent_history"
+                    android:importantForAccessibility="no"
+                    app:tint="@color/cal_brand" />
+
+                <TextView
+                    android:id="@+id/tvScheduledTime"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/cal_text_hi"
+                    tools:text="Today, 3:30 PM" />
+
+                <!-- Status chip (soft ground tinted + colored text set in adapter) -->
+                <TextView
+                    android:id="@+id/tvStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="9dp"
+                    android:paddingEnd="9dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:textSize="10.5sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05"
+                    android:textColor="@color/cal_warn"
+                    android:background="@drawable/bg_status_chip"
+                    tools:text="PENDING" />
+            </LinearLayout>
+
+            <!-- Contact Info Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="10dp"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@android:drawable/ic_menu_call"
+                    android:importantForAccessibility="no"
+                    app:tint="@color/cal_text_mid" />
 
                 <TextView
                     android:id="@+id/tvContactName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="15sp"
-                    android:textColor="@color/gunmetalTextGray"
+                    android:layout_marginStart="8dp"
+                    android:textSize="14.5sp"
+                    android:textColor="@color/cal_text_hi"
                     tools:text="John Doe" />
 
                 <TextView
                     android:id="@+id/tvPhoneNumber"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:textSize="12.5sp"
+                    android:textColor="@color/cal_text_mid"
+                    tools:text="+1 234 567 8900" />
+
+                <!-- Duration -->
+                <TextView
+                    android:id="@+id/tvDuration"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="13sp"
-                    android:textColor="@android:color/darker_gray"
-                    tools:text="+1 234 567 8900" />
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingBottom="3dp"
+                    android:background="@drawable/bg_status_chip"
+                    android:backgroundTint="@color/cal_surface_700"
+                    android:textSize="12sp"
+                    android:textColor="@color/cal_text_mid"
+                    tools:text="15 min" />
             </LinearLayout>
 
-            <!-- Duration -->
-            <TextView
-                android:id="@+id/tvDuration"
-                android:layout_width="wrap_content"
+            <!-- AI Notes Preview -->
+            <LinearLayout
+                android:id="@+id/notesRow"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="13sp"
-                android:textColor="@android:color/darker_gray"
-                tools:text="15 min" />
-        </LinearLayout>
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal"
+                android:background="@drawable/bg_note_box"
+                android:padding="9dp"
+                android:gravity="top">
 
-        <!-- AI Notes Preview -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="horizontal"
-            android:padding="8dp"
-            android:gravity="top">
+                <ImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:src="@android:drawable/ic_dialog_info"
+                    android:importantForAccessibility="no"
+                    app:tint="@color/cal_brand"
+                    android:layout_marginTop="1dp" />
 
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:src="@android:drawable/ic_dialog_info"
-                android:tint="@android:color/holo_blue_dark"
-                android:layout_marginTop="2dp" />
+                <TextView
+                    android:id="@+id/tvConversationNotes"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:textSize="12.5sp"
+                    android:textColor="@color/cal_text_mid"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    tools:text="AI brief: Greet the customer and ask about their recent order..." />
+            </LinearLayout>
 
-            <TextView
-                android:id="@+id/tvConversationNotes"
-                android:layout_width="0dp"
+            <!-- Action Buttons Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:textSize="13sp"
-                android:textColor="@android:color/darker_gray"
-                android:maxLines="2"
-                android:ellipsize="end"
-                tools:text="AI Instructions: Greet the customer and ask about their recent order..." />
-        </LinearLayout>
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal"
+                android:gravity="end">
 
-        <!-- Action Buttons Row -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="horizontal"
-            android:gravity="end">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnEdit"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Edit"
+                    android:textColor="@color/cal_text_hi"
+                    android:textSize="12sp"
+                    app:icon="@android:drawable/ic_menu_edit"
+                    app:iconTint="@color/cal_text_hi" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnEdit"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Edit"
-                android:textColor="@color/white"
-                android:textSize="12sp"
-                android:drawableTint="@color/white"
-                app:icon="@android:drawable/ic_menu_edit"
-                app:iconTint="@color/white"
-                />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnDelete"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Delete"
-                android:textSize="12sp"
-                android:textColor="@color/red"
-                app:icon="@android:drawable/ic_menu_delete"
-                app:iconTint="@color/red" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDelete"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Delete"
+                    android:textSize="12sp"
+                    android:textColor="@color/cal_bad"
+                    app:icon="@android:drawable/ic_menu_delete"
+                    app:iconTint="@color/cal_bad" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 

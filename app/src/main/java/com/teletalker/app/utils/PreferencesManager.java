@@ -228,6 +228,39 @@ public class PreferencesManager {
     public boolean isBotActive(){
         return getBoolean(IS_BOT_ACTIVE,false);
     }
+
+    // One-shot per-call AI override for user-initiated (Call Now) outgoing calls.
+    // Lets a single call opt in/out of AI regardless of the global bot toggle.
+    private static final String PENDING_OUTGOING_AI_SET = "pending_outgoing_ai_set";
+    private static final String PENDING_OUTGOING_AI_VALUE = "pending_outgoing_ai_value";
+    private static final String PENDING_OUTGOING_AI_TIME = "pending_outgoing_ai_time";
+    // The override is meant for the call the user places within seconds of choosing;
+    // beyond this window it's stale and must not affect a later call.
+    private static final long PENDING_OUTGOING_AI_TTL_MS = 120_000L;
+
+    public void setPendingOutgoingAiCall(boolean aiEnabled){
+        saveBoolean(PENDING_OUTGOING_AI_VALUE, aiEnabled);
+        saveLong(PENDING_OUTGOING_AI_TIME, System.currentTimeMillis());
+        saveBoolean(PENDING_OUTGOING_AI_SET, true);
+    }
+
+    /**
+     * Returns the one-shot per-call AI override and clears it; null if none is pending
+     * or it has expired. Always clears on read so a stale flag can never leak into a
+     * later (e.g. incoming) call.
+     */
+    public Boolean consumePendingOutgoingAiCall(){
+        if (!getBoolean(PENDING_OUTGOING_AI_SET, false)) return null;
+        saveBoolean(PENDING_OUTGOING_AI_SET, false); // consume unconditionally
+        long ts = getLong(PENDING_OUTGOING_AI_TIME, 0);
+        if (System.currentTimeMillis() - ts > PENDING_OUTGOING_AI_TTL_MS) return null;
+        return getBoolean(PENDING_OUTGOING_AI_VALUE, false);
+    }
+
+    /** Discards any pending override (e.g. when the outgoing call was never placed). */
+    public void clearPendingOutgoingAiCall(){
+        saveBoolean(PENDING_OUTGOING_AI_SET, false);
+    }
     public int getInt(String key, int defaultValue) {
         return prefs.getInt(key, defaultValue);
     }

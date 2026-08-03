@@ -30,6 +30,7 @@
 
                 <ImageView
                     android:id="@+id/arrow_back"
+                    android:contentDescription="@string/cd_back"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:src="@drawable/arrow_back"
@@ -257,7 +258,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:src="@drawable/ic_flash" />
+            android:src="@drawable/ic_flash"
+            android:importantForAccessibility="no" />
 
 
         <TextView
@@ -287,7 +289,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:src="@drawable/ic_flash" />
+            android:src="@drawable/ic_flash"
+            android:importantForAccessibility="no" />
 
 
         <TextView
@@ -317,7 +320,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:src="@drawable/ic_flash" />
+            android:src="@drawable/ic_flash"
+            android:importantForAccessibility="no" />
 
 
         <TextView
@@ -347,7 +351,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:src="@drawable/ic_flash" />
+            android:src="@drawable/ic_flash"
+            android:importantForAccessibility="no" />
 
 
         <TextView

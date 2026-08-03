@@ -16,6 +16,7 @@
 
             <ImageView
                 android:id="@+id/image"
+                android:contentDescription="@string/cd_profile"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:src="@drawable/calvin_avatar"
@@ -41,7 +42,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/black"
-                android:textSize="10sp"
+                android:textSize="12sp"
                 app:layout_constraintEnd_toEndOf="@+id/nameTv"
                 app:layout_constraintStart_toStartOf="@+id/nameTv"
                 app:layout_constraintTop_toBottomOf="@+id/nameTv"

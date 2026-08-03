@@ -57,32 +57,28 @@ public class PermissionManager {
     private List<String> getAllRequiredPermissions() {
         List<String> permissions = new ArrayList<>();
 
-        // Core permissions - all in one list
+        // Dangerous (runtime) permissions ONLY. Special-access permissions
+        // (SCHEDULE_EXACT_ALARM / USE_EXACT_ALARM) are handled through their
+        // Settings intent, and signature permissions (BIND_INCALL_SERVICE) are
+        // never grantable via requestPermissions — including any of them here
+        // makes the request always report "denied" and blocks the granted-gate.
         permissions.add(Manifest.permission.RECORD_AUDIO);
         permissions.add(Manifest.permission.CALL_PHONE);
         permissions.add(Manifest.permission.READ_PHONE_STATE);
         permissions.add(Manifest.permission.READ_CONTACTS);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            permissions.add(Manifest.permission.SCHEDULE_EXACT_ALARM);
-        }
-//        permissions.add(Manifest.permission.READ_CALL_LOG);
-//        permissions.add(Manifest.permission.WRITE_CALL_LOG); // ADD THIS for default dialer
-        permissions.add(Manifest.permission.BIND_INCALL_SERVICE);
 
-        // Add ANSWER_PHONE_CALLS for Android 8.0+
+        // Android 8.0+ (API 26)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             permissions.add(Manifest.permission.ANSWER_PHONE_CALLS);
-
         }
 
-        // Add READ_CALL_LOG if needed
-//        permissions.add(Manifest.permission.READ_CALL_LOG);
+        // Android 12+ (API 31) — Bluetooth for call-audio routing / SCO
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            permissions.add(Manifest.permission.BLUETOOTH_CONNECT);
+        }
 
-        // Storage permissions based on API level
+        // Media/storage + notifications by API level
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissions.add(Manifest.permission.USE_EXACT_ALARM);
-            permissions.add(Manifest.permission.SCHEDULE_EXACT_ALARM);
-
             permissions.add(Manifest.permission.READ_MEDIA_AUDIO);
             permissions.add(Manifest.permission.POST_NOTIFICATIONS);
         } else {

@@ -174,6 +174,10 @@ public class ElevenLabsWebSocketConfig {
                     handleSessionCreated(message, handler);
                     break;
 
+                case "agent_tool_response":
+                    handleAgentToolResponse(message, handler);
+                    break;
+
                 default:
                     Log.d(TAG, "🔄 Unhandled message type: " + type);
                     Log.v(TAG, "📄 Raw message: " + message.toString());
@@ -182,6 +186,26 @@ public class ElevenLabsWebSocketConfig {
 
         } catch (Exception e) {
             Log.e(TAG, "❌ Error handling ElevenLabs message: " + e.getMessage());
+        }
+    }
+
+    // ElevenLabs sends this when the agent invokes a tool. The built-in system
+    // tool "end_call" fires when the agent decides the conversation is over —
+    // we use it to hang up the phone call automatically instead of leaving it
+    // open until the remote party disconnects.
+    private static void handleAgentToolResponse(JSONObject message, MessageHandler handler) {
+        try {
+            JSONObject tool = message.optJSONObject("agent_tool_response");
+            if (tool == null) return;
+            String toolName = tool.optString("tool_name", "");
+            boolean called = tool.optBoolean("is_called", false);
+            Log.d(TAG, "Agent tool response: " + toolName + " (called=" + called + ")");
+            if ("end_call".equals(toolName) && called) {
+                Log.d(TAG, "🔚 Agent invoked end_call → requesting phone hangup");
+                handler.onEndCallRequested();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error handling agent_tool_response: " + e.getMessage());
         }
     }
 
@@ -402,6 +426,9 @@ public class ElevenLabsWebSocketConfig {
         void onError(String message, String code);
         void onConversationMetadata(String conversationId);
         void onSessionCreated(String sessionId);
+        // Fired when the ElevenLabs agent invokes its end_call tool. Default no-op
+        // so existing handlers keep compiling; the AI recorder overrides it.
+        default void onEndCallRequested() {}
     }
 
     /**

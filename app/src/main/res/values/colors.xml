@@ -206,4 +206,23 @@
     <color name="tab_indicator_color">#6200EE</color>
     <color name="pink">#FF9999</color>
 
+    <!-- Subtle script-block overlay (Part C) -->
+    <color name="script_block_bg">#0D000000</color>
+    <!-- Always-dark text for content on a fixed light surface (e.g. the offer gradient, which has no night variant). -->
+    <color name="on_fixed_light">#1E1E1E</color>
+
+    <!-- ===== Calendar redesign tokens (intent-named, dark app surfaces) ===== -->
+    <color name="cal_surface_900">#0F1420</color>  <!-- screen ground -->
+    <color name="cal_surface_800">#171E2E</color>  <!-- card -->
+    <color name="cal_surface_700">#1F2838</color>  <!-- elevated / chip ground -->
+    <color name="cal_line">#26304A</color>         <!-- hairline / border -->
+    <color name="cal_text_hi">#EAF0F7</color>
+    <color name="cal_text_mid">#93A0B4</color>
+    <color name="cal_text_lo">#5D6B80</color>
+    <color name="cal_brand">#00A6FB</color>        <!-- real app accent -->
+    <color name="cal_brand_ink">#0B3A55</color>
+    <color name="cal_ok">#2FD07E</color>           <!-- completed -->
+    <color name="cal_warn">#F5B44C</color>         <!-- pending -->
+    <color name="cal_bad">#FF5C68</color>          <!-- failed / no-answer / delete -->
+
 </resources>

@@ -43,15 +43,18 @@
 
     <!-- ========== NOTIFICATION PERMISSIONS ========== -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
     <!--    <uses-permission android:name="android.permission.WRITE_CALL_LOG" />-->
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <!-- ========== OTHER PERMISSIONS ========== -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"
         tools:ignore="ScopedStorage" />
+    <!-- Android 13+ (API 33) scoped media read, replaces READ_EXTERNAL_STORAGE -->
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <!-- Android 12+ (API 31) Bluetooth for call-audio routing / SCO -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -78,7 +81,7 @@
         android:hardwareAccelerated="true"
         android:largeHeap="true"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="false"
+        android:supportsRtl="true"
         android:theme="@style/Theme.Teletalker"
         tools:targetApi="tiramisu">
         <activity
@@ -211,6 +214,7 @@
         <service
             android:name=".services.CallDetector"
             android:exported="true"
+            android:foregroundServiceType="microphone|specialUse"
             android:permission="android.permission.BIND_INCALL_SERVICE">
             <intent-filter>
                 <action android:name="android.telecom.InCallService" />
@@ -218,6 +222,9 @@
             <meta-data
                 android:name="android.telecom.INCLUDE_EXTERNAL_CALLS"
                 android:value="true" />
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="AI-assisted in-call recording and audio injection" />
 
         </service>
 
@@ -255,8 +262,12 @@
             android:name=".services.scheduler.ScheduledCallExecutor"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="phoneCall"
-            tools:ignore="ForegroundServicePermission" />
+            android:foregroundServiceType="phoneCall|specialUse"
+            tools:ignore="ForegroundServicePermission">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Automated outbound call placement for scheduled AI calls" />
+        </service>
 
         <!-- Boot Receiver to restart scheduled calls after reboot -->
         <receiver

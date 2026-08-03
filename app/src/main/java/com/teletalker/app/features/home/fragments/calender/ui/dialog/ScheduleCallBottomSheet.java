@@ -56,6 +56,15 @@ public class ScheduleCallBottomSheet extends BottomSheetDialogFragment {
         return sheet;
     }
 
+    /** Opens a fresh schedule form with the given calendar day pre-filled. */
+    public static ScheduleCallBottomSheet newInstanceForDate(long dateMillis) {
+        ScheduleCallBottomSheet sheet = new ScheduleCallBottomSheet();
+        Bundle args = new Bundle();
+        args.putLong("prefill_date", dateMillis);
+        sheet.setArguments(args);
+        return sheet;
+    }
+
     public void setOnScheduleCallListener(OnScheduleCallListener listener) {
         this.listener = listener;
     }
@@ -103,12 +112,29 @@ public class ScheduleCallBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void loadExistingCallIfAny() {
-        if (getArguments() != null) {
-            existingCall = (ScheduledCall) getArguments().getSerializable("existing_call");
-            if (existingCall != null) {
-                populateFields(existingCall);
-                btnSchedule.setText("Update Call");
-            }
+        if (getArguments() == null) return;
+
+        existingCall = (ScheduledCall) getArguments().getSerializable("existing_call");
+        if (existingCall != null) {
+            populateFields(existingCall);
+            btnSchedule.setText("Update Call");
+            return;
+        }
+
+        // Pre-fill the tapped calendar day (keeps a sensible future time-of-day).
+        if (getArguments().containsKey("prefill_date")) {
+            Calendar tapped = Calendar.getInstance();
+            tapped.setTimeInMillis(getArguments().getLong("prefill_date"));
+
+            Calendar future = Calendar.getInstance();
+            future.add(Calendar.HOUR_OF_DAY, 1);
+
+            selectedDateTime.set(Calendar.YEAR, tapped.get(Calendar.YEAR));
+            selectedDateTime.set(Calendar.MONTH, tapped.get(Calendar.MONTH));
+            selectedDateTime.set(Calendar.DAY_OF_MONTH, tapped.get(Calendar.DAY_OF_MONTH));
+            selectedDateTime.set(Calendar.HOUR_OF_DAY, future.get(Calendar.HOUR_OF_DAY));
+            selectedDateTime.set(Calendar.MINUTE, future.get(Calendar.MINUTE));
+            updateDateTimeDisplay();
         }
     }
 
@@ -166,25 +192,23 @@ public class ScheduleCallBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void selectDurationChip(int minutes) {
+        // Options are 1/2/3 minutes (max call duration capped at 5). Anything
+        // outside maps to the 2-minute default.
         int chipId;
         switch (minutes) {
-            case 5: chipId = R.id.chip5Min; break;
-            case 10: chipId = R.id.chip10Min; break;
-            case 15: chipId = R.id.chip15Min; break;
-            case 30: chipId = R.id.chip30Min; break;
-            case 60: chipId = R.id.chip60Min; break;
-            default: chipId = R.id.chip10Min; break;
+            case 1: chipId = R.id.chip1Min; break;
+            case 2: chipId = R.id.chip2Min; break;
+            case 3: chipId = R.id.chip3Min; break;
+            default: chipId = R.id.chip2Min; break;
         }
         chipGroupDuration.check(chipId);
     }
 
     private int getSelectedDuration() {
         int selectedChipId = chipGroupDuration.getCheckedChipId();
-        if (selectedChipId == R.id.chip5Min) return 5;
-        if (selectedChipId == R.id.chip15Min) return 15;
-        if (selectedChipId == R.id.chip30Min) return 30;
-        if (selectedChipId == R.id.chip60Min) return 60;
-        return 10;
+        if (selectedChipId == R.id.chip1Min) return 1;
+        if (selectedChipId == R.id.chip3Min) return 3;
+        return 2; // chip2Min or nothing selected
     }
 
     private void scheduleCall() {

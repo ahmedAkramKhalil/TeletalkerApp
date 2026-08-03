@@ -33,6 +33,7 @@
 
             <ImageView
                 android:id="@+id/agentAvatar"
+                android:contentDescription="@string/cd_agent_avatar"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
@@ -91,7 +92,7 @@
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="2dp"
                 android:textColor="@color/gunmetalTextGray"
-                android:textSize="10sp"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 tools:text="ENGLISH" />
 
@@ -105,7 +106,7 @@
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="2dp"
                 android:textColor="@color/gunmetalTextGray"
-                android:textSize="10sp"
+                android:textSize="12sp"
                 app:drawableStartCompat="@drawable/ic_language"
                 app:drawableTint="@color/gunmetalTextGray"
                 tools:text="English" />

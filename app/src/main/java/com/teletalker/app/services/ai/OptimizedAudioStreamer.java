@@ -60,6 +60,7 @@ public class OptimizedAudioStreamer {
     private AudioRecord audioRecord;
     private final AtomicBoolean isStreaming = new AtomicBoolean(false);
     private final AtomicBoolean isPaused = new AtomicBoolean(false);
+    private final AtomicBoolean isSendingSilence = new AtomicBoolean(false);
 
     // Chunk management
     private final BlockingQueue<AudioChunkData> chunkQueue = new LinkedBlockingQueue<>();
@@ -366,7 +367,17 @@ public class OptimizedAudioStreamer {
             return;
         }
 
-        AudioChunkData chunkData = new AudioChunkData(chunk.data, hasVoice, chunk.timestamp);
+        // When AI is playing, send silence instead of real audio to prevent echo
+        // but keep streaming so ElevenLabs connection stays alive
+        byte[] audioData;
+        if (isSendingSilence.get()) {
+            audioData = new byte[chunk.data.length]; // all zeros = silence
+            hasVoice = false;
+        } else {
+            audioData = chunk.data;
+        }
+
+        AudioChunkData chunkData = new AudioChunkData(audioData, hasVoice, chunk.timestamp);
 
         // Check queue size and manage overflow
         if (chunkQueue.size() >= MAX_QUEUE_SIZE) {
@@ -490,6 +501,16 @@ public class OptimizedAudioStreamer {
                 callback.onConnectionHealthChanged(true);
             }
         }
+    }
+
+    public void startSendingSilence() {
+        isSendingSilence.set(true);
+        Log.d(TAG, "Streaming silence mode ON - sending silence to prevent echo");
+    }
+
+    public void stopSendingSilence() {
+        isSendingSilence.set(false);
+        Log.d(TAG, "Streaming silence mode OFF - sending real audio");
     }
 
     public void pauseStreaming() {

@@ -26,6 +26,7 @@ import com.teletalker.app.utils.ScheduledCallHelper;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.DataOutputStream;
 import java.util.Base64;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -127,6 +128,11 @@ public class AICallRecorderRefactored {
         void onSilenceDetected(long durationMs);
 
         void onSpeechDetected(long durationMs);
+
+        // Fired when the ElevenLabs agent signals the conversation is over
+        // (end_call tool). The InCallService uses this to hang up the phone
+        // call automatically. Default no-op so other impls keep compiling.
+        default void onEndCallRequested() {}
     }
 
 
@@ -301,31 +307,46 @@ public class AICallRecorderRefactored {
             String purpose = prefs.getString("pending_scheduled_call_purpose", "");
             String notes = prefs.getString("pending_scheduled_call_notes", "");
             String contactName = prefs.getString("pending_scheduled_call_contact", "");
+            // Real Firestore booking_id for this call (stored by NotificationHandler,
+            // keyed by the scheduled-call id). The agent MUST pass this to the
+            // confirm_booking/cancel_booking webhook tools so the outcome lands on
+            // the right booking and shows up on the dashboard.
+            long schedId = prefs.getLong("pending_scheduled_call_id", -1);
+            String bookingId = schedId >= 0
+                    ? prefs.getString("pending_booking_id_" + schedId, "") : "";
 
             // Build prompts based on call direction
-            // Build prompts based on call direction
-            String systemPrompt = buildSystemPrompt(isOutbound, purpose, notes, contactName);
+            String systemPrompt = buildSystemPrompt(isOutbound, purpose, notes, contactName, bookingId);
             String firstMessage = buildFirstMessage(isOutbound, purpose, contactName);
 
-            // Create overrides object
-            JSONObject overrides = new JSONObject();
-
-            // Agent override with system prompt
+            // ElevenLabs expects the key "conversation_config_override" with the
+            // agent's prompt AND first_message BOTH nested under "agent". The
+            // sender (ElevenLabsWebSocketConfig.sendInitialConfiguration) only
+            // forwards this exact key — previously we emitted "overrides" with
+            // first_message under "conversation_config", so it was silently
+            // dropped and the agent's dashboard greeting was used instead.
             JSONObject agent = new JSONObject();
             JSONObject promptConfig = new JSONObject();
             promptConfig.put("prompt", systemPrompt);
             agent.put("prompt", promptConfig);
-            overrides.put("agent", agent);
+            agent.put("first_message", firstMessage);
 
-            // Conversation config override with first message
-            JSONObject conversationConfig = new JSONObject();
-            conversationConfig.put("first_message", firstMessage);
-            overrides.put("conversation_config", conversationConfig);
+            JSONObject override = new JSONObject();
+            override.put("agent", agent);
 
-            requestBody.put("overrides", overrides);
+            requestBody.put("conversation_config_override", override);
+
+            // Expose booking_id as a dynamic variable too, so agent tools that
+            // reference {{booking_id}} resolve to the real Firestore id.
+            if (bookingId != null && !bookingId.isEmpty()) {
+                JSONObject dynamicVars = new JSONObject();
+                dynamicVars.put("booking_id", bookingId);
+                requestBody.put("dynamic_variables", dynamicVars);
+            }
 
             Log.d(TAG, "========================================");
             Log.d(TAG, "CONVERSATION INITIATION DATA");
+            Log.d(TAG, "Booking ID: " + (bookingId.isEmpty() ? "(none)" : bookingId));
             Log.d(TAG, "Call Type: " + (isOutbound ? "OUTBOUND" : "INBOUND"));
             Log.d(TAG, "System Prompt: " + systemPrompt);
             Log.d(TAG, "First Message: " + firstMessage);
@@ -339,7 +360,7 @@ public class AICallRecorderRefactored {
         }
     }
 
-    private String buildSystemPrompt(boolean isOutbound, String purpose, String notes, String contactName) {
+    private String buildSystemPrompt(boolean isOutbound, String purpose, String notes, String contactName, String bookingId) {
         if (isOutbound) {
             // OUTBOUND - personalized with variables
             StringBuilder prompt = new StringBuilder();
@@ -357,6 +378,13 @@ public class AICallRecorderRefactored {
 
             if (contactName != null && !contactName.isEmpty()) {
                 prompt.append("You are speaking with: ").append(contactName).append(". ");
+            }
+
+            if (bookingId != null && !bookingId.isEmpty()) {
+                prompt.append("The booking ID for this appointment is ").append(bookingId).append(". ");
+                prompt.append("Whenever you call the confirm_booking, cancel_booking, or reschedule_booking tools, ");
+                prompt.append("you MUST pass this exact booking_id value: ").append(bookingId).append(". ");
+                prompt.append("Never invent, guess, or derive a booking_id from the date or the customer's name. ");
             }
 
             prompt.append("Speak naturally and complete the conversation objective. ");
@@ -609,9 +637,14 @@ public class AICallRecorderRefactored {
             return false;
         }
 
-        // Get user's plan
-        String userPlan = prefs.getString("user_plan", "lite");  // Default to lite
-        boolean isLitePlan = "lite".equalsIgnoreCase(userPlan);
+        // Get the user's REAL plan from SubscriptionManager (backed by the
+        // server's `appVersion`, cached for offline). This replaces the old
+        // phantom "user_plan" pref that was never written — which pinned every
+        // device to "lite" forever regardless of the merchant's actual plan.
+        // Unknown/unsynced defaults to lite (the free tier), which is safe.
+        boolean isLitePlan = !com.teletalker.app.utils.SubscriptionManager
+                .getInstance(context).isStandard();
+        Log.d(TAG, "Plan check → " + (isLitePlan ? "LITE" : "STANDARD"));
 
         // Determine if this is an outbound call
         // isOutboundCall should already be set by checkAndApplyScheduledCallContext()
@@ -619,16 +652,18 @@ public class AICallRecorderRefactored {
         boolean isOutgoing = isOutboundCall || isScheduledOutboundCall(phoneNumber);
 
         if (isLitePlan) {
-            // Lite plan: AI only for OUTGOING calls
-            if (!isOutgoing) {
-                Log.d(TAG, "✅ Lite plan +Incoming   call = AI ENABLED");
-                return true;
-            } else {
-                Log.d(TAG, "❌ Lite plan + Outgoing call = AI DISABLED");
+            // Lite (free) plan = INBOUND AI call handling only. The AI answers
+            // incoming customer calls (the free-tier core use case). Outbound and
+            // scheduled AI calls are a PAID feature and get no AI on Lite.
+            if (isOutgoing) {
+                Log.d(TAG, "❌ Lite plan + Outgoing/Scheduled call = AI DISABLED (paid feature)");
                 return false;
+            } else {
+                Log.d(TAG, "✅ Lite plan + Incoming call = AI ENABLED");
+                return true;
             }
         } else {
-            // Standard plan: AI for ALL calls
+            // Standard (paid) plan: AI for ALL calls (inbound + outbound + scheduled).
             Log.d(TAG, "✅ Standard plan = AI ENABLED for all calls");
             return true;
         }
@@ -971,6 +1006,35 @@ public class AICallRecorderRefactored {
         }
     }
 
+    // In your app, create a simple method:
+    private void setMicMuted(boolean muted) {
+//        try {
+//            // Run as root
+//            Process process = Runtime.getRuntime().exec("su");
+//            DataOutputStream os = new DataOutputStream(process.getOutputStream());
+//
+//            if (muted) {
+//                // Mute mic - try common controls (device-specific)
+//                os.writeBytes("tinymix 'ADC Volume' 0\n");
+//                // OR
+//                os.writeBytes("tinymix 'Mic Volume' 0\n");
+//            } else {
+//                // Unmute mic - restore original value
+//                os.writeBytes("tinymix 'ADC Volume' 100\n");
+//                // OR
+//                os.writeBytes("tinymix 'Mic Volume' 100\n");
+//            }
+//
+//            os.writeBytes("exit\n");
+//            os.flush();
+//            process.waitFor();
+//
+//            Log.d(TAG, "Mic " + (muted ? "MUTED" : "UNMUTED"));
+//        } catch (Exception e) {
+//            Log.e(TAG, "Failed to set mic mute: " + e.getMessage());
+//        }
+    }
+
     private void setupEnhancedCallbacks() {
         // Audio processor callbacks
         if (audioProcessor != null) {
@@ -1007,37 +1071,38 @@ public class AICallRecorderRefactored {
         }
 
         // Response buffer callbacks
+        // FIX: Send silence to ElevenLabs while AI is playing to prevent echo.
+        // We do NOT pause/mute — silence keeps the WebSocket alive and
+        // ElevenLabs can still detect interruption when real audio returns.
         if (responseBuffer != null) {
             responseBuffer.setCallback(new AIResponseBuffer.ResponseCallback() {
                 @Override
                 public void onResponseStarted() {
+                    // AI started playing — send silence to ElevenLabs so it
+                    // doesn't hear its own voice echoed back through the mic
                     if (audioStreamer != null) {
-                        audioStreamer.pauseStreaming();
+                        audioStreamer.startSendingSilence();
                     }
-
-                    Log.d(TAG, "AI response playback started");
+                    Log.d(TAG, "AI response started — sending silence to prevent echo");
                 }
 
                 @Override
                 public void onResponseStopped() {
+                    // AI stopped playing — resume sending real audio
                     mainHandler.postDelayed(() -> {
                         if (audioStreamer != null && isAIConnected.get()) {
-                            audioStreamer.resumeStreaming();
-                            Log.d(TAG, "✅ Mic capture resumed");
+                            audioStreamer.stopSendingSilence();
+                            Log.d(TAG, "AI response stopped — real audio resumed");
                         }
-                    }, 300);  // 300ms buffer
-
-                    Log.d(TAG, "AI response playback stopped");
+                    }, 200); // small delay to avoid tail-end echo
                 }
 
                 @Override
                 public void onResponseError(String error) {
                     Log.e(TAG, "AI response error: " + error);
                     if (audioStreamer != null) {
-                        audioStreamer.resumeStreaming();
+                        audioStreamer.stopSendingSilence();
                     }
-
-
                     totalErrorsEncountered.incrementAndGet();
                     notifyCallback(cb -> cb.onAIError("Response error: " + error));
                 }
@@ -1523,23 +1588,9 @@ public class AICallRecorderRefactored {
                                 totalAudioChunksReceived.incrementAndGet();
                                 Log.d(TAG, "AI Audio Response: " + audioData.length + " bytes");
 
-                                // Add to response buffer for local playback
+                                // Play through speaker — AudioRecord(VOICE_CALL) captures it
+                                // so both device user AND caller hear the AI
                                 responseBuffer.addAudioResponse(audioData);
-
-                                // Choose injection method
-                                if (useRealTimeInjection) {
-                                    if (audioStreamInjector != null) {
-                                        audioStreamInjector.streamPCM(audioData);
-                                    }
-//                                    if (sequentialInjector != null) {
-//                                        sequentialInjector.queueAudioChunk(audioData);
-//                                    }
-                                } else {
-                                    if (sequentialInjector != null) {
-                                        sequentialInjector.queueAudioChunk(audioData);
-                                    }
-//                                    audioAccumulator.addAudioChunk(audioData);
-                                }
 
                                 broadcastAIStatus("ACTIVE", coreRecorder.isRecording(), true, "");
 
@@ -1589,6 +1640,12 @@ public class AICallRecorderRefactored {
                             public void onSessionCreated(String sessionId) {
                                 Log.d(TAG, "Session ID: " + sessionId);
                             }
+
+                            @Override
+                            public void onEndCallRequested() {
+                                Log.d(TAG, "🔚 AI finished conversation (end_call) — notifying InCallService to hang up");
+                                notifyCallback(cb -> cb.onEndCallRequested());
+                            }
                         });
 
             } catch (JSONException e) {
@@ -1607,19 +1664,8 @@ public class AICallRecorderRefactored {
 
             Log.d(TAG, "Binary Audio Response: " + audioData.length + " bytes");
 
-            // Handle binary audio the same way as JSON audio
+            // Same as JSON path — play through speaker, AudioRecord picks it up for call
             responseBuffer.addAudioResponse(audioData);
-
-            if (useRealTimeInjection) {
-                if (audioStreamInjector != null) {
-                    audioStreamInjector.streamPCM(audioData);
-                }
-                if (sequentialInjector != null) {
-                    sequentialInjector.queueAudioChunk(audioData);
-                }
-            } else {
-                audioAccumulator.addAudioChunk(audioData);
-            }
         }
 
         @Override
@@ -1780,22 +1826,13 @@ public class AICallRecorderRefactored {
         CallAudioInjector.InjectionCallback injectionCallback = new CallAudioInjector.InjectionCallback() {
             @Override
             public void onInjectionStarted() {
-                if (audioStreamer != null) {
-                    audioStreamer.pauseStreaming();
-                    Log.d(TAG, "Audio streaming PAUSED for injection");
-                }
+                // FIX: No muting needed - audio goes to telephony, not speaker
                 Log.d(TAG, "Complete audio injection started");
                 notifyCallback(cb -> cb.onAudioInjectionStarted("Complete Response"));
             }
 
             @Override
             public void onInjectionCompleted(boolean success) {
-                if (audioStreamer != null) {
-                    audioStreamer.resumeStreaming();
-                    Log.d(TAG, "Audio streaming RESUMED after injection");
-                }
-
-
                 if (success) {
                     Log.d(TAG, "Complete audio injection completed successfully");
                     notifyCallback(cb -> cb.onAudioInjected(completeAudio.length, completeAudio.length));
@@ -1808,11 +1845,6 @@ public class AICallRecorderRefactored {
 
             @Override
             public void onInjectionError(String error) {
-                if (audioStreamer != null) {
-                    audioStreamer.resumeStreaming();
-                    Log.d(TAG, "Audio streaming RESUMED after injection");
-                }
-
                 Log.e(TAG, "Complete audio injection error: " + error);
                 totalErrorsEncountered.incrementAndGet();
                 notifyCallback(cb -> cb.onAudioInjectionError(error));
@@ -2048,6 +2080,8 @@ public class AICallRecorderRefactored {
                 audioStreamer != null ? audioStreamer.getStats() : null
         );
     }
+
+
 
     public static class AIStatistics {
         public final long totalMessages;

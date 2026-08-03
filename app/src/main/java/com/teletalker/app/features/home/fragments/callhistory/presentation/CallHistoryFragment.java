@@ -14,18 +14,24 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.teletalker.app.R;
 import com.teletalker.app.databinding.FragmentCallHistoryBinding;
 import com.teletalker.app.features.home.fragments.callhistory.data.models.CallEntity;
 import com.teletalker.app.features.home.fragments.callhistory.presentation.adapters.SeeAllHistoryAdapter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class CallHistoryFragment extends Fragment {
 
     private FragmentCallHistoryBinding binding;
     SeeAllHistoryAdapter adapter;
     CallHistoryViewModel viewModel;
+
+    // Full unfiltered list + current filter selection
+    private final List<CallEntity> allCalls = new ArrayList<>();
+    private String currentFilter = "all";
 
     // MediaPlayer management
     private MediaPlayer mediaPlayer;
@@ -89,6 +95,50 @@ public class CallHistoryFragment extends Fragment {
                 });
 
         binding.recyclerView.setAdapter(adapter);
+
+        binding.filterChips.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            int id = group.getCheckedChipId();
+            if (id == R.id.chipInbound) {
+                currentFilter = "in";
+            } else if (id == R.id.chipOutbound) {
+                currentFilter = "out";
+            } else if (id == R.id.chipMissed) {
+                currentFilter = "missed";
+            } else if (id == R.id.chipAi) {
+                currentFilter = "ai";
+            } else {
+                currentFilter = "all";
+            }
+            applyFilter();
+        });
+    }
+
+    private void applyFilter() {
+        List<CallEntity> filtered = new ArrayList<>();
+        for (CallEntity c : allCalls) {
+            boolean keep;
+            switch (currentFilter) {
+                case "in":
+                    keep = "in".equalsIgnoreCase(c.callStatus);
+                    break;
+                case "out":
+                    keep = "out".equalsIgnoreCase(c.callStatus);
+                    break;
+                case "missed":
+                    keep = c.duration == null || c.duration.trim().isEmpty();
+                    break;
+                case "ai":
+                    keep = c.callType != null && c.callType.startsWith("AI Call");
+                    break;
+                default:
+                    keep = true;
+            }
+            if (keep) filtered.add(c);
+        }
+        adapter.updateData(filtered);
+        if (binding != null) {
+            binding.emptyState.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void setupMediaPlayerListeners() {
@@ -179,7 +229,9 @@ public class CallHistoryFragment extends Fragment {
     @SuppressLint("NotifyDataSetChanged")
     void observers(){
         viewModel.getCallHistoryLiveData().observe(getViewLifecycleOwner(), callHistoryItems -> {
-            adapter.updateData(callHistoryItems);
+            allCalls.clear();
+            if (callHistoryItems != null) allCalls.addAll(callHistoryItems);
+            applyFilter();
         });
     }
 

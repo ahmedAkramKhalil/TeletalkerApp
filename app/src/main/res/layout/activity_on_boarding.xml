@@ -11,10 +11,11 @@
 
     <ImageView
         android:id="@+id/imageView"
+        android:importantForAccessibility="no"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:layout_marginBottom="-10dp"
-        android:paddingRight="40dp"
+        android:paddingEnd="40dp"
         app:layout_constraintBottom_toTopOf="@+id/constraintLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -34,6 +35,7 @@
 
         <ImageView
             android:id="@+id/imageView2"
+            android:importantForAccessibility="no"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="12dp"
@@ -147,6 +149,7 @@
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/imageView3"
+        android:contentDescription="@string/cd_next"
         android:layout_width="70dp"
         android:layout_height="70dp"
         android:layout_marginBottom="-55dp"
@@ -164,6 +167,7 @@
         android:layout_height="wrap_content"
         android:elevation="20dp"
         android:visibility="gone"
+        android:importantForAccessibility="no"
 
         app:layout_constraintBottom_toBottomOf="@+id/imageView3"
         app:layout_constraintEnd_toEndOf="@+id/imageView3"
@@ -210,6 +214,7 @@
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:importantForAccessibility="no"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
