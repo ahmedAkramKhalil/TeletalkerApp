@@ -182,23 +182,24 @@ public class VersionSwitcherActivity extends AppCompatActivity {
 
         showLoading(true);
 
-        functions.getHttpsCallable("createSubscription")
+        // Standard is a paid monthly plan: create a subscription invoice and
+        // route the user to checkout. The plan activates via the payment webhook
+        // once paid (matches SubscriptionPlanActivity — the backend is invoice-
+        // based, there is no instant one-shot subscription activation).
+        functions.getHttpsCallable("createSubscriptionInvoice")
                 .call()
                 .addOnSuccessListener(result -> {
                     try {
                         Map<String, Object> data = (Map<String, Object>) result.getData();
-                        boolean success = (boolean) data.get("success");
-
-                        if (success) {
-                            Toast.makeText(this,
-                                    "🎉 Successfully upgraded to Standard!",
-                                    Toast.LENGTH_LONG).show();
-
-                            // Reload subscription status
-                            loadSubscriptionStatus();
+                        String invoiceUrl = (String) data.get("invoiceUrl");
+                        showLoading(false);
+                        if (invoiceUrl != null && !invoiceUrl.isEmpty()) {
+                            Intent intent = new Intent(this,
+                                    com.teletalker.app.subscription.CheckoutActivity.class);
+                            intent.putExtra("checkout_url", invoiceUrl);
+                            startActivity(intent);
                         } else {
-                            showError("Upgrade failed. Please try again.");
-                            showLoading(false);
+                            showError("Could not start checkout. Please try again.");
                         }
                     } catch (Exception e) {
                         showError("Error processing upgrade");
@@ -236,7 +237,7 @@ public class VersionSwitcherActivity extends AppCompatActivity {
 
         showLoading(true);
 
-        functions.getHttpsCallable("cancelSubscription")
+        functions.getHttpsCallable("cancelUserSubscription")
                 .call()
                 .addOnSuccessListener(result -> {
                     Toast.makeText(this,
