@@ -88,6 +88,21 @@ public class FirebaseFunctionsManager {
         void onError(String error);
     }
 
+    public interface OnBookingOutcomeCallback {
+        void onSuccess();
+        void onError(String error);
+    }
+
+    public interface OnMerchantProfileCallback {
+        void onSuccess();
+        void onError(String error);
+    }
+
+    public interface OnSyncApiKeyCallback {
+        void onSuccess();
+        void onError(String error);
+    }
+
     // ============================================
     // HELPER: Ensure Fresh Auth Token
     // ============================================
@@ -470,6 +485,143 @@ public class FirebaseFunctionsManager {
                             });
                 },
                 callback::onError
+        );
+    }
+
+    // ============================================
+    // 9. REPORT BOOKING CALL OUTCOME (booking app integration)
+    // ============================================
+
+    /**
+     * Report the outcome of a confirmation call back to Firestore so the
+     * merchant's booking dashboard reflects what happened.
+     *
+     * @param bookingId Firestore /bookings/{id} document ID
+     * @param outcome   one of "confirmed" | "rescheduled" | "no_answer" |
+     *                  "declined" | "called" | "failed"
+     */
+    public void reportBookingCallOutcome(String bookingId, String outcome,
+                                         OnBookingOutcomeCallback callback) {
+        reportBookingCallOutcome(bookingId, outcome, null, callback);
+    }
+
+    /**
+     * Flip a booking from 'scheduled' → 'calling' so the dashboard shows
+     * "Calling now…" while the AI call is in progress. Idempotent, fire
+     * and forget — failure here doesn't affect the call itself.
+     */
+    public void markBookingCalling(String bookingId) {
+        if (bookingId == null || bookingId.isEmpty()) return;
+        ensureFreshToken(
+                () -> {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("bookingId", bookingId);
+                    functions.getHttpsCallable("markBookingCalling")
+                            .call(data)
+                            .addOnSuccessListener(r ->
+                                    Log.d(TAG, "Booking " + bookingId + " marked as calling"))
+                            .addOnFailureListener(e ->
+                                    Log.w(TAG, "markBookingCalling failed: " + e.getMessage()));
+                },
+                err -> Log.w(TAG, "markBookingCalling token error: " + err)
+        );
+    }
+
+    public void reportBookingCallOutcome(String bookingId, String outcome,
+                                         String newAppointmentIso,
+                                         OnBookingOutcomeCallback callback) {
+        reportBookingCallOutcome(bookingId, outcome, newAppointmentIso, null, callback);
+    }
+
+    public void reportBookingCallOutcome(String bookingId, String outcome,
+                                         String newAppointmentIso,
+                                         String cancellationReason,
+                                         OnBookingOutcomeCallback callback) {
+        if (bookingId == null || bookingId.isEmpty()) {
+            callback.onError("bookingId required");
+            return;
+        }
+
+        ensureFreshToken(
+                () -> {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("bookingId", bookingId);
+                    data.put("outcome", outcome);
+                    if (newAppointmentIso != null && !newAppointmentIso.isEmpty()) {
+                        data.put("newAppointmentIso", newAppointmentIso);
+                    }
+                    if (cancellationReason != null && !cancellationReason.isEmpty()) {
+                        data.put("cancellationReason", cancellationReason);
+                    }
+
+                    functions.getHttpsCallable("reportBookingCallOutcome")
+                            .call(data)
+                            .addOnSuccessListener(result -> {
+                                Log.d(TAG, "✅ Booking outcome reported: " + outcome);
+                                callback.onSuccess();
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "Error reporting booking outcome", e);
+                                callback.onError(e.getMessage());
+                            });
+                },
+                callback::onError
+        );
+    }
+
+    // ============================================
+    // 10. UPSERT MERCHANT PROFILE (booking app onboarding)
+    // ============================================
+
+    /**
+     * Create or update the /merchants/{uid} document for the current user.
+     * The function enforces slug uniqueness server-side.
+     */
+    public void upsertMerchantProfile(Map<String, Object> profile,
+                                      OnMerchantProfileCallback callback) {
+        ensureFreshToken(
+                () -> {
+                    functions.getHttpsCallable("upsertMerchantProfile")
+                            .call(profile)
+                            .addOnSuccessListener(result -> {
+                                Log.d(TAG, "✅ Merchant profile saved");
+                                callback.onSuccess();
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "Error saving merchant profile", e);
+                                callback.onError(e.getMessage());
+                            });
+                },
+                callback::onError
+        );
+    }
+
+    // ============================================
+    // 11. SYNC ELEVENLABS API KEY (booking-app web picker)
+    // ============================================
+
+    /**
+     * Push the merchant's ElevenLabs API key to users/{uid}.elevenlabsApiKey
+     * so the web booking dashboard can fetch the agent list with it.
+     */
+    public void syncElevenLabsApiKey(String apiKey, OnSyncApiKeyCallback cb) {
+        if (apiKey == null || apiKey.isEmpty()) {
+            cb.onError("apiKey required");
+            return;
+        }
+        ensureFreshToken(
+                () -> {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("apiKey", apiKey);
+                    functions.getHttpsCallable("syncElevenLabsApiKey")
+                            .call(data)
+                            .addOnSuccessListener(r -> cb.onSuccess())
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "syncElevenLabsApiKey failed", e);
+                                cb.onError(e.getMessage());
+                            });
+                },
+                cb::onError
         );
     }
 

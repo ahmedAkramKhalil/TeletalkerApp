@@ -3,6 +3,8 @@ package com.teletalker.app.features.home.fragments.callhistory.data.data_sources
 import android.content.Context;
 import android.os.AsyncTask;
 
+import androidx.lifecycle.LiveData;
+
 import com.teletalker.app.features.home.fragments.callhistory.data.data_sources.local.dao.CallDao;
 import com.teletalker.app.features.home.fragments.callhistory.data.data_sources.local.database.CallDatabase;
 import com.teletalker.app.features.home.fragments.callhistory.data.models.CallEntity;
@@ -21,8 +23,8 @@ public class CallLocalDataSourceImpl implements CallLocalDataSource {
     }
 
     @Override
-    public List<CallEntity> getCallHistory() {
-        return  callDao.getAllCalls();
+    public LiveData<List<CallEntity>> getCallHistory() {
+        return callDao.getAllCalls();
     }
 
     @Override
@@ -37,5 +39,10 @@ public class CallLocalDataSourceImpl implements CallLocalDataSource {
     @Override
     public List<CallEntity> getRecentCallRecords() {
         return  callDao.getRecentCallRecords();
+    }
+
+    @Override
+    public LiveData<List<CallEntity>> getLastTwoCallRecords() {
+        return callDao.getLastTwoCallRecords();
     }
 }

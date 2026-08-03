@@ -50,6 +50,9 @@ import com.teletalker.app.features.agent_type.AgentTypeActivity;
 import com.teletalker.app.features.home.HomeActivity;
 import com.teletalker.app.features.home.StatusModel;
 import com.teletalker.app.features.home.TeleTalkerStatusWidget;
+import com.teletalker.app.features.booking.BookingSetupActivity;
+import com.teletalker.app.features.booking.data.MerchantProfile;
+import com.teletalker.app.features.booking.data.MerchantProfileRepository;
 import com.teletalker.app.features.home.ThemeManager;
 import com.teletalker.app.features.home.fragments.callhistory.data.models.CallEntity;
 import com.teletalker.app.features.home.fragments.settings.SettingsViewModel;
@@ -294,6 +297,7 @@ public class HomeFragment extends Fragment implements CallHistoryAdapter.OnCallP
 
         setupBillingListener();
         syncBalanceAndUpdateUI();
+        setupBookingStatusCard();
 
         if (prefsManager.getSelectedAgentId() == null) {
             binding.AgentButtonText.setText(R.string.select_agent);
@@ -305,6 +309,55 @@ public class HomeFragment extends Fragment implements CallHistoryAdapter.OnCallP
         }
         setupAppBarFromCache();
 
+    }
+
+    /**
+     * Booking-page status card. Shown only on Standard plan. Reads the
+     * merchant's /merchants/{uid} doc on Firestore to decide what status
+     * to display, and routes the merchant to BookingSetupActivity on tap.
+     */
+    private void setupBookingStatusCard() {
+        if (binding == null) return;
+        boolean isStandard = SubscriptionManager.getInstance(requireContext()).isStandard();
+        if (!isStandard) {
+            binding.bookingStatusCard.setVisibility(View.GONE);
+            return;
+        }
+
+        binding.bookingStatusCard.setVisibility(View.VISIBLE);
+        binding.bookingStatusCard.setOnClickListener(v ->
+                startActivity(new Intent(requireContext(), BookingSetupActivity.class)));
+
+        // Default state: assume "not set up" until we hear back from Firestore.
+        binding.bookingStatusDot.setBackgroundResource(R.drawable.status_dot_inactive);
+        binding.bookingStatusText.setText(R.string.home_booking_status_setup);
+        binding.bookingStatusAction.setText(R.string.home_booking_status_setup_action);
+
+        new MerchantProfileRepository().load(new MerchantProfileRepository.OnProfileLoaded() {
+            @Override public void onLoaded(@NonNull MerchantProfile p, boolean isNew) {
+                if (binding == null || !isAdded()) return;
+                requireActivity().runOnUiThread(() -> {
+                    if (binding == null) return;
+                    if (!p.hasSlug() || isNew) {
+                        binding.bookingStatusDot.setBackgroundResource(R.drawable.status_dot_inactive);
+                        binding.bookingStatusText.setText(R.string.home_booking_status_setup);
+                        binding.bookingStatusAction.setText(R.string.home_booking_status_setup_action);
+                    } else if (!p.active) {
+                        binding.bookingStatusDot.setBackgroundResource(R.drawable.status_dot_inactive);
+                        binding.bookingStatusText.setText(R.string.home_booking_status_disabled);
+                        binding.bookingStatusAction.setText(R.string.home_booking_status_manage_action);
+                    } else {
+                        binding.bookingStatusDot.setBackgroundResource(R.drawable.status_dot_active);
+                        binding.bookingStatusText.setText(
+                                getString(R.string.home_booking_status_live, p.slug));
+                        binding.bookingStatusAction.setText(R.string.home_booking_status_manage_action);
+                    }
+                });
+            }
+            @Override public void onError(String error) {
+                // Keep the default "setup" state on error — user can still tap to open.
+            }
+        });
     }
 
     private void setupBillingListener() {

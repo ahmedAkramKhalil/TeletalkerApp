@@ -18,23 +18,16 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 public class CallHistoryViewModel extends AndroidViewModel {
-    private final MutableLiveData<List<CallEntity>> callHistoryLiveData = new MutableLiveData<>();
+    private final LiveData<List<CallEntity>> callHistoryLiveData;
     private  CallRepository callRepository;
     public CallHistoryViewModel(Application application) {
         super(application);
         CallDao callDao = CallDatabase.getInstance(application).callDao();
         callRepository = new CallRepositoryImpl(new CallLocalDataSourceImpl(callDao));
-        loadCallHistory();
+        // Room-backed LiveData: the history list auto-refreshes when the calls
+        // table changes (fixes "call logs not refreshing").
+        callHistoryLiveData = callRepository.getCallHistory();
     }
-
-
-    private void loadCallHistory() {
-        Executors.newSingleThreadExecutor().execute(() -> {
-            List<CallEntity> callHistory = callRepository.getCallHistory();
-            callHistoryLiveData.postValue(callHistory);
-        });
-    }
-
 
     public LiveData<List<CallEntity>> getCallHistoryLiveData() {
         return callHistoryLiveData;

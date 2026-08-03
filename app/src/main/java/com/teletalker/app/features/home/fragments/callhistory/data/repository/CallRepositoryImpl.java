@@ -2,6 +2,8 @@ package com.teletalker.app.features.home.fragments.callhistory.data.repository;
 
 import android.app.Application;
 
+import androidx.lifecycle.LiveData;
+
 import com.teletalker.app.features.home.fragments.callhistory.data.data_sources.local.CallLocalDataSource;
 import com.teletalker.app.features.home.fragments.callhistory.data.data_sources.local.CallLocalDataSourceImpl;
 import com.teletalker.app.features.home.fragments.callhistory.data.data_sources.local.database.CallDatabase;
@@ -25,7 +27,7 @@ public class CallRepositoryImpl implements CallRepository {
     }
 
     @Override
-    public List<CallEntity> getCallHistory() {
+    public LiveData<List<CallEntity>> getCallHistory() {
         return callLocalDataSource.getCallHistory();
     }
 
@@ -37,6 +39,11 @@ public class CallRepositoryImpl implements CallRepository {
     @Override
     public List<CallEntity> getRecentCallRecords() {
         return callLocalDataSource.getRecentCallRecords();
+    }
+
+    @Override
+    public LiveData<List<CallEntity>> getLastTwoCallRecords() {
+        return callLocalDataSource.getLastTwoCallRecords();
     }
 
 }

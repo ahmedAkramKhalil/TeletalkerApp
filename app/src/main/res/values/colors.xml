@@ -25,6 +25,12 @@
     <color name="teal_700">#FF018786</color>
     <color name="lightTurquoise">#77E9F8</color>
 
+    <!-- Booking screen palette (light) -->
+    <color name="booking_screen_bg">#F6F8FB</color>
+    <color name="booking_section_bg">#FFFFFF</color>
+    <color name="booking_card_stroke">#E5E9EF</color>
+    <color name="booking_pill_text">#0F172A</color>
+
     <!-- Text Colors - Light -->
     <color name="text_primary">#1E1E1E</color>
     <color name="paragraph">#415A77</color>

@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Booking screen palette (dark) -->
+    <color name="booking_screen_bg">#0E1117</color>
+    <color name="booking_section_bg">#181C25</color>
+    <color name="booking_card_stroke">#262A33</color>
+    <color name="booking_pill_text">#E6EAF2</color>
+
     <!-- Base Colors - Dark Theme -->
     <color name="black">#9DA5BE</color>
     <color name="white">#FFFFFFFF</color>

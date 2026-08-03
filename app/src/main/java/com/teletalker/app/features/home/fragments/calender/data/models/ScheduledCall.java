@@ -35,6 +35,12 @@ public class ScheduledCall implements Serializable {
     private long actualCallEndTime; // When the call actually ended
     private int actualCallDurationSeconds; // Actual duration of the call
 
+    // External source tracking (e.g., booking web app via FCM)
+    // source: "manual" (default, in-app calendar) or "booking_app" (from teletalker-booking)
+    private String source;
+    // For source="booking_app", the Firestore /bookings/{id} document ID
+    private String externalBookingId;
+
     public ScheduledCall() {
         this.createdAt = System.currentTimeMillis();
         this.updatedAt = System.currentTimeMillis();
@@ -44,6 +50,7 @@ public class ScheduledCall implements Serializable {
         this.actualCallStartTime = 0;
         this.actualCallEndTime = 0;
         this.actualCallDurationSeconds = 0;
+        this.source = "manual";
     }
 
     // Getters and Setters
@@ -187,6 +194,32 @@ public class ScheduledCall implements Serializable {
     public void setActualCallDurationSeconds(int actualCallDurationSeconds) {
         this.actualCallDurationSeconds = actualCallDurationSeconds;
         this.updatedAt = System.currentTimeMillis();
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+        this.updatedAt = System.currentTimeMillis();
+    }
+
+    public String getExternalBookingId() {
+        return externalBookingId;
+    }
+
+    public void setExternalBookingId(String externalBookingId) {
+        this.externalBookingId = externalBookingId;
+        this.updatedAt = System.currentTimeMillis();
+    }
+
+    /**
+     * True if this call originated from the booking web app (via FCM).
+     * Used by ScheduledCallExecutor to report the outcome back to Firestore.
+     */
+    public boolean isFromBookingApp() {
+        return "booking_app".equals(source);
     }
 
     // Helpful utility methods

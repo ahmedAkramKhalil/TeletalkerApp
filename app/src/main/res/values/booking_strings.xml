@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- generic -->
+    <string name="save">Save</string>
+    <string name="saved">Saved.</string>
+    <string name="back">Back</string>
+    <string name="copy">Copy</string>
+    <string name="open">Open</string>
+    <string name="share">Share</string>
+    <string name="next">Next</string>
+    <string name="get_started">Get started</string>
+    <string name="remove">Remove</string>
+
+    <!-- entry in settings -->
+    <string name="booking_page">Booking page</string>
+    <string name="booking_page_subtitle">Let customers book and get an AI confirmation call</string>
+
+    <!-- share card -->
+    <string name="booking_share_card_title">Your booking page is live</string>
+    <string name="booking_share_empty_hint">Pick a slug below and save to get your shareable link.</string>
+    <string name="booking_slug_url">https://teletalker-21348.web.app/book/%1$s</string>
+    <string name="booking_share_text">Book with %1$s online: %2$s</string>
+    <string name="booking_share_title">Share booking link</string>
+    <string name="booking_link_copied">Booking link copied</string>
+    <string name="booking_open_tutorial">How does the booking flow work?</string>
+
+    <!-- sections -->
+    <string name="booking_section_profile">Profile</string>
+    <string name="booking_section_look">Look &amp; feel</string>
+    <string name="booking_section_services">Services</string>
+    <string name="booking_section_hours">Open hours</string>
+    <string name="booking_section_mode">How customers pick a time</string>
+
+    <!-- Bookings list (mobile dashboard) -->
+    <string name="bookings_title">Bookings</string>
+    <string name="bookings_view_button">View bookings</string>
+    <string name="bookings_view_subtitle">See live status of every booking + AI call outcomes</string>
+    <string name="bookings_signed_out">Please sign in to view bookings.</string>
+    <string name="bookings_load_error">Couldn\'t load bookings: %1$s</string>
+    <string name="bookings_empty_title">No bookings yet</string>
+    <string name="bookings_empty_subtitle">When customers book through your page, they\'ll appear here. Confirmation calls show their status live.</string>
+    <string name="bookings_unknown_customer">(no name)</string>
+    <string name="bookings_was_prefix">(was %1$s)</string>
+
+    <plurals name="bookings_count">
+        <item quantity="one">%d booking</item>
+        <item quantity="other">%d bookings</item>
+    </plurals>
+
+    <!-- Status pills -->
+    <string name="bookings_status_pending">Pending</string>
+    <string name="bookings_status_scheduled">Scheduled</string>
+    <string name="bookings_status_calling">Calling now…</string>
+    <string name="bookings_status_called">Called</string>
+    <string name="bookings_status_confirmed">Confirmed</string>
+    <string name="bookings_status_rescheduled">Rescheduled</string>
+    <string name="bookings_status_no_answer">No answer</string>
+    <string name="bookings_status_declined">Declined</string>
+    <string name="bookings_status_failed">Failed</string>
+
+    <!-- Inbound AI -->
+    <string name="inbound_ai_title">Inbound AI receptionist</string>
+    <string name="inbound_ai_card_title">Inbound AI receptionist</string>
+    <string name="inbound_ai_card_subtitle">Set per-agent scripts for incoming calls</string>
+    <string name="inbound_ai_agent_label">Active agent for incoming calls</string>
+    <string name="inbound_ai_agent_hint">Pick which ElevenLabs agent answers when someone calls you. The script below is saved per-agent, so switching back later restores its config.</string>
+    <string name="inbound_ai_first_msg_label">First message</string>
+    <string name="inbound_ai_first_msg_hint">What the AI says when the call connects. Leave empty to use the agent\'s built-in greeting.</string>
+    <string name="inbound_ai_first_msg_default">Hi, thanks for calling {business_name}. How can I help?</string>
+    <string name="inbound_ai_prompt_add_label">Role &amp; instructions</string>
+    <string name="inbound_ai_prompt_add_hint">Tell the AI what it is and what it can do. Empty = use the agent\'s ElevenLabs dashboard prompt.</string>
+    <string name="inbound_ai_prompt_add_hint_text">You are a friendly receptionist for {business_name}. You handle booking questions, hours, and pricing inquiries. Keep replies short.</string>
+    <string name="inbound_ai_advanced_hint">Replaces the entire system prompt for inbound calls with whatever you write here.</string>
+    <string name="inbound_ai_active_toggle">Set as active for inbound calls</string>
+    <string name="inbound_ai_save">Save preset</string>
+    <string name="inbound_ai_saved">Saved.</string>
+
+    <!-- AI script -->
+    <string name="booking_section_ai_script">AI script &amp; personality</string>
+    <string name="booking_ai_tone_label">Tone of voice</string>
+    <string name="booking_ai_tone_warm">Warm</string>
+    <string name="booking_ai_tone_professional">Professional</string>
+    <string name="booking_ai_tone_casual">Casual</string>
+    <string name="booking_ai_tone_friendly">Friendly</string>
+    <string name="booking_ai_first_msg_label">First message (what the AI says first)</string>
+    <string name="booking_ai_first_msg_hint">Leave empty to use the default. Use the chips below to insert booking details.</string>
+    <string name="booking_ai_first_msg_default_preview">Hi {customer_name}, this is {business_name} calling to confirm your {service_name} on {appointment}. Does that time still work for you?</string>
+    <string name="booking_ai_voicemail_label">Voicemail message (when nobody picks up)</string>
+    <string name="booking_ai_voicemail_hint">Played if the call goes to voicemail. Leave empty for the default.</string>
+    <string name="booking_ai_voicemail_default_preview">Hi {customer_name}, this is {business_name}. Please call us back to confirm your {service_name}.</string>
+    <string name="booking_ai_rules_label">Extra rules for the AI</string>
+    <string name="booking_ai_rules_hint">One short rule per line. Examples: \"Always mention parking is free.\" or \"Don\'t discuss pricing.\"</string>
+    <string name="booking_ai_rule_hint">e.g. Always mention parking is free out front.</string>
+    <string name="booking_ai_rule_add">+ Add rule</string>
+    <string name="booking_ai_advanced_toggle">Use my own full system prompt</string>
+    <string name="booking_ai_advanced_hint">Replaces the entire guided composition. Booking facts and tool-call rules will NOT be auto-added — you must include them yourself. Use {customer_name}, {business_name}, {service_name}, {appointment} placeholders.</string>
+    <string name="booking_ai_advanced_label">Full system prompt</string>
+    <string name="booking_ai_var_customer">Customer</string>
+    <string name="booking_ai_var_business">Business</string>
+    <string name="booking_ai_var_service">Service</string>
+    <string name="booking_ai_var_appointment">Appointment</string>
+
+    <!-- agent -->
+    <string name="booking_section_agent">AI agent</string>
+    <string name="booking_agent_label">Agent for confirmation calls</string>
+    <string name="booking_agent_hint">Loaded from your ElevenLabs account. The picked agent will handle every booking call for this page.</string>
+    <string name="booking_agent_none">No agent selected</string>
+    <string name="booking_agent_choose">Choose</string>
+    <string name="booking_agent_loading">Loading agents…</string>
+    <string name="booking_agent_no_key">Set your ElevenLabs API key in Voice Engine settings first.</string>
+    <string name="booking_agent_load_failed">Couldn\'t load agents — check your API key and connection.</string>
+    <string name="booking_agent_dialog_title">Pick an agent</string>
+
+    <!-- look & feel -->
+    <string name="booking_cover_label">Cover image URL</string>
+    <string name="booking_cover_hint">Shown at the top of the public booking page. PNG/JPG, 16:6 looks best.</string>
+    <string name="booking_logo_label">Logo</string>
+    <string name="booking_logo_hint">Shown next to your business name on the booking page. Square images work best (under 2 MB).</string>
+    <string name="booking_logo_choose">Choose logo</string>
+    <string name="booking_logo_change">Change logo</string>
+    <string name="booking_logo_remove">Remove</string>
+    <string name="booking_logo_uploading">Uploading logo…</string>
+    <string name="booking_logo_too_large">That image is too large. Pick one under 2 MB.</string>
+    <string name="booking_logo_upload_failed">Logo upload failed: %1$s</string>
+
+    <!-- template picker -->
+    <string name="booking_section_template">Booking page template</string>
+    <string name="booking_section_template_hint">Pick the public page customers see when they book. You can change this anytime.</string>
+    <string name="booking_template_preview">Preview</string>
+    <string name="booking_template_selected">Selected</string>
+    <string name="booking_template_thumb_desc">Booking template preview</string>
+
+    <!-- home status card -->
+    <string name="home_booking_status_title">Booking page</string>
+    <string name="home_booking_status_live">Live · /book/%1$s</string>
+    <string name="home_booking_status_setup">Not set up · tap to configure</string>
+    <string name="home_booking_status_disabled">Disabled</string>
+    <string name="home_booking_status_setup_action">Set up</string>
+    <string name="home_booking_status_manage_action">Manage</string>
+
+    <!-- profile fields -->
+    <string name="booking_slug_label">Booking page slug</string>
+    <string name="booking_name_label">Business name</string>
+    <string name="booking_name_hint">e.g. Jeff\'s Barbershop</string>
+    <string name="booking_timezone_label">Timezone</string>
+    <string name="booking_desc_label">Short description</string>
+    <string name="booking_desc_hint">Shown at the top of your public booking page.</string>
+    <string name="booking_phone_label">Phone (shown publicly)</string>
+    <string name="booking_address_label">Address</string>
+    <string name="booking_website_label">Website</string>
+
+    <!-- services -->
+    <string name="booking_add_service">Add service</string>
+    <string name="booking_service_name_hint">Service name</string>
+    <string name="booking_duration_hint">Duration (min)</string>
+    <string name="booking_price_hint">Price (optional)</string>
+    <string name="booking_service_description_hint">Description (optional)</string>
+
+    <!-- hours -->
+    <string name="booking_closed">Closed</string>
+
+    <!-- modes -->
+    <string name="booking_mode_interval">Interval slots</string>
+    <string name="booking_mode_interval_desc">Auto-generate buttons every N min inside your open hours.</string>
+    <string name="booking_mode_slots">Fixed slots</string>
+    <string name="booking_mode_slots_desc">You list the exact times per day. Customers pick from them.</string>
+    <string name="booking_mode_slots_hint">Tip: fixed slots can be edited on the web settings for now.</string>
+    <string name="booking_mode_anytime">Anytime</string>
+    <string name="booking_mode_anytime_desc">Customers can pick any time inside your open hours.</string>
+    <string name="booking_slot_interval">Slot interval</string>
+    <string name="booking_minutes_short">%1$d min</string>
+
+    <!-- gating -->
+    <string name="standard_plan_only">Standard</string>
+    <string name="booking_upgrade_title">Available on Standard</string>
+    <string name="booking_upgrade_body">The booking page is included with the Standard plan. Upgrade to start taking online bookings with automatic AI confirmation calls.</string>
+    <string name="booking_upgrade_cta">Upgrade to Standard</string>
+
+    <!-- low-balance alert -->
+    <string name="booking_alerts_channel_name">Booking alerts</string>
+    <string name="booking_alerts_channel_desc">Notifications about incoming bookings and balance issues.</string>
+    <string name="booking_low_balance_title">Booking received — top up needed</string>
+    <string name="booking_low_balance_body">%1$s just booked, but you only have %2$s minutes left. Top up now so the AI confirmation call goes through.</string>
+    <string name="booking_low_balance_top_up">Top up</string>
+
+    <!-- validation -->
+    <string name="booking_invalid_slug">Slug must be lowercase letters, numbers or hyphens (3-40 chars).</string>
+    <string name="booking_missing_name">Business name is required.</string>
+    <string name="booking_missing_service">Add at least one service.</string>
+    <string name="booking_slug_taken">That slug is already taken — pick another.</string>
+
+    <!-- tutorial -->
+    <string name="booking_tutorial_title_1">Get a free booking page</string>
+    <string name="booking_tutorial_body_1">TeleTalker gives you a public page at teletalker-21348.web.app/book/&lt;your-slug&gt;. Share it on cards, on socials, anywhere.</string>
+    <string name="booking_tutorial_title_2">Customers book in seconds</string>
+    <string name="booking_tutorial_body_2">They pick a service, pick a time slot inside your hours, and submit. No accounts. No friction.</string>
+    <string name="booking_tutorial_title_3">Your phone calls them back</string>
+    <string name="booking_tutorial_body_3">~30 seconds after booking, TeleTalker dials the customer from your own device. The AI confirms by name.</string>
+    <string name="booking_tutorial_title_4">Manage from anywhere</string>
+    <string name="booking_tutorial_body_4">Change services, hours, and booking mode here on your phone — or from the web dashboard. Both stay in sync.</string>
+
+</resources>

@@ -23,14 +23,16 @@ import java.util.concurrent.Executors;
 
 public class HomeViewModel extends AndroidViewModel {
     final MutableLiveData<HomeFragmentEvents> events = new MutableLiveData<>();
-    private final MutableLiveData<List<CallEntity>> callHistoryLiveData = new MutableLiveData<>();
+    private final LiveData<List<CallEntity>> callHistoryLiveData;
     private CallRepository callRepository;
 
     public HomeViewModel(Application application) {
         super(application);
         CallDao callDao = CallDatabase.getInstance(application).callDao();
         callRepository = new CallRepositoryImpl(new CallLocalDataSourceImpl(callDao));
-        loadCallHistory();
+        // Room auto-emits a fresh list whenever the calls table changes,
+        // so the home-screen "recent calls" widget refreshes automatically.
+        callHistoryLiveData = callRepository.getLastTwoCallRecords();
     }
 
 
@@ -53,14 +55,6 @@ public class HomeViewModel extends AndroidViewModel {
     public LiveData<List<CallEntity>> getCallHistoryLiveData() {
         return callHistoryLiveData;
     }
-
-    private void loadCallHistory() {
-        Executors.newSingleThreadExecutor().execute(() -> {
-            List<CallEntity> callHistory = callRepository.getRecentCallRecords();
-            callHistoryLiveData.postValue(callHistory);
-        });
-    }
-
 
 
     private MediaPlayer mediaPlayer;

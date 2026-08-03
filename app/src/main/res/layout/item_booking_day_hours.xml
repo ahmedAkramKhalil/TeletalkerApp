@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingVertical="4dp">
+
+    <CheckBox
+        android:id="@+id/dayCheckbox"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1.4"
+        android:buttonTint="@color/colorPrimary"
+        android:fontFamily="sans-serif-medium"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp" />
+
+    <LinearLayout
+        android:id="@+id/timeWrap"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1.6"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <TextView
+            android:id="@+id/openTime"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:background="@drawable/booking_input_inner_bg"
+            android:gravity="center"
+            android:minWidth="64dp"
+            android:paddingHorizontal="10dp"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="6dp"
+            android:layout_gravity="center_vertical"
+            android:text="—"
+            android:textColor="@color/text_gray" />
+
+        <TextView
+            android:id="@+id/closeTime"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:background="@drawable/booking_input_inner_bg"
+            android:gravity="center"
+            android:minWidth="64dp"
+            android:paddingHorizontal="10dp"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/closedLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1.6"
+        android:gravity="end"
+        android:text="@string/booking_closed"
+        android:textColor="@color/text_gray"
+        android:textSize="13sp"
+        android:visibility="gone" />
+</LinearLayout>

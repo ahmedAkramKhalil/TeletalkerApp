@@ -18,10 +18,11 @@ import com.teletalker.app.features.home.fragments.calender.data.models.Scheduled
  * Version History:
  * - v1: Initial database with basic scheduled call fields
  * - v2: Added purpose, actual call tracking fields (actualCallStartTime, actualCallEndTime, actualCallDurationSeconds)
+ * - v3: Added source + externalBookingId for booking-app-originated calls (FCM-triggered)
  */
 @Database(
         entities = {ScheduledCall.class},
-        version = 2,
+        version = 3,
         exportSchema = false
 )
 public abstract class ScheduledCallDatabase extends RoomDatabase {
@@ -60,11 +61,11 @@ public abstract class ScheduledCallDatabase extends RoomDatabase {
                         ScheduledCallDatabase.class,
                         DATABASE_NAME
                 )
-                .addMigrations(MIGRATION_1_2)
-                // If the device already holds a NEWER schema than this build
-                // (e.g. an older APK reinstalled over a newer one), Room cannot
-                // downgrade and would crash. Recreate the table instead of
-                // taking down the whole app.
+                // Booking schema migration (2→3: source + externalBookingId)
+                // alongside 1→2. Plus a downgrade fallback so an older APK
+                // reinstalled over a newer schema recreates the table instead
+                // of crashing.
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .fallbackToDestructiveMigrationOnDowngrade()
                 .addCallback(DATABASE_CALLBACK)
                 .build();
@@ -91,6 +92,26 @@ public abstract class ScheduledCallDatabase extends RoomDatabase {
             } catch (Exception e) {
                 Log.e(TAG, "❌ Error during migration 1->2: " + e.getMessage(), e);
                 throw e; // Re-throw to trigger fallback if needed
+            }
+        }
+    };
+
+    /**
+     * Migration from version 2 to version 3
+     * Adds source + externalBookingId for booking-app-originated calls (FCM-triggered).
+     * Defaults all existing rows to source="manual".
+     */
+    private static final Migration MIGRATION_2_3 = new Migration(2, 3) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            Log.d(TAG, "Migrating database from version 2 to 3");
+            try {
+                database.execSQL("ALTER TABLE scheduled_calls ADD COLUMN source TEXT DEFAULT 'manual'");
+                database.execSQL("ALTER TABLE scheduled_calls ADD COLUMN externalBookingId TEXT");
+                Log.d(TAG, "✅ Database migration 2->3 completed successfully");
+            } catch (Exception e) {
+                Log.e(TAG, "❌ Error during migration 2->3: " + e.getMessage(), e);
+                throw e;
             }
         }
     };

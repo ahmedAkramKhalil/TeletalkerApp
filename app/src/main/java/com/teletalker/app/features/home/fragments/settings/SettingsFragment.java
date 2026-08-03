@@ -30,9 +30,11 @@ import com.teletalker.app.R;
 import com.teletalker.app.billing.BillingManager;
 import com.teletalker.app.databinding.FragmentSettingsBinding;
 import com.teletalker.app.features.agent_type.AgentTypeActivity;
+import com.teletalker.app.features.booking.BookingSetupActivity;
 import com.teletalker.app.features.authentication.presentation.AuthActivity;
 import com.teletalker.app.features.home.ThemeManager;
 import com.teletalker.app.features.select_voice.presentation.SelectVoiceActivity;
+import com.teletalker.app.network.ElevenLabsApiClient;
 import com.teletalker.app.network.FirebaseFunctionsManager;
 import com.teletalker.app.network.UserBalance;
 import com.teletalker.app.utils.PreferencesManager;
@@ -50,6 +52,7 @@ public class SettingsFragment extends Fragment implements com.teletalker.app.uti
     private FirebaseAuth auth;
     private static final int REQUEST_SUBSCRIPTION = 1001;
     private com.teletalker.app.utils.SubscriptionManager subscriptionManager;
+    private ElevenLabsApiClient elevenLabsApiClient;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -71,6 +74,7 @@ public class SettingsFragment extends Fragment implements com.teletalker.app.uti
         observes();
         initListeners();
         setAutoAnswerSwitch();
+        setupApiKeyCard();
 
         // Load user profile
         loadUserProfile();
@@ -222,6 +226,77 @@ public class SettingsFragment extends Fragment implements com.teletalker.app.uti
         });
     }
 
+    // ============================================
+    // ELEVENLABS API KEY CARD
+    // ============================================
+
+    private void setupApiKeyCard() {
+        elevenLabsApiClient = new ElevenLabsApiClient();
+
+        // Show masked existing key if present
+        String existingKey = PreferencesManager.getInstance(requireContext()).getApiKey();
+        if (existingKey != null && existingKey.length() > 4) {
+            String masked = "••••••••" + existingKey.substring(existingKey.length() - 4);
+            binding.apiKeyInput.setHint(masked);
+            binding.apiKeyStatus.setText(R.string.elevenlabs_api_key_valid);
+            binding.apiKeyStatus.setTextColor(getResources().getColor(R.color.colorPrimary));
+            binding.apiKeyStatus.setVisibility(View.VISIBLE);
+        }
+
+        binding.apiKeySaveBtn.setOnClickListener(v -> {
+            String key = binding.apiKeyInput.getText().toString().trim();
+            if (key.isEmpty()) {
+                Toast.makeText(requireContext(), "Please enter an API key", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Show validating state
+            binding.apiKeySaveBtn.setEnabled(false);
+            binding.apiKeyStatus.setText(R.string.elevenlabs_api_key_validating);
+            binding.apiKeyStatus.setTextColor(getResources().getColor(R.color.gunmetalTextGray));
+            binding.apiKeyStatus.setVisibility(View.VISIBLE);
+
+            elevenLabsApiClient.validateApiKey(key, (valid, message) -> {
+                if (!isAdded() || binding == null) return;
+
+                binding.apiKeySaveBtn.setEnabled(true);
+
+                if (valid) {
+                    // Save the key
+                    PreferencesManager.getInstance(requireContext()).saveApiKey(key);
+
+                    binding.apiKeyStatus.setText(R.string.elevenlabs_api_key_valid);
+                    binding.apiKeyStatus.setTextColor(getResources().getColor(R.color.colorPrimary));
+
+                    // Clear input and show masked hint
+                    binding.apiKeyInput.setText("");
+                    String masked = "••••••••" + key.substring(key.length() - 4);
+                    binding.apiKeyInput.setHint(masked);
+
+                    Toast.makeText(requireContext(), "API key saved", Toast.LENGTH_SHORT).show();
+
+                    // Sync to Firestore (best-effort)
+                    try {
+                        FirebaseFunctionsManager.getInstance()
+                                .syncElevenLabsApiKey(key, new FirebaseFunctionsManager.OnSyncApiKeyCallback() {
+                                    @Override public void onSuccess() {
+                                        Log.d("SettingsFragment", "API key synced to cloud");
+                                    }
+                                    @Override public void onError(String error) {
+                                        Log.w("SettingsFragment", "Failed to sync API key: " + error);
+                                    }
+                                });
+                    } catch (Exception e) {
+                        Log.w("SettingsFragment", "Failed to sync API key to cloud: " + e.getMessage());
+                    }
+                } else {
+                    binding.apiKeyStatus.setText(R.string.elevenlabs_api_key_invalid);
+                    binding.apiKeyStatus.setTextColor(getResources().getColor(R.color.error));
+                }
+            });
+        });
+    }
+
     public static void configureAutoAnswer(Context context, boolean enabled) {
         Log.d("configureAutoAnswer", "AutoAnswer==" + enabled);
         PreferencesManager.getInstance(context)
@@ -269,6 +344,16 @@ public class SettingsFragment extends Fragment implements com.teletalker.app.uti
         binding.backgroundCardView.setOnClickListener(v -> showBackgroundDialog());
 
         binding.dialerCardView.setOnClickListener(v -> showDialerRoleDialog());
+
+        // Booking page + inbound AI (merchant booking feature).
+        boolean isLite = com.teletalker.app.utils.SubscriptionManager.getInstance(requireContext()).isLite();
+        binding.bookingPageBadge.setVisibility(isLite ? View.VISIBLE : View.GONE);
+        binding.bookingPageCard.setOnClickListener(v ->
+                startActivity(new android.content.Intent(requireContext(),
+                        com.teletalker.app.features.booking.BookingSetupActivity.class)));
+        binding.inboundAiCard.setOnClickListener(v ->
+                startActivity(new android.content.Intent(requireContext(),
+                        com.teletalker.app.features.booking.InboundAIActivity.class)));
     }
 
     // ============================================

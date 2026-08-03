@@ -85,6 +85,24 @@
         android:theme="@style/Theme.Teletalker"
         tools:targetApi="tiramisu">
         <activity
+            android:name=".features.booking.BookingSetupActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Teletalker" />
+        <activity
+            android:name=".features.booking.BookingTutorialActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Teletalker" />
+        <activity
+            android:name=".features.booking.BookingsListActivity"
+            android:exported="false"
+            android:label="@string/bookings_title"
+            android:theme="@style/Theme.Teletalker" />
+        <activity
+            android:name=".features.booking.InboundAIActivity"
+            android:exported="false"
+            android:label="@string/inbound_ai_title"
+            android:theme="@style/Theme.Teletalker" />
+        <activity
             android:name=".features.home.fragments.settings.InvoicesActivity"
             android:exported="false" />
         <activity

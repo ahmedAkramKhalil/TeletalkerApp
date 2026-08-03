@@ -162,4 +162,13 @@
     <string name="cd_logo">TeleTalker logo</string>
     <string name="cd_sort">Sort</string>
     <string name="cd_see_all">See all</string>
+
+    <!-- ElevenLabs API Key -->
+    <string name="elevenlabs_api_key_title">ElevenLabs API Key</string>
+    <string name="elevenlabs_api_key_hint">Enter your API key</string>
+    <string name="elevenlabs_api_key_save">Save</string>
+    <string name="elevenlabs_api_key_valid">✓ Valid API key</string>
+    <string name="elevenlabs_api_key_invalid">✗ Invalid API key</string>
+    <string name="elevenlabs_api_key_validating">Validating…</string>
+    <string name="elevenlabs_api_key_subtitle">Required for AI voice features</string>
 </resources>
