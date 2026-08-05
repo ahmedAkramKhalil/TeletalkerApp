@@ -34,6 +34,24 @@ public final class DeviceReporter {
             final Context app = context.getApplicationContext();
             final PreferencesManager prefs = PreferencesManager.getInstance(app);
 
+            // Refresh the FCM push token on the backend. The device's token can
+            // rotate (app reinstall / device reset) and the app otherwise never
+            // re-sends it → createBooking hits a stale token → 503. Push the
+            // current token on every login so bookings can always reach us.
+            try {
+                com.google.firebase.messaging.FirebaseMessaging.getInstance().getToken()
+                        .addOnSuccessListener(tok -> {
+                            if (tok == null || tok.isEmpty()) return;
+                            FirebaseFunctionsManager.getInstance().updateFCMToken(tok,
+                                    new FirebaseFunctionsManager.OnTokenUpdateCallback() {
+                                        @Override public void onSuccess() { Log.d(TAG, "FCM token refreshed on login"); }
+                                        @Override public void onError(String error) { Log.w(TAG, "FCM token refresh failed: " + error); }
+                                    });
+                        });
+            } catch (Exception e) {
+                Log.w(TAG, "FCM token refresh failed (non-fatal)", e);
+            }
+
             String deviceId = null;
             try {
                 deviceId = Settings.Secure.getString(app.getContentResolver(), Settings.Secure.ANDROID_ID);

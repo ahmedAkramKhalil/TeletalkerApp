@@ -632,7 +632,7 @@
                 android:orientation="horizontal"
                 app:layout_constraintEnd_toEndOf="@+id/linearLayout2"
                 app:layout_constraintStart_toStartOf="@+id/linearLayout2"
-                app:layout_constraintTop_toBottomOf="@+id/linearLayout2">
+                app:layout_constraintTop_toBottomOf="@+id/bookingStatusCard">
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/btnCallNow"
@@ -799,7 +799,7 @@
                 android:paddingVertical="10dp"
                 app:layout_constraintEnd_toEndOf="@+id/linearLayout2"
                 app:layout_constraintStart_toStartOf="@+id/linearLayout2"
-                app:layout_constraintTop_toBottomOf="@+id/bookingStatusCard">
+                app:layout_constraintTop_toBottomOf="@+id/summaryRow">
 
                 <TextView
                     android:layout_width="wrap_content"

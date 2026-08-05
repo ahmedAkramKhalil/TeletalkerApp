@@ -184,7 +184,21 @@ public class NotificationHandler extends FirebaseMessagingService {
 
     @Override
     public void onNewToken(String token) {
-        // Save token to Firebase
-        // You already have updatefcmtoken function
+        // Push the rotated FCM token to the backend so createBooking can reach
+        // this device. Without this, a token rotation (app reinstall / device
+        // reset) leaves a stale token on file → FCM "NotRegistered" → bookings
+        // fail with 503. Best-effort; only meaningful when a user is signed in.
+        try {
+            if (token == null || token.isEmpty()) return;
+            if (com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() == null) return;
+            com.teletalker.app.network.FirebaseFunctionsManager.getInstance().updateFCMToken(
+                    token,
+                    new com.teletalker.app.network.FirebaseFunctionsManager.OnTokenUpdateCallback() {
+                        @Override public void onSuccess() { Log.d(TAG, "FCM token pushed (onNewToken)"); }
+                        @Override public void onError(String error) { Log.w(TAG, "FCM token push failed: " + error); }
+                    });
+        } catch (Exception e) {
+            Log.w(TAG, "onNewToken push failed", e);
+        }
     }
 }
