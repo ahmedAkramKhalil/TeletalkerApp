@@ -513,6 +513,14 @@ public class SettingsFragment extends Fragment implements com.teletalker.app.uti
     private void handleLogout() {
         PreferencesManager.getInstance(getContext()).clearLoginData();
 
+        // Reset the in-memory + cached plan so the NEXT user doesn't inherit
+        // this user's plan. SubscriptionManager is a singleton that holds
+        // currentPlan in memory; clearLoginData only wipes prefs, so without
+        // this a "standard" user logging out left the next (lite) user showing
+        // Standard until a sync landed. clearAll() resets currentPlan → "lite".
+        com.teletalker.app.utils.SubscriptionManager.getInstance(getContext()).clearAll();
+        BillingManager.getInstance(getContext()).clearCache();
+
         // Sign out from Firebase
         FirebaseAuth.getInstance().signOut();
         // Redirect to auth screen
