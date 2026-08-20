@@ -662,7 +662,8 @@ public class HomeFragment extends Fragment implements CallHistoryAdapter.OnCallP
     }
 
     private void placeOutgoingCall(String number, boolean withAi) {
-        if (number.isEmpty()) {
+        android.util.Log.d("CallNow", "placeOutgoingCall: number='" + number + "' withAi=" + withAi);
+        if (number == null || number.trim().isEmpty()) {
             Toast.makeText(getContext(), R.string.call_now_hint, LENGTH_SHORT).show();
             return;
         }
@@ -670,19 +671,37 @@ public class HomeFragment extends Fragment implements CallHistoryAdapter.OnCallP
             Toast.makeText(getContext(), R.string.please_select_agent, LENGTH_LONG).show();
             return;
         }
+        number = number.trim();
         // Arm (or suppress) AI for just this one call; CallDetector consumes it.
         prefsManager.setPendingOutgoingAiCall(withAi);
 
-        android.net.Uri uri = android.net.Uri.parse("tel:" + number);
+        // Place the call the SAME way scheduled calls do — TelecomManager.placeCall()
+        // — which is the proven-working path. The old startActivity(ACTION_CALL) was
+        // unreliable here: because the app registers its own InCallService but isn't
+        // the default dialer, the intent could be intercepted and dropped without ever
+        // dialing (no ConnectionService to route it), so "Call Now" silently did nothing.
+        android.net.Uri uri = android.net.Uri.fromParts("tel", number, null);
         try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M
+                    && androidx.core.content.ContextCompat.checkSelfPermission(
+                            requireContext(), android.Manifest.permission.CALL_PHONE)
+                        == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                android.telecom.TelecomManager tm =
+                        (android.telecom.TelecomManager) requireContext()
+                                .getSystemService(android.content.Context.TELECOM_SERVICE);
+                if (tm != null) {
+                    tm.placeCall(uri, null);
+                    android.util.Log.d("CallNow", "Call placed via TelecomManager to " + number);
+                    return;
+                }
+            }
+            // Permission missing or no TelecomManager → direct ACTION_CALL, else dialer.
             startActivity(new Intent(Intent.ACTION_CALL, uri));
         } catch (SecurityException se) {
-            // CALL_PHONE not granted → fall back to the dialer with the number prefilled.
-            // Keep the override armed (short TTL) so the AI choice still applies if the
-            // user places the call within a couple of minutes.
+            android.util.Log.w("CallNow", "CALL_PHONE denied — falling back to dialer", se);
             startActivity(new Intent(Intent.ACTION_DIAL, uri));
         } catch (Exception e) {
-            // No call was placed at all → drop the armed override so it can't leak.
+            android.util.Log.e("CallNow", "Call placement failed", e);
             prefsManager.clearPendingOutgoingAiCall();
             Toast.makeText(getContext(), "No dialer available", LENGTH_SHORT).show();
         }
