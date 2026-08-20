@@ -166,8 +166,18 @@ public class HomeActivity extends BaseThemedActivity implements
 
 
     private void setupAiAgent() {
-        PreferencesManager.getInstance(this)
-                .saveApiKey("sk_691d29f40ed72ac79857e3132d83dceb494cc2af495d5fae");
+        // Do NOT force a shared/default ElevenLabs API key. Each merchant enters
+        // their OWN key via Settings → "ElevenLabs API Key". Previously this
+        // overwrote the merchant's key with a hardcoded one on every launch,
+        // so everyone silently ran on the same default account.
+        //
+        // Migrate existing installs OFF that retired default: if the stored key
+        // is the old hardcoded one, clear it so the merchant is prompted for theirs.
+        PreferencesManager pm = PreferencesManager.getInstance(this);
+        String stored = pm.getApiKey();
+        if (stored != null && stored.startsWith("sk_691d29f40ed72ac7")) {
+            pm.saveApiKey(null);
+        }
     }
 
     private void setupUI() {

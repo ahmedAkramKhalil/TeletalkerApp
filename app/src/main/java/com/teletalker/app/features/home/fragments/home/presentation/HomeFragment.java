@@ -545,18 +545,21 @@ public class HomeFragment extends Fragment implements CallHistoryAdapter.OnCallP
 
 
         binding.aiActivationButton.setOnClickListener(v -> {
-            if (prefsManager.getSelectedAgentId() == null) {
-                Toast.makeText(getContext(), R.string.please_select_agent, LENGTH_LONG).show();
-                return;
-            }
-
-//            boolean status = !prefsManager.isBotActive();
-//            binding.aiActivationButton.setImageResource(status ? R.drawable.active_button : R.drawable.inactive_button);
-//            prefsManager.setIsBotActive(status);
-
-
             boolean currentState = prefsManager.isBotActive();
             if (!currentState) {
+                // Activating the AI bot REQUIRES the merchant's own ElevenLabs API
+                // key (no shared default) and a selected agent — prompt clearly.
+                String apiKey = prefsManager.getApiKey();
+                if (apiKey == null || apiKey.trim().isEmpty()) {
+                    Toast.makeText(getContext(),
+                            "Enter your ElevenLabs API key in Settings to activate AI.",
+                            LENGTH_LONG).show();
+                    return;
+                }
+                if (prefsManager.getSelectedAgentId() == null) {
+                    Toast.makeText(getContext(), R.string.please_select_agent, LENGTH_LONG).show();
+                    return;
+                }
                 enableAIWithBalanceCheck();
             } else {
                 disableAI();
