@@ -197,7 +197,38 @@ public class HomeActivity extends BaseThemedActivity implements
 
     private void initBottomNavView() {
         binding.navView.setItemIconTintList(null);
-        NavigationUI.setupWithNavController(binding.navView, navController);
+        if (navController == null) return;
+
+        // Explicit tab → destination mapping. We do NOT use
+        // setupWithNavController for selection because its back-stack handling
+        // was landing the Home tab on the Calendar destination. Instead each tab
+        // navigates directly to its own destination (single-top, popping back to
+        // the start so the back stack doesn't accumulate), and we keep the
+        // selected highlight in sync via a destination-changed listener.
+        binding.navView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (navController.getCurrentDestination() != null
+                    && navController.getCurrentDestination().getId() == id) {
+                return true; // already here
+            }
+            androidx.navigation.NavOptions opts = new androidx.navigation.NavOptions.Builder()
+                    .setLaunchSingleTop(true)
+                    .setPopUpTo(navController.getGraph().getStartDestinationId(), false)
+                    .build();
+            try {
+                navController.navigate(id, null, opts);
+                return true;
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
+        });
+
+        // Keep the highlighted tab in sync when navigation happens in code
+        // (e.g. the Home "Schedule Call" button opening the Calendar tab).
+        navController.addOnDestinationChangedListener((controller, destination, args) -> {
+            android.view.MenuItem item = binding.navView.getMenu().findItem(destination.getId());
+            if (item != null) item.setChecked(true);
+        });
     }
 
     private void initializeManagers() {
