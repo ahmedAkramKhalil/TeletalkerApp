@@ -35,7 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * CallRecorder - Simplified BCR-style call recording implementation
+ * CallRecorder - Call recording implementation
  * Focuses purely on reliable call recording without AI features
  */
 public class CallRecorder {

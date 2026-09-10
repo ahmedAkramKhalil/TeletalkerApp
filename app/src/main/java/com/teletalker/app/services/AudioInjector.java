@@ -11,7 +11,7 @@ import java.io.OutputStream;
 
 public class AudioInjector {
     private static final String TAG = "AudioInjector";
-    private static final String INJECTOR_SCRIPT = "/data/adb/modules/BCR/scripts/audio_injector.sh";
+    private static final String INJECTOR_SCRIPT = "/data/adb/modules/com.teletalker.app/scripts/audio_injector.sh";
 
     public static void startInjection() {
         new Thread(() -> {

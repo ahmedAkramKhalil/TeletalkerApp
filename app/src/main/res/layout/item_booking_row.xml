@@ -56,7 +56,7 @@
                         android:singleLine="true"
                         android:textColor="@color/gunmetalTextGray"
                         android:textSize="15sp"
-                        tools:text="Ahmed Khalil" />
+                        tools:text="John Doe" />
 
                     <TextView
                         android:id="@+id/rowStatus"

@@ -10,7 +10,7 @@ import android.util.Log;
 import java.io.File;
 
 /**
- * Simple boot completion handler - much simpler than BCR's DirectBootMigrationService
+ * Simple boot completion handler - lightweight boot handler
  * Just ensures the service is ready after device reboot
  */
 public class BootCompletedReceiver extends BroadcastReceiver {
