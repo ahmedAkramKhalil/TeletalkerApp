@@ -48,6 +48,9 @@ public class VersionSwitcherActivity extends AppCompatActivity {
     private FirebaseAuth auth;
     private String currentPlan = "lite";
     private boolean isLoading = false;
+    // Standard monthly price, resolved from the backend (pricing_config). The
+    // default here is only a placeholder before the first load completes.
+    private int monthlyPrice = 100;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -117,10 +120,16 @@ public class VersionSwitcherActivity extends AppCompatActivity {
                         Map<String, Object> data = (Map<String, Object>) result.getData();
                         boolean hasSubscription = (boolean) data.get("hasSubscription");
 
+                        // Backend returns monthlyPrice on every path (incl. lite),
+                        // so the upgrade dialog always shows the real price.
+                        Object priceObj = data.get("monthlyPrice");
+                        if (priceObj instanceof Number) {
+                            monthlyPrice = ((Number) priceObj).intValue();
+                        }
+
                         if (hasSubscription) {
                             currentPlan = (String) data.get("plan");
                             String status = (String) data.get("status");
-                            Integer monthlyPrice = (Integer) data.get("monthlyPrice");
                             String nextBillingDate = (String) data.get("nextBillingDate");
 
                             updateUIForStandardPlan(status, monthlyPrice, nextBillingDate);
@@ -160,13 +169,14 @@ public class VersionSwitcherActivity extends AppCompatActivity {
     private void showUpgradeConfirmation() {
         new AlertDialog.Builder(this)
                 .setTitle("Upgrade to Standard")
-                .setMessage("Subscribe to Standard plan for $10/month?\n\n" +
+                .setMessage(String.format(Locale.US,
+                        "Subscribe to Standard plan for $%d/month?\n\n" +
                         "✓ Unlimited call recording\n" +
                         "✓ Advanced AI features\n" +
                         "✓ Cloud backup\n" +
                         "✓ Priority support\n" +
                         "✓ No ads\n\n" +
-                        "You'll be billed $10 every 30 days.")
+                        "You'll be billed $%d every 30 days.", monthlyPrice, monthlyPrice))
                 .setPositiveButton("Subscribe Now", (dialog, which) -> upgradeToStandard())
                 .setNegativeButton("Maybe Later", null)
                 .setCancelable(true)
@@ -279,7 +289,7 @@ public class VersionSwitcherActivity extends AppCompatActivity {
         btnViewInvoices.setVisibility(View.VISIBLE);
     }
 
-    private void updateUIForStandardPlan(String status, Integer monthlyPrice, String nextBillingDate) {
+    private void updateUIForStandardPlan(String status, int monthlyPrice, String nextBillingDate) {
         currentPlan = "standard";
 
         // Update header
@@ -290,7 +300,7 @@ public class VersionSwitcherActivity extends AppCompatActivity {
         // Show subscription info
         cardSubscriptionInfo.setVisibility(View.VISIBLE);
         tvSubscriptionStatus.setText("Status: " + status.toUpperCase());
-        tvMonthlyPrice.setText(String.format(Locale.US, "$%.2f/month", monthlyPrice));
+        tvMonthlyPrice.setText(String.format(Locale.US, "$%d/month", monthlyPrice));
 
         if (nextBillingDate != null && !nextBillingDate.isEmpty()) {
             try {

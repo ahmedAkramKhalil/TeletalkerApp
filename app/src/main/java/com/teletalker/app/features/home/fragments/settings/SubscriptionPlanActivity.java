@@ -31,7 +31,7 @@ public class SubscriptionPlanActivity extends AppCompatActivity {
 
     private String currentPlan = "lite";
     private boolean isSubscribed = false;
-    private double monthlyPrice = 10.0;
+    private double monthlyPrice = 100.0;
     private String nextBillingDate = null;
 
     private AppVersion litePlan;

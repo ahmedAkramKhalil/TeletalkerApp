@@ -15,3 +15,12 @@
 local.properties
 keystore.properties
 *.jks
+
+# Claude Code worktrees/tooling. These are duplicate copies of the source tree
+# (a nested one under src/main/java breaks the build with duplicate classes).
+.claude/
+**/.claude/
+
+# local scratch / logs
+alarm_test.txt
+scheduled_call_execution.log
