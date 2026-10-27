@@ -6,6 +6,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import com.teletalker.app.services.injection.TelephonyUplinkInjector;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -57,6 +59,10 @@ public class CallAudioInjector {
     private static volatile boolean globalInjectionRunning = false;
     private static Process streamingProcess = null;
 
+    // Android 13+ platform uplink injection; used instead of tinyalsa when the
+    // device reports the SIM call as interceptable (see TelephonyUplinkInjector).
+    private final TelephonyUplinkInjector uplink;
+
     public interface InjectionCallback {
         void onInjectionStarted();
         void onInjectionCompleted(boolean success);
@@ -78,6 +84,7 @@ public class CallAudioInjector {
         });
 
         this.mainHandler = new Handler(Looper.getMainLooper());
+        this.uplink = new TelephonyUplinkInjector(context);
 
         Log.i(instanceTag, "CallAudioInjector with streaming mode created");
     }
@@ -94,6 +101,19 @@ public class CallAudioInjector {
                     Log.w(instanceTag, "Streaming mode already active");
                     if (callback != null) {
                         mainHandler.post(() -> callback.onInjectionError("Streaming mode already active"));
+                    }
+                    return;
+                }
+
+                if (uplink.isPreferred() && uplink.open(SAMPLE_RATE)) {
+                    Log.d(instanceTag, "Streaming mode started on platform uplink injection");
+                    streamingModeActive.set(true);
+                    globalInjectionRunning = true;
+                    if (callback != null) {
+                        mainHandler.post(() -> {
+                            callback.onInjectionStarted();
+                            callback.onStreamingStarted();
+                        });
                     }
                     return;
                 }
@@ -188,6 +208,7 @@ public class CallAudioInjector {
             synchronized (INJECTION_LOCK) {
                 try {
                     streamingModeActive.set(false);
+                    uplink.close();
 
                     // Remove pipe to signal script to stop
                     if (new File(STREAM_PIPE).exists()) {
@@ -248,7 +269,7 @@ public class CallAudioInjector {
         executor.execute(() -> {
             try {
                 // Write PCM data directly to stream pipe
-                boolean success = writeToStreamPipe(pcmData);
+                boolean success = uplink.isOpen() ? uplink.write(pcmData) : writeToStreamPipe(pcmData);
 
                 if (success) {
                     Log.d(instanceTag, "Audio written to stream successfully");

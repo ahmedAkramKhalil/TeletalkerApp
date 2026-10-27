@@ -29,6 +29,12 @@
     <uses-permission
         android:name="android.permission.CAPTURE_AUDIO_OUTPUT"
         tools:ignore="ProtectedPermissions" />
+    <!-- Android 13+ PSTN call uplink injection (AudioManager#getCallUplinkInjectionAudioTrack).
+         signature|privileged: MUST also be in the Magisk module's privapp allowlist,
+         or devices with ro.control_privapp_permissions=enforce refuse the app at boot. -->
+    <uses-permission
+        android:name="android.permission.CALL_AUDIO_INTERCEPTION"
+        tools:ignore="ProtectedPermissions" />
 
     <!-- ========== FOREGROUND SERVICE PERMISSIONS ========== -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
